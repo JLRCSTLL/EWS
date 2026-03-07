@@ -1,0 +1,251 @@
+@import './fonts.css';
+@import './tailwind.css';
+@import './theme.css';
+
+/* React Grid Layout Styles */
+.react-grid-layout {
+  position: relative;
+  transition: height 200ms ease;
+}
+
+.react-grid-item {
+  transition: all 200ms ease;
+  transition-property: left, top, width, height;
+}
+
+.react-grid-item img {
+  pointer-events: none;
+  user-select: none;
+}
+
+.react-grid-item > .react-resizable-handle {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+}
+
+.react-grid-item > .react-resizable-handle::after {
+  content: "";
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid rgba(6, 182, 212, 0.5);
+  border-bottom: 2px solid rgba(6, 182, 212, 0.5);
+}
+
+.react-resizable-hide > .react-resizable-handle {
+  display: none;
+}
+
+.react-grid-item > .react-resizable-handle.react-resizable-handle-sw {
+  bottom: 0;
+  left: 0;
+  cursor: sw-resize;
+  transform: rotate(90deg);
+}
+
+.react-grid-item > .react-resizable-handle.react-resizable-handle-se {
+  bottom: 0;
+  right: 0;
+  cursor: se-resize;
+}
+
+.react-grid-item > .react-resizable-handle.react-resizable-handle-nw {
+  top: 0;
+  left: 0;
+  cursor: nw-resize;
+  transform: rotate(180deg);
+}
+
+.react-grid-item > .react-resizable-handle.react-resizable-handle-ne {
+  top: 0;
+  right: 0;
+  cursor: ne-resize;
+  transform: rotate(270deg);
+}
+
+.react-grid-item > .react-resizable-handle.react-resizable-handle-w,
+.react-grid-item > .react-resizable-handle.react-resizable-handle-e {
+  top: 50%;
+  margin-top: -10px;
+  cursor: ew-resize;
+}
+
+.react-grid-item > .react-resizable-handle.react-resizable-handle-w {
+  left: 0;
+  transform: rotate(135deg);
+}
+
+.react-grid-item > .react-resizable-handle.react-resizable-handle-e {
+  right: 0;
+  transform: rotate(315deg);
+}
+
+.react-grid-item > .react-resizable-handle.react-resizable-handle-n,
+.react-grid-item > .react-resizable-handle.react-resizable-handle-s {
+  left: 50%;
+  margin-left: -10px;
+  cursor: ns-resize;
+}
+
+.react-grid-item > .react-resizable-handle.react-resizable-handle-n {
+  top: 0;
+  transform: rotate(225deg);
+}
+
+.react-grid-item > .react-resizable-handle.react-resizable-handle-s {
+  bottom: 0;
+  transform: rotate(45deg);
+}
+
+.react-grid-item.resizing {
+  transition: none;
+  z-index: 100;
+  will-change: width, height;
+}
+
+.react-grid-item.react-draggable-dragging {
+  transition: none;
+  z-index: 100;
+  will-change: transform;
+  opacity: 0.8;
+}
+
+.react-grid-item.dropping {
+  visibility: hidden;
+}
+
+.react-grid-item.react-grid-placeholder {
+  background: rgba(6, 182, 212, 0.2);
+  opacity: 0.5;
+  transition-duration: 100ms;
+  z-index: 2;
+  border-radius: 8px;
+  border: 2px dashed rgba(6, 182, 212, 0.5);
+}
+
+.react-grid-item > .react-resizable-handle:hover::after {
+  border-right-color: rgba(6, 182, 212, 1);
+  border-bottom-color: rgba(6, 182, 212, 1);
+}
+
+.dashboard-item {
+  height: 100%;
+  overflow: hidden;
+}
+
+.tactical-map-canvas.leaflet-container {
+  height: 100%;
+  width: 100%;
+  background: #0f172a;
+  font: inherit;
+}
+
+.tactical-map-canvas .leaflet-control-attribution {
+  margin: 0 8px 8px 0;
+  border: 1px solid rgba(8, 145, 178, 0.25);
+  border-radius: 8px;
+  background: rgba(2, 6, 23, 0.85);
+  padding: 4px 8px;
+  color: rgba(148, 163, 184, 0.9);
+}
+
+.tactical-map-canvas .leaflet-control-attribution a {
+  color: #22d3ee;
+}
+
+.tactical-map-canvas .leaflet-control-scale {
+  margin: 0 0 8px 8px;
+}
+
+.tactical-map-canvas .leaflet-control-scale-line {
+  border-color: rgba(148, 163, 184, 0.7);
+  background: rgba(2, 6, 23, 0.75);
+  color: #cbd5e1;
+}
+
+.tactical-map-div-icon {
+  background: transparent;
+  border: 0;
+}
+
+.tactical-map-marker {
+  display: flex;
+  height: 38px;
+  width: 38px;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid rgba(15, 23, 42, 0.7);
+  border-radius: 9999px;
+  background: var(--marker-color);
+  box-shadow: 0 0 12px var(--marker-color);
+  color: #f8fafc;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.tactical-map-marker.is-selected {
+  transform: scale(1.08);
+  border-color: #e2e8f0;
+}
+
+.tactical-map-popup .leaflet-popup-content-wrapper {
+  border: 1px solid rgba(34, 211, 238, 0.35);
+  border-radius: 10px;
+  background: rgba(2, 6, 23, 0.96);
+  box-shadow: 0 20px 50px rgba(2, 6, 23, 0.5);
+  color: #e2e8f0;
+}
+
+.tactical-map-popup .leaflet-popup-tip {
+  background: rgba(2, 6, 23, 0.96);
+}
+
+.tactical-map-popup .leaflet-popup-content {
+  margin: 10px 12px;
+}
+
+.tactical-map-popup-card {
+  min-width: 180px;
+  font-size: 12px;
+}
+
+.tactical-map-popup-title {
+  margin-bottom: 4px;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.tactical-map-popup-subtitle,
+.tactical-map-popup-line {
+  color: #94a3b8;
+}
+
+.tactical-map-popup-meta {
+  margin-top: 6px;
+  color: #22d3ee;
+  font-size: 10px;
+}
+
+/* Custom scrollbar for dashboard */
+.dashboard-item ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.dashboard-item ::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.5);
+}
+
+.dashboard-item ::-webkit-scrollbar-thumb {
+  background: rgba(6, 182, 212, 0.3);
+  border-radius: 3px;
+}
+
+.dashboard-item ::-webkit-scrollbar-thumb:hover {
+  background: rgba(6, 182, 212, 0.5);
+}
