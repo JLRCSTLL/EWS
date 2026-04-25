@@ -1,35 +1,24 @@
-import { Suspense, lazy, useCallback, useEffect, useState } from 'react';
-import { Activity, AlertTriangle, FileText, Layout as LayoutIcon, MessageSquare, RotateCcw, Save, Shield, Users } from 'lucide-react';
-import { Responsive, WidthProvider, type Layout } from 'react-grid-layout/legacy';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Expand, Layout as LayoutIcon, Library, RotateCcw, Save, Shield, Shrink } from 'lucide-react';
+import type { Layout } from 'react-grid-layout/legacy';
 import { Toaster, toast } from 'sonner';
 import {
-  disasterEvents,
   geoFenceOptions,
   initialAuditLogs,
   initialMessages,
-  riskAreas,
   targetGroups,
   type AuditLogEntry,
 } from './lib/dashboard-data';
 import { formatSystemClock } from './lib/formatting';
-import { AuditLogs } from './components/AuditLogs';
+import { allWidgetIds, WIDGETS, type WidgetId, type WidgetRuntimeProps } from './lib/widget-registry';
+import { DashboardGrid } from './components/DashboardGrid';
 import { DashboardWidget } from './components/DashboardWidget';
-import { DisasterEventFeed } from './components/DisasterEventFeed';
-import { MessageHistory } from './components/MessageHistory';
-import { MessagingPanel, type OutboundMessageDraft } from './components/MessagingPanel';
-import { ResponderDeployment } from './components/ResponderDeployment';
-import { RiskMonitoring } from './components/RiskMonitoring';
-import { SystemHealth } from './components/SystemHealth';
-import { UserManagement } from './components/UserManagement';
+import type { OutboundMessageDraft } from './components/MessagingPanel';
+import { WidgetLibrary } from './components/WidgetLibrary';
 import { Button } from './components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './components/ui/select';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
-
-const ResponsiveGridLayout = WidthProvider(Responsive);
-const ImprovedMapPanel = lazy(() =>
-  import('./components/ImprovedMapPanel').then((module) => ({ default: module.ImprovedMapPanel })),
-);
 
 type GridLayouts = Record<string, Layout[]>;
 
@@ -119,55 +108,8 @@ const STORAGE_KEYS = {
   auditLogs: 'ecc-dashboard-audit-logs',
 } as const;
 
-const widgetDefinitions = {
-  map: {
-    title: 'TACTICAL MAP DISPLAY',
-    icon: <Shield className="h-4 w-4 text-cyan-400" />,
-    headerColor: 'text-cyan-400',
-  },
-  'disaster-feed': {
-    title: 'DISASTER EVENT FEED',
-    icon: <AlertTriangle className="h-4 w-4 text-red-400" />,
-    headerColor: 'text-red-400',
-  },
-  'risk-monitoring': {
-    title: 'RISK AND VULNERABILITY',
-    icon: <Shield className="h-4 w-4 text-orange-400" />,
-    headerColor: 'text-orange-400',
-  },
-  responders: {
-    title: 'RESPONDER DEPLOYMENT',
-    icon: <Users className="h-4 w-4 text-green-400" />,
-    headerColor: 'text-green-400',
-  },
-  messaging: {
-    title: 'BROADCAST CONTROL',
-    icon: <MessageSquare className="h-4 w-4 text-purple-400" />,
-    headerColor: 'text-purple-400',
-  },
-  'message-history': {
-    title: 'MESSAGE HISTORY',
-    icon: <MessageSquare className="h-4 w-4 text-purple-400" />,
-    headerColor: 'text-purple-400',
-  },
-  'user-management': {
-    title: 'USER MANAGEMENT (RBAC)',
-    icon: <Users className="h-4 w-4 text-blue-400" />,
-    headerColor: 'text-blue-400',
-  },
-  'audit-logs': {
-    title: 'AUDIT LOGS',
-    icon: <FileText className="h-4 w-4 text-cyan-400" />,
-    headerColor: 'text-cyan-400',
-  },
-  'system-health': {
-    title: 'SYSTEM HEALTH',
-    icon: <Activity className="h-4 w-4 text-green-400" />,
-    headerColor: 'text-green-400',
-  },
-} as const;
-
-type WidgetId = keyof typeof widgetDefinitions;
+const TOOLBAR_BUTTON_CLASS =
+  'h-8 gap-2 border-cyan-900/40 bg-slate-900/80 text-cyan-100 hover:bg-cyan-950/50 hover:text-cyan-50';
 
 function cloneLayouts(layouts: GridLayouts) {
   return JSON.parse(JSON.stringify(layouts)) as GridLayouts;
@@ -184,6 +126,18 @@ function readStoredJson<T>(key: string, fallback: T) {
   } catch {
     return fallback;
   }
+}
+
+function persistPresetLayouts(preset: PresetKey, layouts: GridLayouts) {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  const savedLayouts = readStoredJson<SavedLayouts>(STORAGE_KEYS.layouts, {});
+  window.localStorage.setItem(
+    STORAGE_KEYS.layouts,
+    JSON.stringify({ ...savedLayouts, [preset]: cloneLayouts(layouts) }),
+  );
 }
 
 function getStoredPreset(): PresetKey {
@@ -214,6 +168,24 @@ function createId(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+function createWidgetLayoutItem(widgetId: WidgetId, layout: Layout[], placement?: Partial<Layout>): Layout {
+  const widget = WIDGETS[widgetId];
+  const lowestY = layout.reduce((maxY, item) => Math.max(maxY, item.y + item.h), 0);
+  const requestedX = placement?.x ?? 0;
+  const requestedY = placement?.y ?? lowestY;
+  const isRequestedCellOccupied = layout.some((item) => item.x === requestedX && item.y === requestedY);
+
+  return {
+    i: widgetId,
+    x: requestedX,
+    y: isRequestedCellOccupied ? lowestY : requestedY,
+    w: placement?.w ?? widget.defaultSize.w,
+    h: placement?.h ?? widget.defaultSize.h,
+    minW: widget.minSize.w,
+    minH: widget.minSize.h,
+  };
+}
+
 function ClockChip() {
   const [now, setNow] = useState(() => new Date());
 
@@ -232,16 +204,6 @@ function ClockChip() {
   );
 }
 
-function MapLoadingState() {
-  return (
-    <div className="flex h-full items-center justify-center bg-slate-950">
-      <div className="rounded border border-cyan-900/30 bg-slate-900/60 px-4 py-3 font-mono text-xs tracking-wider text-cyan-400">
-        LOADING TACTICAL MAP...
-      </div>
-    </div>
-  );
-}
-
 export default function App() {
   const [layoutMode, setLayoutMode] = useState(false);
   const [currentPreset, setCurrentPreset] = useState<PresetKey>(() => getStoredPreset());
@@ -249,6 +211,11 @@ export default function App() {
   const [maximizedWidget, setMaximizedWidget] = useState<WidgetId | null>(null);
   const [messages, setMessages] = useState(() => readStoredJson(STORAGE_KEYS.messages, initialMessages));
   const [auditLogs, setAuditLogs] = useState(() => readStoredJson(STORAGE_KEYS.auditLogs, initialAuditLogs));
+  const [isBrowserFullscreen, setIsBrowserFullscreen] = useState(false);
+  const [hasLayoutChanges, setHasLayoutChanges] = useState(false);
+  const [isWidgetLibraryOpen, setIsWidgetLibraryOpen] = useState(false);
+  const [activeDragWidgetId, setActiveDragWidgetId] = useState<WidgetId | null>(null);
+  const skipNextLayoutChangeRef = useRef(true);
 
   useEffect(() => {
     window.localStorage.setItem(STORAGE_KEYS.preset, currentPreset);
@@ -261,6 +228,19 @@ export default function App() {
   useEffect(() => {
     window.localStorage.setItem(STORAGE_KEYS.auditLogs, JSON.stringify(auditLogs));
   }, [auditLogs]);
+
+  useEffect(() => {
+    const syncFullscreenState = () => {
+      setIsBrowserFullscreen(Boolean(document.fullscreenElement));
+    };
+
+    syncFullscreenState();
+    document.addEventListener('fullscreenchange', syncFullscreenState);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', syncFullscreenState);
+    };
+  }, []);
 
   const appendAuditLog = useCallback((entry: Omit<AuditLogEntry, 'id' | 'createdAt'>) => {
     setAuditLogs((currentLogs) => [
@@ -275,11 +255,16 @@ export default function App() {
 
   const handleLayoutChange = useCallback(
     (_layout: Layout[], allLayouts: GridLayouts) => {
-      if (layoutMode) {
-        setLayouts(allLayouts);
+      if (skipNextLayoutChangeRef.current) {
+        skipNextLayoutChangeRef.current = false;
+        return;
       }
+
+      setLayouts(allLayouts);
+      persistPresetLayouts(currentPreset, allLayouts);
+      setHasLayoutChanges(true);
     },
-    [layoutMode],
+    [currentPreset],
   );
 
   const handlePresetChange = (preset: string) => {
@@ -288,17 +273,17 @@ export default function App() {
     }
 
     const nextPreset = preset as PresetKey;
+    skipNextLayoutChangeRef.current = true;
     setCurrentPreset(nextPreset);
     setLayouts(getPresetLayouts(nextPreset));
+    setHasLayoutChanges(false);
     setLayoutMode(false);
     toast.info(`Loaded ${PRESET_LAYOUTS[nextPreset].name}`);
   };
 
   const handleSaveLayout = () => {
-    const savedLayouts = readStoredJson<SavedLayouts>(STORAGE_KEYS.layouts, {});
-    const nextLayouts = { ...savedLayouts, [currentPreset]: cloneLayouts(layouts) };
-
-    window.localStorage.setItem(STORAGE_KEYS.layouts, JSON.stringify(nextLayouts));
+    persistPresetLayouts(currentPreset, layouts);
+    setHasLayoutChanges(false);
     setLayoutMode(false);
     appendAuditLog({
       type: 'config',
@@ -317,7 +302,9 @@ export default function App() {
     delete nextLayouts[currentPreset];
     window.localStorage.setItem(STORAGE_KEYS.layouts, JSON.stringify(nextLayouts));
 
+    skipNextLayoutChangeRef.current = true;
     setLayouts(getPresetLayouts(currentPreset));
+    setHasLayoutChanges(false);
     setLayoutMode(false);
     appendAuditLog({
       type: 'config',
@@ -330,6 +317,62 @@ export default function App() {
       description: `${PRESET_LAYOUTS[currentPreset].name} has been restored to its default arrangement.`,
     });
   };
+
+  const handleCloseWidget = (widgetId: WidgetId) => {
+    setLayouts((currentLayouts) => {
+      const nextLayouts = Object.fromEntries(
+        Object.entries(currentLayouts).map(([breakpoint, breakpointLayout]) => [
+          breakpoint,
+          breakpointLayout.filter((item) => item.i !== widgetId),
+        ]),
+      ) as GridLayouts;
+
+      persistPresetLayouts(currentPreset, nextLayouts);
+      return nextLayouts;
+    });
+    setMaximizedWidget((currentWidget) => (currentWidget === widgetId ? null : currentWidget));
+    setHasLayoutChanges(true);
+    toast.info(`${WIDGETS[widgetId].title} hidden`, {
+      description: 'Open the widget library to add it back.',
+    });
+  };
+
+  const handleAddWidget = useCallback(
+    (widgetId: WidgetId, placement?: Partial<Layout>) => {
+      setActiveDragWidgetId(null);
+
+      const layoutEntries = Object.entries(layouts);
+      const safeLayoutEntries = layoutEntries.length > 0 ? layoutEntries : [['lg', [] as Layout[]]];
+      const isAlreadyPresentEverywhere = safeLayoutEntries.every(([, breakpointLayout]) =>
+        breakpointLayout.some((item) => item.i === widgetId),
+      );
+
+      if (isAlreadyPresentEverywhere) {
+        toast.info(`${WIDGETS[widgetId].title} is already on the dashboard.`);
+        return;
+      }
+
+      const nextLayouts = Object.fromEntries(
+        safeLayoutEntries.map(([breakpoint, breakpointLayout]) => {
+          const presentWidgetIds = new Set(breakpointLayout.map((item) => item.i));
+
+          if (presentWidgetIds.has(widgetId)) {
+            return [breakpoint, breakpointLayout];
+          }
+
+          return [breakpoint, [...breakpointLayout, createWidgetLayoutItem(widgetId, breakpointLayout, placement)]];
+        }),
+      ) as GridLayouts;
+
+      setLayouts(nextLayouts);
+      persistPresetLayouts(currentPreset, nextLayouts);
+      setHasLayoutChanges(true);
+      toast.success(`${WIDGETS[widgetId].title} added`, {
+        description: 'Layout updated and stored on this workstation.',
+      });
+    },
+    [currentPreset, layouts],
+  );
 
   const handleSendMessage = useCallback(
     (draft: OutboundMessageDraft) => {
@@ -390,47 +433,43 @@ export default function App() {
     [appendAuditLog],
   );
 
-  const renderWidgetContent = (widgetId: WidgetId) => {
-    switch (widgetId) {
-      case 'map':
-        return (
-          <Suspense fallback={<MapLoadingState />}>
-            <ImprovedMapPanel />
-          </Suspense>
-        );
-      case 'disaster-feed':
-        return <DisasterEventFeed />;
-      case 'risk-monitoring':
-        return <RiskMonitoring />;
-      case 'responders':
-        return <ResponderDeployment />;
-      case 'messaging':
-        return <MessagingPanel onSendMessage={handleSendMessage} pendingCount={messages.filter((message) => message.status === 'sending').length} />;
-      case 'message-history':
-        return <MessageHistory messages={messages} />;
-      case 'user-management':
-        return <UserManagement />;
-      case 'audit-logs':
-        return <AuditLogs logs={auditLogs} />;
-      case 'system-health':
-        return <SystemHealth />;
-      default:
-        return null;
+  const handleBrowserFullscreenToggle = useCallback(async () => {
+    if (!document.fullscreenEnabled) {
+      toast.error('Fullscreen is not available in this browser.');
+      return;
     }
-  };
 
-  const activeAlerts = disasterEvents.filter((event) => event.severity === 'critical' || event.severity === 'high').length;
-  const pendingBroadcasts = messages.filter((message) => message.status === 'sending').length;
-  const criticalRiskAreas = riskAreas.filter((area) => area.status === 'critical').length;
-  const riskPosture = criticalRiskAreas > 0 ? 'CRITICAL' : activeAlerts > 0 ? 'HIGH' : 'ELEVATED';
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      } else {
+        await document.documentElement.requestFullscreen();
+      }
+    } catch {
+      toast.error('Unable to toggle browser fullscreen.');
+    }
+  }, []);
+
   const visibleWidgetIds = Array.from(
     new Set(
       Object.values(layouts).flatMap((breakpointLayouts) => breakpointLayouts.map((item) => item.i)),
     ),
-  ).filter((widgetId): widgetId is WidgetId => widgetId in widgetDefinitions);
+  ).filter((widgetId): widgetId is WidgetId => widgetId in WIDGETS);
+  const hiddenWidgetCount = allWidgetIds.length - visibleWidgetIds.length;
+  const pendingBroadcasts = messages.filter((message) => message.status === 'sending').length;
+  const widgetRuntimeProps = useMemo<WidgetRuntimeProps>(
+    () => ({
+      auditLogs,
+      messages,
+      onSendMessage: handleSendMessage,
+      pendingCount: pendingBroadcasts,
+    }),
+    [auditLogs, handleSendMessage, messages, pendingBroadcasts],
+  );
 
   if (maximizedWidget) {
-    const widget = widgetDefinitions[maximizedWidget];
+    const widget = WIDGETS[maximizedWidget];
+    const Widget = widget.component;
 
     return (
       <div className="fixed inset-0 z-50 bg-black">
@@ -442,7 +481,7 @@ export default function App() {
           onMinimize={() => setMaximizedWidget(null)}
           className="h-full"
         >
-          {renderWidgetContent(maximizedWidget)}
+          <Widget {...widgetRuntimeProps} />
         </DashboardWidget>
         <Toaster position="top-right" richColors closeButton theme="dark" />
       </div>
@@ -450,24 +489,24 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen overflow-hidden bg-black text-slate-200">
-      <div className="border-b-2 border-cyan-900/50 bg-gradient-to-r from-slate-900 via-slate-950 to-slate-900 p-2 shadow-lg shadow-cyan-900/20">
-        <div className="flex items-center justify-between px-4">
-          <div className="flex items-center gap-3">
+    <div className="flex h-screen min-h-0 flex-col overflow-hidden bg-[#0B1220] text-slate-200">
+      <div className="shrink-0 border-b-2 border-cyan-900/50 bg-gradient-to-r from-slate-900 via-slate-950 to-slate-900 p-2 shadow-lg shadow-cyan-900/20">
+        <div className="flex items-center justify-between gap-4 px-4">
+          <div className="flex min-w-0 items-center gap-3">
             <div className="rounded bg-gradient-to-br from-cyan-500 to-blue-600 p-2 shadow-lg shadow-cyan-500/50">
               <Shield className="h-5 w-5 text-white" />
             </div>
-            <div>
-              <h1 className="text-lg font-mono tracking-widest text-cyan-400 drop-shadow-[0_0_10px_rgba(6,182,212,0.5)]">
+            <div className="min-w-0">
+              <h1 className="truncate text-lg font-mono tracking-widest text-cyan-400 drop-shadow-[0_0_10px_rgba(6,182,212,0.5)]">
                 EMERGENCY COMMAND CENTER
               </h1>
-              <p className="text-[10px] font-mono tracking-wider text-slate-500">
+              <p className="truncate text-[10px] font-mono tracking-wider text-slate-500">
                 MODULAR DASHBOARD SYSTEM | DRAGGABLE AND RESIZABLE WIDGETS
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex shrink-0 items-center gap-3">
             <Select value={currentPreset} onValueChange={handlePresetChange}>
               <SelectTrigger className="h-8 w-[220px] border-cyan-900/30 bg-slate-800 text-xs text-slate-300">
                 <SelectValue />
@@ -485,85 +524,98 @@ export default function App() {
             </Select>
 
             <Button
-              variant={layoutMode ? 'default' : 'outline'}
+              variant="outline"
               size="sm"
-              className="h-8 gap-2"
+              className={`${TOOLBAR_BUTTON_CLASS} ${layoutMode ? 'border-cyan-400/70 bg-cyan-950/60 text-cyan-50' : ''}`}
               onClick={() => setLayoutMode((current) => !current)}
             >
               <LayoutIcon className="h-4 w-4" />
               <span className="text-xs">{layoutMode ? 'Lock Layout' : 'Edit Layout'}</span>
             </Button>
 
-            {layoutMode && (
+            <Button
+              variant="outline"
+              size="sm"
+              className={`${TOOLBAR_BUTTON_CLASS} ${isWidgetLibraryOpen ? 'border-cyan-400/70 bg-cyan-950/60 text-cyan-50' : ''}`}
+              onClick={() => setIsWidgetLibraryOpen((current) => !current)}
+              aria-label="Open widget library"
+            >
+              <Library className="h-4 w-4" />
+              <span className="text-xs">Widget Library</span>
+              {hiddenWidgetCount > 0 && (
+                <span className="ml-1 rounded bg-cyan-500/20 px-1.5 py-0.5 text-[10px] text-cyan-200">
+                  {hiddenWidgetCount}
+                </span>
+              )}
+            </Button>
+
+            {(layoutMode || hasLayoutChanges) && (
               <>
-                <Button variant="outline" size="sm" className="h-8 gap-2" onClick={handleSaveLayout}>
+                <Button variant="outline" size="sm" className={TOOLBAR_BUTTON_CLASS} onClick={handleSaveLayout}>
                   <Save className="h-4 w-4" />
                   <span className="text-xs">Save</span>
                 </Button>
-                <Button variant="outline" size="sm" className="h-8 gap-2" onClick={handleResetLayout}>
+                <Button variant="outline" size="sm" className={TOOLBAR_BUTTON_CLASS} onClick={handleResetLayout}>
                   <RotateCcw className="h-4 w-4" />
                   <span className="text-xs">Reset</span>
                 </Button>
               </>
             )}
+
+            <Button
+              variant="outline"
+              size="sm"
+              className={TOOLBAR_BUTTON_CLASS}
+              onClick={handleBrowserFullscreenToggle}
+              aria-label={isBrowserFullscreen ? 'Exit browser fullscreen' : 'Enter browser fullscreen'}
+            >
+              {isBrowserFullscreen ? <Shrink className="h-4 w-4" /> : <Expand className="h-4 w-4" />}
+              <span className="text-xs">{isBrowserFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}</span>
+            </Button>
           </div>
 
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 rounded border border-red-900/50 bg-red-950/30 px-3 py-1">
-              <div className="h-2 w-2 animate-pulse rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
-              <span className="font-mono text-xs text-red-400">ACTIVE ALERTS: {activeAlerts}</span>
-            </div>
-            <div className="flex items-center gap-2 rounded border border-orange-900/50 bg-orange-950/30 px-3 py-1">
-              <AlertTriangle className="h-4 w-4 text-orange-400" />
-              <span className="font-mono text-xs text-orange-400">RISK: {riskPosture}</span>
-            </div>
-            <div className="flex items-center gap-2 rounded border border-purple-900/50 bg-purple-950/20 px-3 py-1">
-              <MessageSquare className="h-4 w-4 text-purple-400" />
-              <span className="font-mono text-xs text-purple-400">QUEUE: {pendingBroadcasts}</span>
-            </div>
+          <div className="flex shrink-0 items-center gap-4">
             <ClockChip />
           </div>
         </div>
       </div>
 
-      <div className="p-3" style={{ height: 'calc(100vh - 64px)' }}>
-        <ResponsiveGridLayout
-          className="layout"
+      <main
+        className={`flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-3 transition-[padding] duration-200 ${
+          layoutMode ? 'pb-24' : ''
+        } ${isWidgetLibraryOpen ? 'lg:pr-[410px]' : ''}`}
+      >
+        <DashboardGrid
+          activeDragWidgetId={activeDragWidgetId}
+          layoutMode={layoutMode}
           layouts={layouts}
-          breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
-          cols={{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }}
-          rowHeight={80}
-          isDraggable={layoutMode}
-          isResizable={layoutMode}
+          visibleWidgetIds={visibleWidgetIds}
+          widgetRuntimeProps={widgetRuntimeProps}
+          onCloseWidget={handleCloseWidget}
+          onDropWidget={handleAddWidget}
           onLayoutChange={handleLayoutChange}
-          draggableHandle=".drag-handle"
-          compactType="vertical"
-          margin={[12, 12]}
-        >
-          {visibleWidgetIds.map((widgetId) => {
-            const widget = widgetDefinitions[widgetId];
+          onMaximizeWidget={setMaximizedWidget}
+        />
+      </main>
 
-            return (
-              <div key={widgetId} className="dashboard-item">
-                <DashboardWidget
-                  title={widget.title}
-                  icon={widget.icon}
-                  headerColor={widget.headerColor}
-                  onMaximize={() => setMaximizedWidget(widgetId)}
-                >
-                  {renderWidgetContent(widgetId)}
-                </DashboardWidget>
-              </div>
-            );
-          })}
-        </ResponsiveGridLayout>
-      </div>
+      <WidgetLibrary
+        open={isWidgetLibraryOpen}
+        visibleWidgetIds={visibleWidgetIds}
+        onAddWidget={handleAddWidget}
+        onClose={() => setIsWidgetLibraryOpen(false)}
+        onWidgetDragEnd={() => setActiveDragWidgetId(null)}
+        onWidgetDragStart={setActiveDragWidgetId}
+      />
 
-      {layoutMode && (
+      {(layoutMode || hasLayoutChanges) && (
         <div className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-lg border-2 border-cyan-500/50 bg-cyan-900/90 px-6 py-3 font-mono text-sm text-cyan-100 shadow-[0_0_30px_rgba(6,182,212,0.5)] backdrop-blur-sm">
           <div className="flex items-center gap-3">
             <LayoutIcon className="h-5 w-5 animate-pulse" />
-            <span>LAYOUT EDIT MODE ACTIVE | Drag widgets to reposition and resize from corners</span>
+            <span>
+              {layoutMode
+                ? 'LAYOUT EDIT MODE ACTIVE | Drag widgets to reposition or resize from the lower-right corner'
+                : 'UNSAVED LAYOUT CHANGES | Layout is stored locally; save to clear this notice'}
+            </span>
           </div>
         </div>
       )}

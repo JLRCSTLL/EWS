@@ -82,12 +82,12 @@ export function MessagingPanel({ onSendMessage, pendingCount }: MessagingPanelPr
   };
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-lg border border-cyan-900/30 bg-slate-950">
-      <div className="border-b border-cyan-900/30 bg-gradient-to-r from-slate-900 to-slate-950 p-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <MessageSquare className="h-5 w-5 text-purple-400" />
-            <h2 className="font-mono tracking-wider text-purple-400">BROADCAST CONTROL</h2>
+    <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-lg border border-cyan-900/30 bg-slate-950">
+      <div className="shrink-0 border-b border-cyan-900/30 bg-gradient-to-r from-slate-900 to-slate-950 p-3">
+        <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            <MessageSquare className="h-5 w-5 shrink-0 text-purple-400" />
+            <h2 className="truncate font-mono tracking-wider text-purple-400">BROADCAST CONTROL</h2>
           </div>
           {pendingCount > 0 && (
             <Badge variant="outline" className="border-yellow-900/50 text-xs text-yellow-400">
@@ -97,9 +97,9 @@ export function MessagingPanel({ onSendMessage, pendingCount }: MessagingPanelPr
         </div>
       </div>
 
-      <div className="flex-1 overflow-auto">
+      <div className="min-h-0 min-w-0 flex-1 overflow-auto">
         <div className="space-y-4 p-3">
-          <div className="grid grid-cols-3 gap-3 rounded-lg border border-slate-800 bg-slate-900/50 p-3 text-xs">
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(90px,1fr))] gap-3 rounded-lg border border-slate-800 bg-slate-900/50 p-3 text-xs">
             <div>
               <div className="mb-1 text-slate-500">Target Reach</div>
               <div className="font-mono text-slate-200">{formatCompactNumber(target.audience)}</div>
@@ -116,7 +116,7 @@ export function MessagingPanel({ onSendMessage, pendingCount }: MessagingPanelPr
 
           <div className="space-y-2">
             <Label className="text-xs font-mono text-cyan-400/70">MESSAGE TEMPLATES</Label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(130px,1fr))] gap-2">
               {messageTemplates.map((template) => (
                 <button
                   key={template.id}
@@ -140,10 +140,10 @@ export function MessagingPanel({ onSendMessage, pendingCount }: MessagingPanelPr
               value={message}
               onChange={(event) => setMessage(event.target.value.slice(0, MESSAGE_LIMIT))}
               placeholder="Enter emergency broadcast message..."
-              className="min-h-[110px] resize-none border-cyan-900/30 bg-slate-900 text-slate-200"
+              className="min-h-[88px] resize-none border-cyan-900/30 bg-slate-900 text-slate-200"
             />
-            <div className="flex items-center justify-between text-xs">
-              <div className="text-slate-500">
+            <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+              <div className="min-w-0 flex-1 text-slate-500">
                 Messages are written to the outbound queue and audit trail immediately.
               </div>
               <div className={remainingCharacters < 50 ? 'font-mono text-orange-400' : 'font-mono text-slate-500'}>
@@ -161,8 +161,8 @@ export function MessagingPanel({ onSendMessage, pendingCount }: MessagingPanelPr
               <SelectContent className="border-cyan-900/30 bg-slate-800">
                 {targetGroups.map((group) => (
                   <SelectItem key={group.id} value={group.id}>
-                    <div className="flex w-full items-center justify-between gap-3">
-                      <span>{group.label}</span>
+                    <div className="flex w-full min-w-0 items-center justify-between gap-3">
+                      <span className="truncate">{group.label}</span>
                       <Badge variant="outline" className="text-[10px]">
                         {formatCompactNumber(group.audience)}
                       </Badge>
@@ -185,8 +185,8 @@ export function MessagingPanel({ onSendMessage, pendingCount }: MessagingPanelPr
               <SelectContent className="border-cyan-900/30 bg-slate-800">
                 {geoFenceOptions.map((option) => (
                   <SelectItem key={option.id} value={option.id}>
-                    <div className="flex w-full items-center justify-between gap-3">
-                      <span>{option.label}</span>
+                    <div className="flex w-full min-w-0 items-center justify-between gap-3">
+                      <span className="truncate">{option.label}</span>
                       <span className="text-[10px] text-slate-500">{Math.round(option.coverage * 100)}%</span>
                     </div>
                   </SelectItem>
@@ -223,7 +223,7 @@ export function MessagingPanel({ onSendMessage, pendingCount }: MessagingPanelPr
               <Users className="h-3 w-3" />
               Delivery Preview
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-2">
               <div>
                 <div className="text-slate-500">Selected Group</div>
                 <div className="text-slate-300">{target.label}</div>

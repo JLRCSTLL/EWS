@@ -22,7 +22,7 @@ function AreaChart({ data, color = '#06b6d4' }: { data: { time: string; value: n
   const areaPath = `${pathData} L ${width} ${height} L 0 ${height} Z`;
 
   return (
-    <div className="relative h-[120px] w-full rounded border border-slate-800 bg-slate-900/50 p-3">
+    <div className="relative h-[clamp(80px,22vh,120px)] w-full rounded border border-slate-800 bg-slate-900/50 p-3">
       <svg viewBox={`0 0 ${width} ${height}`} className="h-full w-full" preserveAspectRatio="none">
         {[0, 25, 50, 75, 100].map((gridLine) => (
           <line
@@ -58,7 +58,7 @@ function LineChart({
   const height = 100;
 
   return (
-    <div className="relative h-[120px] w-full rounded border border-slate-800 bg-slate-900/50 p-3">
+    <div className="relative h-[clamp(80px,22vh,120px)] w-full rounded border border-slate-800 bg-slate-900/50 p-3">
       <svg viewBox={`0 0 ${width} ${height}`} className="h-full w-full" preserveAspectRatio="none">
         {[0, 25, 50, 75, 100].map((gridLine) => (
           <line
@@ -111,23 +111,23 @@ export function SystemHealth() {
   const onlineServers = servers.filter((server) => server.status === 'online').length;
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-lg border border-cyan-900/30 bg-slate-950">
-      <div className="border-b border-cyan-900/30 bg-gradient-to-r from-slate-900 to-slate-950 p-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Activity className="h-5 w-5 text-green-400" />
-            <h2 className="font-mono tracking-wider text-green-400">SYSTEM HEALTH</h2>
+    <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-lg border border-cyan-900/30 bg-slate-950">
+      <div className="shrink-0 border-b border-cyan-900/30 bg-gradient-to-r from-slate-900 to-slate-950 p-3">
+        <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            <Activity className="h-5 w-5 shrink-0 text-green-400" />
+            <h2 className="truncate font-mono tracking-wider text-green-400">SYSTEM HEALTH</h2>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             <div className="h-2 w-2 animate-pulse rounded-full bg-green-400" />
             <span className="font-mono text-xs text-green-400/70">{onlineServers}/{servers.length} SYSTEMS ONLINE</span>
           </div>
         </div>
       </div>
 
-      <div className="flex-1 overflow-auto">
+      <div className="min-h-0 min-w-0 flex-1 overflow-auto">
         <div className="space-y-4 p-3">
-          <div className="grid grid-cols-4 gap-3">
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(115px,1fr))] gap-3">
             {systemMetrics.map((metric) => {
               const MetricIcon = metricIcons[metric.icon];
 
@@ -156,10 +156,10 @@ export function SystemHealth() {
           </div>
 
           <div className="space-y-2">
-            <div className="flex items-center gap-2 px-3 text-sm text-orange-400">
+            <div className="flex flex-wrap items-center gap-2 px-3 text-sm text-orange-400">
               <Wifi className="h-4 w-4" />
               <span>NETWORK ACTIVITY (MB/s)</span>
-              <div className="ml-auto flex items-center gap-4 text-xs">
+              <div className="ml-auto flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
                 <div className="flex items-center gap-1">
                   <div className="h-0.5 w-3 bg-green-500" />
                   <span className="text-slate-400">Inbound</span>
@@ -180,12 +180,12 @@ export function SystemHealth() {
             </div>
             <div className="space-y-2">
               {servers.map((server) => (
-                <div key={server.id} className="flex items-center justify-between rounded bg-slate-800/50 p-2 text-xs">
-                  <div className="flex items-center gap-2">
+                <div key={server.id} className="flex flex-wrap items-center justify-between gap-2 rounded bg-slate-800/50 p-2 text-xs">
+                  <div className="flex min-w-0 items-center gap-2">
                     <div className={`h-2 w-2 rounded-full ${server.status === 'online' ? 'bg-green-400' : 'bg-blue-400'}`} />
-                    <span className="text-slate-300">{server.name}</span>
+                    <span className="truncate text-slate-300">{server.name}</span>
                   </div>
-                  <div className="flex items-center gap-4">
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
                     <div className="text-slate-500">
                       Uptime: <span className="text-green-400">{server.uptime}</span>
                     </div>

@@ -44,12 +44,12 @@ export function ResponderDeployment() {
   const activeTeams = responderTeams.filter((team) => team.status === 'deployed' || team.status === 'active').length;
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-lg border border-cyan-900/30 bg-slate-950">
-      <div className="border-b border-cyan-900/30 bg-gradient-to-r from-slate-900 to-slate-950 p-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Users className="h-5 w-5 text-green-400" />
-            <h2 className="font-mono tracking-wider text-green-400">RESPONDER DEPLOYMENT</h2>
+    <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-lg border border-cyan-900/30 bg-slate-950">
+      <div className="shrink-0 border-b border-cyan-900/30 bg-gradient-to-r from-slate-900 to-slate-950 p-3">
+        <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            <Users className="h-5 w-5 shrink-0 text-green-400" />
+            <h2 className="truncate font-mono tracking-wider text-green-400">RESPONDER DEPLOYMENT</h2>
           </div>
           <Badge variant="outline" className="border-green-900/50 text-xs text-green-400">
             {activeTeams} ACTIVE TEAMS
@@ -57,7 +57,7 @@ export function ResponderDeployment() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 border-b border-cyan-900/30 bg-slate-900/50 p-3">
+      <div className="grid shrink-0 grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-3 border-b border-cyan-900/30 bg-slate-900/50 p-3">
         <div className="rounded bg-slate-800/50 p-2">
           <div className="mb-1 text-xs text-slate-400">Total Personnel</div>
           <div className="font-mono text-2xl text-green-400">{totalPersonnel}</div>
@@ -70,7 +70,7 @@ export function ResponderDeployment() {
         </div>
       </div>
 
-      <ScrollArea className="flex-1">
+      <ScrollArea className="min-h-0 flex-1">
         <div className="space-y-3 p-3">
           {responderTeams.map((team) => {
             const statusConfig = getStatusConfig(team.status);
@@ -81,7 +81,7 @@ export function ResponderDeployment() {
                 className="space-y-2 rounded-lg border border-slate-800 bg-slate-900/50 p-3 transition-colors hover:border-cyan-900/50"
               >
                 <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1">
+                  <div className="min-w-0 flex-1">
                     <h3 className="mb-1 text-sm font-medium text-slate-200">{team.name}</h3>
                     <div className="text-xs text-slate-500">{team.type}</div>
                   </div>
@@ -103,7 +103,7 @@ export function ResponderDeployment() {
                   <span className="text-slate-400">{team.location}</span>
                 </div>
 
-                <div className="flex items-center justify-between border-t border-slate-800 pt-2">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-800 pt-2">
                   {team.deployedAt ? (
                     <div className="font-mono text-xs text-orange-400">Deployed {formatRelativeTime(team.deployedAt)}</div>
                   ) : (

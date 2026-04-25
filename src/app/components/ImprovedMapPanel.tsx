@@ -1,13 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { AlertTriangle, Crosshair, Layers, Minus, Pen, Plus, Search, X } from 'lucide-react';
+import { Crosshair, Layers, Minus, Pen, Plus, Search, SlidersHorizontal, X } from 'lucide-react';
 import { disasterEvents, infrastructureSites, responderTeams, type Severity } from '../lib/dashboard-data';
 import { formatRelativeTime } from '../lib/formatting';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Switch } from './ui/switch';
 
 interface MapLayer {
@@ -23,6 +22,7 @@ interface GeofencePoint {
 }
 
 type MarkerCategory = 'disaster' | 'infrastructure' | 'responder';
+type CategoryFilter = 'all' | MarkerCategory;
 
 interface MapMarker {
   id: string;
@@ -161,9 +161,9 @@ export function ImprovedMapPanel() {
     { id: 'responders', name: 'Responders', enabled: true },
   ]);
   const [zoom, setZoom] = useState(DEFAULT_ZOOM);
-  const [mapCenter, setMapCenter] = useState(DEFAULT_CENTER);
   const [disasterFilter, setDisasterFilter] = useState('all');
   const [severityFilter, setSeverityFilter] = useState('all');
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null);
   const [drawingMode, setDrawingMode] = useState(false);
@@ -215,15 +215,27 @@ export function ImprovedMapPanel() {
   const allMarkers = [...disasterMarkers, ...infrastructureMarkers, ...responderMarkers];
   const query = searchQuery.trim().toLowerCase();
 
+  const matchesCategoryFilter = (marker: MapMarker) =>
+    categoryFilter === 'all' || marker.category === categoryFilter;
+
+  const getSearchValues = (marker: MapMarker) => [
+    marker.name,
+    marker.subtitle,
+    marker.type,
+    marker.category,
+    marker.severity ?? marker.meta ?? '',
+  ];
+
+  const matchesSearchFilter = (marker: MapMarker) =>
+    query.length === 0 ||
+    getSearchValues(marker).some((value) => value.toLowerCase().includes(query));
+
   const filteredDisasterMarkers = disasterMarkers.filter((marker) => {
+    const matchesCategory = matchesCategoryFilter(marker);
     const matchesType = disasterFilter === 'all' || marker.type === disasterFilter;
     const matchesSeverity = severityFilter === 'all' || marker.severity === severityFilter;
-    const matchesSearch =
-      query.length === 0 ||
-      marker.name.toLowerCase().includes(query) ||
-      marker.subtitle.toLowerCase().includes(query);
 
-    return matchesType && matchesSeverity && matchesSearch;
+    return matchesCategory && matchesType && matchesSeverity && matchesSearchFilter(marker);
   });
 
   const visibleMarkers = allMarkers.filter((marker) => {
@@ -232,13 +244,7 @@ export function ImprovedMapPanel() {
       return false;
     }
 
-    const matchesSearch =
-      query.length === 0 ||
-      marker.name.toLowerCase().includes(query) ||
-      marker.subtitle.toLowerCase().includes(query) ||
-      marker.type.toLowerCase().includes(query);
-
-    if (!matchesSearch) {
+    if (!matchesCategoryFilter(marker) || !matchesSearchFilter(marker)) {
       return false;
     }
 
@@ -250,6 +256,8 @@ export function ImprovedMapPanel() {
   });
 
   const selectedMarker = visibleMarkers.find((marker) => marker.id === selectedMarkerId) ?? null;
+  const hasActiveFilters =
+    query.length > 0 || categoryFilter !== 'all' || disasterFilter !== 'all' || severityFilter !== 'all';
 
   const fitMarkers = (markersToFit: MapMarker[]) => {
     const map = mapRef.current;
@@ -288,9 +296,7 @@ export function ImprovedMapPanel() {
     mapRef.current = map;
 
     const syncViewState = () => {
-      const center = map.getCenter();
       setZoom(map.getZoom());
-      setMapCenter([Number(center.lat.toFixed(4)), Number(center.lng.toFixed(4))]);
     };
 
     map.on('zoomend', syncViewState);
@@ -303,6 +309,28 @@ export function ImprovedMapPanel() {
       map.remove();
       mapRef.current = null;
       overlaysRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    const mapContainer = mapContainerRef.current;
+    if (!mapContainer || typeof ResizeObserver === 'undefined') {
+      return;
+    }
+
+    let animationFrameId = 0;
+    const observer = new ResizeObserver(() => {
+      window.cancelAnimationFrame(animationFrameId);
+      animationFrameId = window.requestAnimationFrame(() => {
+        mapRef.current?.invalidateSize({ animate: false });
+      });
+    });
+
+    observer.observe(mapContainer);
+
+    return () => {
+      window.cancelAnimationFrame(animationFrameId);
+      observer.disconnect();
     };
   }, []);
 
@@ -452,6 +480,7 @@ export function ImprovedMapPanel() {
 
   const resetView = () => {
     setSearchQuery('');
+    setCategoryFilter('all');
     setDisasterFilter('all');
     setSeverityFilter('all');
     setSelectedMarkerId(null);
@@ -467,174 +496,215 @@ export function ImprovedMapPanel() {
   };
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="space-y-2 border-b border-cyan-900/30 bg-slate-900/80 p-2 backdrop-blur-sm">
-        <div className="flex items-center gap-2">
-          <div className="flex flex-1 items-center gap-2">
-            <Search className="h-4 w-4 text-slate-400" />
-            <Input
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') {
-                  focusVisibleMarkers();
-                }
-              }}
-              placeholder="Search location, unit, or incident..."
-              className="h-8 border-cyan-900/30 bg-slate-800 text-xs text-slate-300"
-            />
-          </div>
+    <div className="relative h-full min-h-0 min-w-0 overflow-hidden bg-slate-900">
+      <div ref={mapContainerRef} className="tactical-map-canvas absolute inset-0" />
 
-          <div className="flex items-center gap-1 rounded border border-slate-700 bg-slate-800">
+      <div className="absolute left-3 right-3 top-3 z-[500] flex items-start gap-2 sm:left-4 sm:right-auto sm:w-[min(560px,calc(100%-7rem))]">
+        <div className="flex h-11 min-w-0 flex-1 items-center gap-2 rounded bg-white px-3 text-slate-900 shadow-lg shadow-slate-950/20 ring-1 ring-slate-950/10">
+          <Search className="h-4 w-4 shrink-0 text-slate-500" />
+          <Input
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                focusVisibleMarkers();
+              }
+            }}
+            placeholder="Search maps"
+            className="h-full border-0 bg-transparent px-0 text-sm text-slate-900 shadow-none placeholder:text-slate-500 focus-visible:ring-0"
+          />
+          {searchQuery && (
             <Button
               variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0 hover:bg-slate-700"
-              onClick={() => setZoom((currentZoom) => Math.min(18, currentZoom + 1))}
+              size="icon"
+              className="h-7 w-7 shrink-0 text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+              onClick={() => setSearchQuery('')}
+              title="Clear search"
+              aria-label="Clear search"
             >
-              <Plus className="h-4 w-4 text-slate-300" />
+              <X className="h-4 w-4" />
             </Button>
-            <div className="border-x border-slate-700 px-2 font-mono text-xs text-slate-400">{zoom}</div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0 hover:bg-slate-700"
-              onClick={() => setZoom((currentZoom) => Math.max(4, currentZoom - 1))}
-            >
-              <Minus className="h-4 w-4 text-slate-300" />
-            </Button>
-          </div>
-
-          <Button
-            variant={drawingMode ? 'default' : 'outline'}
-            size="sm"
-            className="h-8 w-8 p-0"
-            onClick={() => setDrawingMode((current) => !current)}
-          >
-            <Pen className="h-4 w-4" />
-          </Button>
-
-          <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={focusVisibleMarkers}>
-            <Crosshair className="h-4 w-4" />
-          </Button>
+          )}
         </div>
 
-        <div className="flex items-center gap-2">
-          <Select value={disasterFilter} onValueChange={setDisasterFilter}>
-            <SelectTrigger className="h-8 border-cyan-900/30 bg-slate-800 text-xs text-slate-300">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="border-cyan-900/30 bg-slate-800">
-              <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="typhoon">Typhoon</SelectItem>
-              <SelectItem value="earthquake">Earthquake</SelectItem>
-              <SelectItem value="flood">Flood</SelectItem>
-              <SelectItem value="landslide">Landslide</SelectItem>
-              <SelectItem value="fire">Fire</SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="group/map-filter relative shrink-0">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="relative h-11 w-11 rounded bg-white text-slate-700 shadow-lg shadow-slate-950/20 ring-1 ring-slate-950/10 hover:bg-slate-50"
+            title="Map filters"
+            aria-label="Map filters"
+          >
+            <SlidersHorizontal className="h-4 w-4" />
+            {hasActiveFilters && <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-blue-600" />}
+          </Button>
 
-          <Select value={severityFilter} onValueChange={setSeverityFilter}>
-            <SelectTrigger className="h-8 border-cyan-900/30 bg-slate-800 text-xs text-slate-300">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="border-cyan-900/30 bg-slate-800">
-              <SelectItem value="all">All Levels</SelectItem>
-              <SelectItem value="critical">Critical</SelectItem>
-              <SelectItem value="high">High</SelectItem>
-              <SelectItem value="medium">Medium</SelectItem>
-              <SelectItem value="low">Low</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="pointer-events-none absolute right-0 top-12 w-[252px] max-w-[calc(100vw-1.5rem)] translate-y-1 rounded bg-white p-3 text-slate-800 opacity-0 shadow-xl shadow-slate-950/20 ring-1 ring-slate-950/10 transition-all duration-150 group-hover/map-filter:pointer-events-auto group-hover/map-filter:translate-y-0 group-hover/map-filter:opacity-100 group-focus-within/map-filter:pointer-events-auto group-focus-within/map-filter:translate-y-0 group-focus-within/map-filter:opacity-100">
+            <div className="space-y-3">
+              <div className="space-y-1.5">
+                <Label className="text-[11px] font-medium uppercase tracking-normal text-slate-500">Assets</Label>
+                <select
+                  value={categoryFilter}
+                  onChange={(event) => setCategoryFilter(event.target.value as CategoryFilter)}
+                  className="h-8 w-full rounded border border-slate-200 bg-white px-2 text-xs text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                >
+                  <option value="all">All Assets</option>
+                  <option value="disaster">Incidents</option>
+                  <option value="infrastructure">Infrastructure</option>
+                  <option value="responder">Responders</option>
+                </select>
+              </div>
 
-          <div className="ml-auto flex items-center gap-2 rounded border border-slate-800 bg-slate-900/60 px-3 py-1 text-[10px] font-mono text-cyan-400">
-            <AlertTriangle className="h-3 w-3" />
-            {filteredDisasterMarkers.length} visible alerts | {visibleMarkers.length} visible assets
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1.5">
+                  <Label className="text-[11px] font-medium uppercase tracking-normal text-slate-500">Type</Label>
+                  <select
+                    value={disasterFilter}
+                    onChange={(event) => setDisasterFilter(event.target.value)}
+                    className="h-8 w-full rounded border border-slate-200 bg-white px-2 text-xs text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                  >
+                    <option value="all">All Types</option>
+                    <option value="typhoon">Typhoon</option>
+                    <option value="earthquake">Earthquake</option>
+                    <option value="flood">Flood</option>
+                    <option value="landslide">Landslide</option>
+                    <option value="fire">Fire</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-[11px] font-medium uppercase tracking-normal text-slate-500">Severity</Label>
+                  <select
+                    value={severityFilter}
+                    onChange={(event) => setSeverityFilter(event.target.value)}
+                    className="h-8 w-full rounded border border-slate-200 bg-white px-2 text-xs text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                  >
+                    <option value="all">All Levels</option>
+                    <option value="critical">Critical</option>
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between border-t border-slate-100 pt-2 text-xs text-slate-500">
+                <span>{visibleMarkers.length} results</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 text-xs text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                  onClick={resetView}
+                >
+                  Reset
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="relative flex-1 overflow-hidden bg-slate-900">
-        <div ref={mapContainerRef} className="tactical-map-canvas absolute inset-0" />
+      <div className="group/map-layers absolute bottom-4 left-4 z-[500]">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-10 w-10 rounded bg-white text-slate-700 shadow-lg shadow-slate-950/20 ring-1 ring-slate-950/10 hover:bg-slate-50"
+          title="Map layers"
+          aria-label="Map layers"
+        >
+          <Layers className="h-4 w-4" />
+        </Button>
 
-        <div className="pointer-events-none absolute left-2 top-2 rounded bg-slate-950/80 px-2 py-1 font-mono text-[10px] text-cyan-400/70 backdrop-blur-sm">
-          {mapCenter[0].toFixed(4)} N, {mapCenter[1].toFixed(4)} E
-        </div>
-
-        <div className="absolute right-2 top-2 max-h-[320px] overflow-y-auto rounded border border-cyan-900/30 bg-slate-900/95 p-2 text-xs backdrop-blur-sm">
-          <div className="mb-2 flex items-center gap-2 border-b border-slate-800 pb-2 font-mono text-cyan-400">
-            <Layers className="h-4 w-4" />
-            <span>MAP LAYERS</span>
-          </div>
-
+        <div className="pointer-events-none absolute bottom-12 left-0 w-[210px] max-w-[calc(100vw-2rem)] translate-y-1 rounded bg-white p-3 text-xs text-slate-800 opacity-0 shadow-xl shadow-slate-950/20 ring-1 ring-slate-950/10 transition-all duration-150 group-hover/map-layers:pointer-events-auto group-hover/map-layers:translate-y-0 group-hover/map-layers:opacity-100 group-focus-within/map-layers:pointer-events-auto group-focus-within/map-layers:translate-y-0 group-focus-within/map-layers:opacity-100">
           <div className="space-y-2">
             {layers.map((layer) => (
               <div key={layer.id} className="flex items-center gap-2">
                 <Switch
                   checked={layer.enabled}
                   onCheckedChange={() => toggleLayer(layer.id)}
-                  className="data-[state=checked]:bg-cyan-500"
+                  className="data-[state=checked]:bg-blue-600"
                 />
-                <Label className="cursor-pointer text-xs text-slate-300" onClick={() => toggleLayer(layer.id)}>
+                <Label className="cursor-pointer text-xs text-slate-700" onClick={() => toggleLayer(layer.id)}>
                   {layer.name}
                 </Label>
               </div>
             ))}
           </div>
-
-          <div className="mt-3 border-t border-slate-800 pt-2">
-            <div className="mb-2 font-mono text-cyan-400">DATA SOURCE</div>
-            <div className="rounded border border-slate-800 bg-slate-950/60 px-2 py-2 text-[10px] text-slate-400">
-              OpenStreetMap tiles with live Leaflet map rendering.
-            </div>
-          </div>
-
-          <div className="mt-3 border-t border-slate-800 pt-2">
-            <div className="mb-2 font-mono text-cyan-400">LEGEND</div>
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <div className="h-3 w-3 rounded-full bg-red-500" />
-                <span className="text-slate-300">Critical Incident</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="h-3 w-3 rounded-full bg-orange-500" />
-                <span className="text-slate-300">High Impact</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="h-3 w-3 rounded-full bg-green-500" />
-                <span className="text-slate-300">Operational Asset</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="h-3 w-3 rounded-full bg-cyan-500" />
-                <span className="text-slate-300">Active Responder</span>
-              </div>
-            </div>
-          </div>
         </div>
-
-        {(drawingMode || selectedMarker) && (
-          <div className="absolute left-1/2 top-2 z-[500] -translate-x-1/2 rounded border border-cyan-500/50 bg-cyan-900/90 px-4 py-2 font-mono text-xs text-cyan-100 backdrop-blur-sm">
-            {drawingMode ? (
-              <div className="flex items-center gap-3">
-                <span>DRAWING MODE ACTIVE | Click map to place geofence points ({geofencePoints.length})</span>
-                {geofencePoints.length > 0 && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-7 border-cyan-300/40 bg-transparent px-2 text-cyan-100 hover:bg-cyan-800"
-                    onClick={() => setGeofencePoints([])}
-                  >
-                    <X className="mr-1 h-3 w-3" />
-                    Clear
-                  </Button>
-                )}
-              </div>
-            ) : (
-              <span>{selectedMarker?.name} selected for tactical focus</span>
-            )}
-          </div>
-        )}
       </div>
+
+      <div className="absolute bottom-4 right-4 z-[500] flex flex-col items-end gap-2">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-10 w-10 rounded bg-white text-slate-700 shadow-lg shadow-slate-950/20 ring-1 ring-slate-950/10 hover:bg-slate-50"
+          onClick={focusVisibleMarkers}
+          title="Fit visible markers"
+          aria-label="Fit visible markers"
+        >
+          <Crosshair className="h-4 w-4" />
+        </Button>
+
+        <Button
+          variant="ghost"
+          size="icon"
+          className={`h-10 w-10 rounded shadow-lg shadow-slate-950/20 ring-1 ring-slate-950/10 ${
+            drawingMode ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-white text-slate-700 hover:bg-slate-50'
+          }`}
+          onClick={() => setDrawingMode((current) => !current)}
+          title="Draw geofence"
+          aria-label="Draw geofence"
+        >
+          <Pen className="h-4 w-4" />
+        </Button>
+
+        <div className="overflow-hidden rounded bg-white shadow-lg shadow-slate-950/20 ring-1 ring-slate-950/10">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-10 w-10 rounded-none text-slate-700 hover:bg-slate-50"
+            onClick={() => setZoom((currentZoom) => Math.min(18, currentZoom + 1))}
+            title="Zoom in"
+            aria-label="Zoom in"
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+          <div className="h-px bg-slate-200" />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-10 w-10 rounded-none text-slate-700 hover:bg-slate-50"
+            onClick={() => setZoom((currentZoom) => Math.max(4, currentZoom - 1))}
+            title="Zoom out"
+            aria-label="Zoom out"
+          >
+            <Minus className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
+      {(drawingMode || selectedMarker) && (
+        <div className="absolute bottom-[4.5rem] left-1/2 z-[500] max-w-[calc(100%-7.5rem)] -translate-x-1/2 rounded bg-slate-950/85 px-3 py-2 text-xs text-white shadow-lg shadow-slate-950/20 backdrop-blur-sm">
+          {drawingMode ? (
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <span>Drawing geofence ({geofencePoints.length})</span>
+              {geofencePoints.length > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 bg-white/10 px-2 text-xs text-white hover:bg-white/20"
+                  onClick={() => setGeofencePoints([])}
+                >
+                  <X className="mr-1 h-3 w-3" />
+                  Clear
+                </Button>
+              )}
+            </div>
+          ) : (
+            <span>{selectedMarker?.name}</span>
+          )}
+        </div>
+      )}
     </div>
   );
 }

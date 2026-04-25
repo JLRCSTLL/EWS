@@ -54,14 +54,14 @@ export function MessageHistory({ messages }: MessageHistoryProps) {
   const queuedCount = messages.filter((message) => message.status === 'sending').length;
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-lg border border-cyan-900/30 bg-slate-950">
-      <div className="border-b border-cyan-900/30 bg-gradient-to-r from-slate-900 to-slate-950 p-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <MessageSquare className="h-5 w-5 text-purple-400" />
-            <h2 className="font-mono tracking-wider text-purple-400">MESSAGE HISTORY</h2>
+    <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-lg border border-cyan-900/30 bg-slate-950">
+      <div className="shrink-0 border-b border-cyan-900/30 bg-gradient-to-r from-slate-900 to-slate-950 p-3">
+        <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            <MessageSquare className="h-5 w-5 shrink-0 text-purple-400" />
+            <h2 className="truncate font-mono tracking-wider text-purple-400">MESSAGE HISTORY</h2>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
             {queuedCount > 0 && (
               <Badge variant="outline" className="border-yellow-900/50 text-xs text-yellow-400">
                 {queuedCount} QUEUED
@@ -74,7 +74,7 @@ export function MessageHistory({ messages }: MessageHistoryProps) {
         </div>
       </div>
 
-      <ScrollArea className="flex-1">
+      <ScrollArea className="min-h-0 flex-1">
         <div className="space-y-3 p-3">
           {messages.length === 0 && (
             <div className="rounded-lg border border-dashed border-slate-800 bg-slate-900/40 p-6 text-center text-sm text-slate-500">
@@ -91,7 +91,7 @@ export function MessageHistory({ messages }: MessageHistoryProps) {
                 className="space-y-2 rounded-lg border border-slate-800 bg-slate-900/50 p-3 transition-colors hover:border-cyan-900/50"
               >
                 <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-2">
+                  <div className="flex min-w-0 flex-wrap items-center gap-2">
                     <Badge className={getPriorityColor(message.priority)}>{message.priority.toUpperCase()}</Badge>
                     <Badge variant="outline" className="border-cyan-900/50 text-xs text-cyan-400">
                       {message.category}
@@ -105,7 +105,7 @@ export function MessageHistory({ messages }: MessageHistoryProps) {
 
                 <p className="text-sm text-slate-300">{message.content}</p>
 
-                <div className="grid grid-cols-2 gap-2 border-t border-slate-800 pt-2 text-xs">
+                <div className="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-2 border-t border-slate-800 pt-2 text-xs">
                   <div>
                     <div className="text-slate-500">Sender</div>
                     <div className="text-slate-400">{message.sender}</div>

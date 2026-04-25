@@ -28,15 +28,15 @@ export function DashboardWidget({
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   return (
-    <div className={`flex h-full flex-col overflow-hidden rounded-lg border border-cyan-900/30 bg-slate-950 shadow-lg ${className}`}>
-      <div className="border-b border-cyan-900/30 bg-gradient-to-r from-slate-900 to-slate-950 p-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <GripVertical className="drag-handle h-4 w-4 cursor-grab text-slate-600 active:cursor-grabbing" />
+    <div className={`dashboard-widget flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-lg border border-cyan-900/30 bg-slate-950 shadow-lg ${className}`}>
+      <div className="shrink-0 border-b border-cyan-900/30 bg-gradient-to-r from-slate-900 to-slate-950 p-3">
+        <div className="flex min-w-0 items-center justify-between gap-2">
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            <GripVertical className="drag-handle h-4 w-4 shrink-0 cursor-grab text-slate-600 active:cursor-grabbing" />
             {icon}
-            <h2 className={`${headerColor} text-sm font-mono tracking-wider`}>{title}</h2>
+            <h2 className={`${headerColor} truncate text-sm font-mono tracking-wider`}>{title}</h2>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex shrink-0 items-center gap-1">
             <Button
               variant="ghost"
               size="sm"
@@ -87,7 +87,7 @@ export function DashboardWidget({
         </div>
       </div>
 
-      {!isCollapsed && <div className="flex-1 overflow-hidden">{children}</div>}
+      {!isCollapsed && <div className="min-h-0 min-w-0 flex-1 overflow-hidden">{children}</div>}
     </div>
   );
 }

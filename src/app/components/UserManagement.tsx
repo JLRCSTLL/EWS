@@ -24,12 +24,12 @@ export function UserManagement() {
   const activeUsers = users.filter((user) => user.status === 'active').length;
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-lg border border-cyan-900/30 bg-slate-950">
-      <div className="border-b border-cyan-900/30 bg-gradient-to-r from-slate-900 to-slate-950 p-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Shield className="h-5 w-5 text-blue-400" />
-            <h2 className="font-mono tracking-wider text-blue-400">USER MANAGEMENT (RBAC)</h2>
+    <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-lg border border-cyan-900/30 bg-slate-950">
+      <div className="shrink-0 border-b border-cyan-900/30 bg-gradient-to-r from-slate-900 to-slate-950 p-3">
+        <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            <Shield className="h-5 w-5 shrink-0 text-blue-400" />
+            <h2 className="truncate font-mono tracking-wider text-blue-400">USER MANAGEMENT (RBAC)</h2>
           </div>
           <Badge variant="outline" className="border-blue-900/50 text-xs text-blue-400">
             {activeUsers} ACTIVE
@@ -37,8 +37,8 @@ export function UserManagement() {
         </div>
       </div>
 
-      <Tabs defaultValue="users" className="flex flex-1 flex-col">
-        <TabsList className="rounded-none border-b border-cyan-900/30 bg-slate-900/50 p-3">
+      <Tabs defaultValue="users" className="min-h-0 min-w-0 flex-1">
+        <TabsList className="h-auto w-full shrink-0 flex-wrap justify-start rounded-none border-b border-cyan-900/30 bg-slate-900/50 p-2">
           <TabsTrigger value="users" className="data-[state=active]:bg-cyan-900/30 data-[state=active]:text-cyan-400">
             Active Users
           </TabsTrigger>
@@ -47,8 +47,8 @@ export function UserManagement() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="users" className="mt-0 flex-1">
-          <ScrollArea className="h-full">
+        <TabsContent value="users" className="mt-0 min-h-0 flex-1">
+          <ScrollArea className="h-full min-h-0">
             <div className="space-y-3 p-3">
               {users.map((user) => (
                 <div
@@ -56,14 +56,14 @@ export function UserManagement() {
                   className="space-y-2 rounded-lg border border-slate-800 bg-slate-900/50 p-3 transition-colors hover:border-cyan-900/50"
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1">
+                    <div className="min-w-0 flex-1">
                       <div className="mb-1 flex items-center gap-2">
                         <UserCheck className="h-4 w-4 text-slate-400" />
                         <h3 className="text-sm font-medium text-slate-200">{user.name}</h3>
                       </div>
                       <div className="text-xs text-slate-500">{user.organization}</div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
                       <Badge className={getRoleColor(user.role)}>{user.role.toUpperCase()}</Badge>
                       <div className={`h-2 w-2 rounded-full ${user.status === 'active' ? 'bg-green-400' : 'bg-slate-600'}`} />
                     </div>
@@ -89,14 +89,14 @@ export function UserManagement() {
           </ScrollArea>
         </TabsContent>
 
-        <TabsContent value="roles" className="mt-0 flex-1">
+        <TabsContent value="roles" className="mt-0 min-h-0 flex-1 overflow-auto">
           <div className="space-y-3 p-3">
             {roleSummaries.map((role) => (
               <div
                 key={role.id}
                 className="rounded-lg border border-slate-800 bg-slate-900/50 p-4 transition-colors hover:border-cyan-900/50"
               >
-                <div className="mb-2 flex items-center justify-between">
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                   <h3 className={`text-sm font-medium ${role.color}`}>{role.label}</h3>
                   <Badge variant="outline" className="border-cyan-900/50 text-cyan-400">
                     {role.count} users

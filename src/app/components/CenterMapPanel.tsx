@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AlertTriangle, Hospital, Home, Flame, Users, MapPin, Shield } from 'lucide-react';
+import { AlertTriangle, Hospital, Home, Layers, Users, MapPin, Shield } from 'lucide-react';
 import { Switch } from './ui/switch';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
@@ -108,39 +108,47 @@ export function CenterMapPanel() {
     .filter(e => severityFilter === 'all' || e.severity === severityFilter);
 
   return (
-    <div className="h-full flex flex-col bg-slate-950 border border-cyan-900/30 rounded-lg overflow-hidden">
+    <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-lg border border-cyan-900/30 bg-slate-950">
       {/* Header */}
-      <div className="bg-gradient-to-r from-slate-900 to-slate-950 border-b border-cyan-900/30 p-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <MapPin className="w-5 h-5 text-cyan-400" />
-            <h2 className="text-cyan-400 font-mono tracking-wider">TACTICAL MAP DISPLAY</h2>
+      <div className="shrink-0 border-b border-cyan-900/30 bg-gradient-to-r from-slate-900 to-slate-950 p-3">
+        <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            <MapPin className="h-5 w-5 shrink-0 text-cyan-400" />
+            <h2 className="truncate font-mono tracking-wider text-cyan-400">TACTICAL MAP DISPLAY</h2>
           </div>
-          <div className="flex items-center gap-2 text-xs text-cyan-400/70 font-mono">
-            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+          <div className="flex shrink-0 items-center gap-2 font-mono text-xs text-cyan-400/70">
+            <div className="h-2 w-2 animate-pulse rounded-full bg-green-400"></div>
             LIVE TRACKING
           </div>
         </div>
       </div>
 
       {/* Control Panel */}
-      <div className="bg-slate-900/80 border-b border-cyan-900/30 p-3 grid grid-cols-3 gap-4">
+      <div className="grid shrink-0 grid-cols-1 gap-4 border-b border-cyan-900/30 bg-slate-900/80 p-3 lg:grid-cols-[minmax(260px,1.5fr)_minmax(160px,1fr)_minmax(160px,1fr)]">
         {/* Layer Toggles */}
-        <div className="space-y-2">
-          <div className="text-xs text-cyan-400/70 font-mono mb-2">MAP LAYERS</div>
-          <div className="grid grid-cols-2 gap-2">
-            {layers.map((layer) => (
-              <div key={layer.id} className="flex items-center gap-2">
-                <Switch
-                  checked={layer.enabled}
-                  onCheckedChange={() => toggleLayer(layer.id)}
-                  className="data-[state=checked]:bg-cyan-500"
-                />
-                <Label className="text-xs text-slate-300 cursor-pointer" onClick={() => toggleLayer(layer.id)}>
-                  {layer.name}
-                </Label>
-              </div>
-            ))}
+        <div className="group/map-layers space-y-2">
+          <div
+            tabIndex={0}
+            className="flex h-9 w-fit items-center gap-2 rounded border border-cyan-900/30 bg-slate-800 px-3 font-mono text-xs text-cyan-400/70 transition-colors hover:border-cyan-500/60 hover:text-cyan-300 focus-visible:border-cyan-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/40"
+          >
+            <Layers className="h-4 w-4" />
+            <span>MAP LAYERS</span>
+          </div>
+          <div className="pointer-events-none max-h-0 overflow-hidden opacity-0 transition-all duration-150 group-hover/map-layers:pointer-events-auto group-hover/map-layers:max-h-40 group-hover/map-layers:opacity-100 group-focus-within/map-layers:pointer-events-auto group-focus-within/map-layers:max-h-40 group-focus-within/map-layers:opacity-100">
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(130px,1fr))] gap-2 rounded border border-cyan-900/30 bg-slate-950/40 p-2">
+              {layers.map((layer) => (
+                <div key={layer.id} className="flex items-center gap-2">
+                  <Switch
+                    checked={layer.enabled}
+                    onCheckedChange={() => toggleLayer(layer.id)}
+                    className="data-[state=checked]:bg-cyan-500"
+                  />
+                  <Label className="cursor-pointer text-xs text-slate-300" onClick={() => toggleLayer(layer.id)}>
+                    {layer.name}
+                  </Label>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -178,7 +186,7 @@ export function CenterMapPanel() {
       </div>
 
       {/* Map Display */}
-      <div className="flex-1 relative bg-slate-900 overflow-hidden">
+      <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden bg-slate-900">
         {/* Background Map Grid */}
         <div className="absolute inset-0 opacity-20">
           <svg className="w-full h-full">
@@ -241,7 +249,7 @@ export function CenterMapPanel() {
                 style={{ color: getDisasterColor(event.severity) }}
               />
               {hoveredMarker === `disaster-${event.id}` && (
-                <div className="absolute left-8 top-0 bg-slate-900 border border-cyan-900/50 rounded p-2 text-xs whitespace-nowrap z-50">
+                <div className="absolute left-8 top-0 z-50 max-w-[220px] rounded border border-cyan-900/50 bg-slate-900 p-2 text-xs">
                   <div className="font-bold text-slate-200">{event.name}</div>
                   <div className="text-slate-400">Type: {event.type}</div>
                   <div className="text-slate-400">Severity: {event.severity}</div>
@@ -269,7 +277,7 @@ export function CenterMapPanel() {
                 {getInfrastructureIcon(infra.type)}
               </div>
               {hoveredMarker === `infra-${infra.id}` && (
-                <div className="absolute left-8 top-0 bg-slate-900 border border-cyan-900/50 rounded p-2 text-xs whitespace-nowrap z-50">
+                <div className="absolute left-8 top-0 z-50 max-w-[220px] rounded border border-cyan-900/50 bg-slate-900 p-2 text-xs">
                   <div className="font-bold text-slate-200">{infra.name}</div>
                   <div className="text-slate-400">Type: {infra.type}</div>
                   <div className="text-slate-400">Status: {infra.status}</div>
@@ -297,7 +305,7 @@ export function CenterMapPanel() {
                 <Users className="w-4 h-4 text-white" />
               </div>
               {hoveredMarker === `responder-${responder.id}` && (
-                <div className="absolute left-10 top-0 bg-slate-900 border border-cyan-900/50 rounded p-2 text-xs whitespace-nowrap z-50">
+                <div className="absolute left-10 top-0 z-50 max-w-[220px] rounded border border-cyan-900/50 bg-slate-900 p-2 text-xs">
                   <div className="font-bold text-slate-200">{responder.team}</div>
                   <div className="text-slate-400">Personnel: {responder.personnel}</div>
                   <div className="text-slate-400">Status: {responder.status}</div>
@@ -308,15 +316,15 @@ export function CenterMapPanel() {
         ))}
 
         {/* Grid Coordinates */}
-        <div className="absolute top-2 left-2 text-xs text-cyan-400/50 font-mono">
+        <div className="pointer-events-none absolute left-2 top-2 z-20 rounded bg-slate-950/70 px-2 py-1 font-mono text-xs text-cyan-400/50">
           14.5995°N, 120.9842°E
         </div>
-        <div className="absolute bottom-2 right-2 text-xs text-cyan-400/50 font-mono">
+        <div className="pointer-events-none absolute bottom-2 left-2 z-20 rounded bg-slate-950/70 px-2 py-1 font-mono text-xs text-cyan-400/50">
           ZOOM: 12 | SCALE: 1:50000
         </div>
 
         {/* Legend */}
-        <div className="absolute bottom-4 right-4 bg-slate-900/95 border border-cyan-900/30 rounded p-3 text-xs">
+        <div className="absolute bottom-4 right-4 z-20 max-w-[calc(100%-1rem)] rounded border border-cyan-900/30 bg-slate-900/95 p-3 text-xs">
           <div className="text-cyan-400 font-mono mb-2">LEGEND</div>
           <div className="space-y-1">
             <div className="flex items-center gap-2">

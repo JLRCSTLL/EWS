@@ -53,12 +53,12 @@ const getTypeColor = (type: AuditLogEntry['type']) => {
 
 export function AuditLogs({ logs }: AuditLogsProps) {
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-lg border border-cyan-900/30 bg-slate-950">
-      <div className="border-b border-cyan-900/30 bg-gradient-to-r from-slate-900 to-slate-950 p-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-cyan-400" />
-            <h2 className="font-mono tracking-wider text-cyan-400">AUDIT LOGS</h2>
+    <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-lg border border-cyan-900/30 bg-slate-950">
+      <div className="shrink-0 border-b border-cyan-900/30 bg-gradient-to-r from-slate-900 to-slate-950 p-3">
+        <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            <FileText className="h-5 w-5 shrink-0 text-cyan-400" />
+            <h2 className="truncate font-mono tracking-wider text-cyan-400">AUDIT LOGS</h2>
           </div>
           <Badge variant="outline" className="border-cyan-900/50 text-xs text-cyan-400">
             {logs.length} EVENTS
@@ -66,7 +66,7 @@ export function AuditLogs({ logs }: AuditLogsProps) {
         </div>
       </div>
 
-      <ScrollArea className="flex-1">
+      <ScrollArea className="min-h-0 flex-1">
         <div className="space-y-2 p-3">
           {logs.length === 0 && (
             <div className="rounded-lg border border-dashed border-slate-800 bg-slate-900/40 p-6 text-center text-sm text-slate-500">
@@ -82,7 +82,7 @@ export function AuditLogs({ logs }: AuditLogsProps) {
               <div className="flex items-start justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <div className={getTypeColor(log.type)}>{getTypeIcon(log.type)}</div>
-                  <div className="flex-1">
+                  <div className="min-w-0 flex-1">
                     <h3 className="text-sm text-slate-200">{log.action}</h3>
                   </div>
                 </div>
@@ -91,7 +91,7 @@ export function AuditLogs({ logs }: AuditLogsProps) {
 
               <p className="text-xs text-slate-400">{log.details}</p>
 
-              <div className="flex items-center justify-between border-t border-slate-800 pt-2 text-xs">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-800 pt-2 text-xs">
                 <div className="text-slate-500">
                   <span className="text-slate-400">User:</span> {log.user}
                 </div>
