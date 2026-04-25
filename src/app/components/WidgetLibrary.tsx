@@ -20,12 +20,12 @@ function setDragPreview(event: DragEvent<HTMLElement>, title: string) {
   preview.style.left = '-1000px';
   preview.style.zIndex = '9999';
   preview.style.padding = '10px 14px';
-  preview.style.border = '1px solid rgba(34, 211, 238, 0.65)';
-  preview.style.borderRadius = '12px';
-  preview.style.background = 'rgba(15, 23, 42, 0.96)';
-  preview.style.boxShadow = '0 0 26px rgba(34, 211, 238, 0.38)';
-  preview.style.color = '#a5f3fc';
-  preview.style.font = '12px monospace';
+  preview.style.border = '1px solid rgba(255, 255, 255, 0.45)';
+  preview.style.borderRadius = '999px';
+  preview.style.background = 'rgba(12, 12, 14, 0.95)';
+  preview.style.boxShadow = '0 12px 30px rgba(0, 0, 0, 0.5)';
+  preview.style.color = '#f4f4f5';
+  preview.style.font = '11px "IBM Plex Mono", monospace';
   preview.style.letterSpacing = '0';
   preview.style.pointerEvents = 'none';
   document.body.appendChild(preview);
@@ -63,22 +63,20 @@ export function WidgetLibrary({
   };
 
   return (
-    <aside className="fixed bottom-0 right-0 top-[60px] z-[70] flex w-[390px] max-w-[calc(100vw-1rem)] flex-col border-l border-t border-cyan-500/30 bg-[#0B1220] shadow-[-16px_0_50px_rgba(8,145,178,0.2)]">
-      <div className="shrink-0 border-b border-cyan-900/40 bg-slate-950/70 p-4">
+    <aside className="fixed bottom-0 right-0 top-[60px] z-[70] flex w-[360px] max-w-[calc(100vw-0.75rem)] flex-col border-l border-white/10 bg-[#0f0f10]/96 backdrop-blur-lg">
+      <div className="shrink-0 border-b border-white/10 px-4 py-3">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <div className="flex items-center gap-2 font-mono text-sm tracking-wider text-cyan-300">
+            <div className="flex items-center gap-2 font-mono text-sm tracking-[0.16em] text-zinc-100">
               <Library className="h-4 w-4" />
               <span>WIDGET LIBRARY</span>
             </div>
-            <p className="mt-1 text-xs text-slate-500">
-              Drag a widget into the grid or add it to the next open slot.
-            </p>
+            <p className="mt-1 text-xs text-zinc-500">Drag into the grid, or tap add.</p>
           </div>
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 shrink-0 text-slate-400 hover:bg-slate-800 hover:text-slate-100"
+            className="h-8 w-8 shrink-0 rounded-full border border-transparent text-zinc-400 hover:border-white/15 hover:bg-white/5 hover:text-zinc-100"
             onClick={onClose}
             aria-label="Close widget library"
           >
@@ -86,12 +84,12 @@ export function WidgetLibrary({
           </Button>
         </div>
 
-        <div className="mt-3 rounded border border-cyan-900/40 bg-cyan-950/20 px-3 py-2 text-xs text-cyan-100">
+        <div className="mt-3 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs text-zinc-300">
           {hiddenWidgetCount} hidden widget{hiddenWidgetCount === 1 ? '' : 's'} available
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3">
+      <div className="min-h-0 flex-1 overflow-y-auto">
         {allWidgetIds.map((widgetId) => {
           const widget = WIDGETS[widgetId];
           const isVisible = visibleWidgets.has(widgetId);
@@ -102,25 +100,24 @@ export function WidgetLibrary({
               draggable={!isVisible}
               onDragStart={(event) => handleDragStart(event, widgetId)}
               onDragEnd={onWidgetDragEnd}
-              className={`group rounded-xl border p-3 transition-all ${
+              className={`group border-b border-white/5 px-4 py-3 transition-colors ${
                 isVisible
-                  ? 'border-slate-800 bg-slate-950/50 opacity-70'
-                  : 'cursor-grab border-cyan-900/35 bg-slate-950/80 shadow-lg shadow-cyan-950/10 hover:border-cyan-500/60 hover:shadow-cyan-950/30 active:cursor-grabbing'
+                  ? 'opacity-45'
+                  : 'cursor-grab hover:bg-white/[0.04] active:cursor-grabbing'
               }`}
             >
-              <div className="flex items-start gap-3">
-                <div className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-800 bg-slate-900">
+              <div className="flex items-center gap-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/[0.02]">
                   {widget.icon}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className={`truncate font-mono text-xs tracking-wider ${widget.headerColor}`}>
+                  <div className={`truncate font-mono text-[11px] tracking-[0.14em] ${widget.headerColor}`}>
                     {widget.libraryTitle.toUpperCase()}
                   </div>
-                  <p className="mt-1 text-xs leading-5 text-slate-500">{widget.description}</p>
-                  <div className="mt-3 flex items-center gap-2 text-[11px] text-slate-500">
-                    <GripVertical className="h-3.5 w-3.5 text-cyan-400/70" />
-                    <span>Drag handle</span>
-                    <span className="rounded border border-slate-800 px-1.5 py-0.5 font-mono">
+                  <p className="mt-0.5 truncate text-[11px] text-zinc-500">{widget.description}</p>
+                  <div className="mt-1.5 flex items-center gap-2 text-[10px] text-zinc-500">
+                    <GripVertical className="h-3.5 w-3.5 text-zinc-400" />
+                    <span className="font-mono tracking-[0.08em]">
                       {widget.defaultSize.w}x{widget.defaultSize.h}
                     </span>
                   </div>
@@ -128,10 +125,10 @@ export function WidgetLibrary({
                 <Button
                   variant={isVisible ? 'ghost' : 'outline'}
                   size="sm"
-                  className={`h-8 min-w-[76px] gap-1 px-2 text-xs ${
+                  className={`h-7 min-w-[64px] gap-1 rounded-full px-2 text-[10px] tracking-[0.1em] ${
                     isVisible
-                      ? 'text-slate-500 hover:bg-transparent hover:text-slate-500'
-                      : 'border-cyan-900/40 bg-slate-900 text-cyan-200 hover:bg-cyan-950/50'
+                      ? 'text-zinc-500 hover:bg-transparent hover:text-zinc-500'
+                      : 'border-white/15 bg-white/[0.02] text-zinc-100 hover:bg-white/[0.07]'
                   }`}
                   disabled={isVisible}
                   onClick={() => onAddWidget(widgetId)}

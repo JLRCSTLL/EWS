@@ -48,8 +48,8 @@ export function DashboardGrid({
   return (
     <div className={`relative min-h-full min-w-0 ${canDropActiveWidget ? 'dashboard-drop-active' : ''}`}>
       {canDropActiveWidget && (
-        <div className="pointer-events-none absolute inset-0 z-10 rounded-xl border border-dashed border-cyan-400/60 bg-cyan-400/5 shadow-[inset_0_0_45px_rgba(34,211,238,0.1)]">
-          <div className="absolute right-4 top-4 rounded border border-cyan-400/50 bg-slate-950/90 px-3 py-2 font-mono text-xs text-cyan-200 shadow-lg shadow-cyan-950/40">
+        <div className="pointer-events-none absolute inset-0 z-10 rounded-2xl border border-dashed border-white/30 bg-white/[0.02]">
+          <div className="absolute right-4 top-4 rounded-full border border-white/20 bg-black/70 px-3 py-2 font-mono text-[11px] tracking-[0.14em] text-zinc-100">
             DROP TO SNAP INTO GRID
           </div>
         </div>
@@ -88,14 +88,14 @@ export function DashboardGrid({
         }}
         draggableHandle=".drag-handle"
         compactType="vertical"
-        margin={[10, 10]}
+        margin={[14, 14]}
       >
         {visibleWidgetIds.map((widgetId) => {
           const widget = WIDGETS[widgetId];
           const Widget = widget.component;
 
           return (
-            <div key={widgetId} className="dashboard-item animate-widget-drop">
+            <div key={widgetId} className="dashboard-item">
               <DashboardWidget
                 title={widget.title}
                 icon={widget.icon}

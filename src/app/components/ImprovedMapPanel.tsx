@@ -21,6 +21,8 @@ interface GeofencePoint {
   lng: number;
 }
 
+type GeofenceShape = 'polygon' | 'rectangle' | 'circle';
+
 type MarkerCategory = 'disaster' | 'infrastructure' | 'responder';
 type CategoryFilter = 'all' | MarkerCategory;
 
@@ -41,12 +43,18 @@ interface MapMarker {
 
 const DEFAULT_CENTER: [number, number] = [14.5995, 120.9842];
 const DEFAULT_ZOOM = 11;
+const GEOFENCE_SHAPE_ORDER: GeofenceShape[] = ['polygon', 'rectangle', 'circle'];
+const GEOFENCE_SHAPE_LABEL: Record<GeofenceShape, string> = {
+  polygon: 'Polygon',
+  rectangle: 'Rectangle',
+  circle: 'Circle',
+};
 
 const severityColors: Record<Severity, string> = {
   critical: '#ef4444',
   high: '#f97316',
   medium: '#eab308',
-  low: '#3b82f6',
+  low: '#a1a1aa',
 };
 
 const infrastructureColors = {
@@ -57,7 +65,7 @@ const infrastructureColors = {
 
 const responderColors = {
   deployed: '#22c55e',
-  active: '#06b6d4',
+  active: '#2bd576',
   standby: '#94a3b8',
   returning: '#eab308',
 };
@@ -133,10 +141,15 @@ const escapeHtml = (value: string) =>
 const createMarkerIcon = (marker: MapMarker, isSelected: boolean) =>
   L.divIcon({
     className: 'tactical-map-div-icon',
-    html: `<div class="tactical-map-marker${isSelected ? ' is-selected' : ''}" style="--marker-color: ${marker.color};">${escapeHtml(marker.code)}</div>`,
-    iconSize: [38, 38],
-    iconAnchor: [19, 19],
-    popupAnchor: [0, -18],
+    html: `
+      <div class="tactical-map-pin${isSelected ? ' is-selected' : ''}" style="--marker-color: ${marker.color};">
+        <span class="tactical-map-marker"></span>
+        <span class="tactical-map-marker-label">${escapeHtml(marker.code)}</span>
+      </div>
+    `,
+    iconSize: [52, 34],
+    iconAnchor: [12, 12],
+    popupAnchor: [0, -10],
   });
 
 const createPopupHtml = (marker: MapMarker) => `
@@ -167,6 +180,7 @@ export function ImprovedMapPanel() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null);
   const [drawingMode, setDrawingMode] = useState(false);
+  const [geofenceShape, setGeofenceShape] = useState<GeofenceShape>('polygon');
   const [geofencePoints, setGeofencePoints] = useState<GeofencePoint[]>([]);
 
   const disasterMarkers: MapMarker[] = disasterEvents.map((event) => ({
@@ -372,21 +386,30 @@ export function ImprovedMapPanel() {
         return;
       }
 
-      setGeofencePoints((currentPoints) => [
-        ...currentPoints,
-        {
+      setGeofencePoints((currentPoints) => {
+        const nextPoint = {
           id: `point-${Date.now()}-${currentPoints.length}`,
           lat: Number(event.latlng.lat.toFixed(5)),
           lng: Number(event.latlng.lng.toFixed(5)),
-        },
-      ]);
+        };
+
+        if (geofenceShape === 'polygon') {
+          return [...currentPoints, nextPoint];
+        }
+
+        if (currentPoints.length === 0 || currentPoints.length >= 2) {
+          return [nextPoint];
+        }
+
+        return [currentPoints[0], nextPoint];
+      });
     };
 
     map.on('click', handleMapClick);
     return () => {
       map.off('click', handleMapClick);
     };
-  }, [drawingMode]);
+  }, [drawingMode, geofenceShape]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -401,12 +424,12 @@ export function ImprovedMapPanel() {
     if (layers.find((layer) => layer.id === 'risk-zones')?.enabled) {
       filteredDisasterMarkers.forEach((marker) => {
         L.circle([marker.lat, marker.lng], {
-          radius: getAlertRadius(marker.severity ?? 'low'),
-          color: marker.color,
-          weight: 1.5,
-          opacity: 0.6,
+          radius: getAlertRadius(marker.severity ?? 'low') * 0.8,
+          color: 'rgba(255,255,255,0.28)',
+          weight: 1,
+          opacity: 0.8,
           fillColor: marker.color,
-          fillOpacity: 0.12,
+          fillOpacity: 0.08,
         }).addTo(overlays);
       });
     }
@@ -432,29 +455,51 @@ export function ImprovedMapPanel() {
 
     if (geofencePoints.length > 0) {
       const latLngs = geofencePoints.map((point) => [point.lat, point.lng] as [number, number]);
+      const geofenceStrokeColor = 'rgba(255,255,255,0.55)';
+      const geofenceFillColor = 'rgba(255,255,255,0.18)';
 
-      if (latLngs.length > 2) {
-        L.polygon(latLngs, {
-          color: '#22d3ee',
-          weight: 2,
-          dashArray: '6 4',
-          fillColor: '#22d3ee',
-          fillOpacity: 0.12,
+      if (geofenceShape === 'polygon') {
+        if (latLngs.length > 2) {
+          L.polygon(latLngs, {
+            color: geofenceStrokeColor,
+            weight: 1.3,
+            dashArray: '4 4',
+            fillColor: geofenceFillColor,
+            fillOpacity: 0.08,
+          }).addTo(overlays);
+        } else if (latLngs.length > 1) {
+          L.polyline(latLngs, {
+            color: geofenceStrokeColor,
+            weight: 1.3,
+            dashArray: '4 4',
+          }).addTo(overlays);
+        }
+      } else if (geofenceShape === 'rectangle' && latLngs.length > 1) {
+        L.rectangle(L.latLngBounds(latLngs[0], latLngs[1]), {
+          color: geofenceStrokeColor,
+          weight: 1.3,
+          dashArray: '4 4',
+          fillColor: geofenceFillColor,
+          fillOpacity: 0.08,
         }).addTo(overlays);
-      } else if (latLngs.length > 1) {
-        L.polyline(latLngs, {
-          color: '#22d3ee',
-          weight: 2,
-          dashArray: '6 4',
+      } else if (geofenceShape === 'circle' && latLngs.length > 1) {
+        const radius = map.distance(latLngs[0], latLngs[1]);
+        L.circle(latLngs[0], {
+          radius,
+          color: geofenceStrokeColor,
+          weight: 1.3,
+          dashArray: '4 4',
+          fillColor: geofenceFillColor,
+          fillOpacity: 0.08,
         }).addTo(overlays);
       }
 
       geofencePoints.forEach((point) => {
         L.circleMarker([point.lat, point.lng], {
-          radius: 5,
-          color: '#ecfeff',
-          weight: 1.5,
-          fillColor: '#22d3ee',
+          radius: 4,
+          color: '#f4f4f5',
+          weight: 1,
+          fillColor: '#f4f4f5',
           fillOpacity: 1,
         }).addTo(overlays);
       });
@@ -495,13 +540,22 @@ export function ImprovedMapPanel() {
     }
   };
 
+  const cycleGeofenceShape = () => {
+    setGeofenceShape((currentShape) => {
+      const currentIndex = GEOFENCE_SHAPE_ORDER.indexOf(currentShape);
+      const nextShape = GEOFENCE_SHAPE_ORDER[(currentIndex + 1) % GEOFENCE_SHAPE_ORDER.length];
+      return nextShape;
+    });
+    setGeofencePoints([]);
+  };
+
   return (
     <div className="relative h-full min-h-0 min-w-0 overflow-hidden bg-slate-900">
       <div ref={mapContainerRef} className="tactical-map-canvas absolute inset-0" />
 
       <div className="absolute left-3 right-3 top-3 z-[500] flex items-start gap-2 sm:left-4 sm:right-auto sm:w-[min(560px,calc(100%-7rem))]">
-        <div className="flex h-11 min-w-0 flex-1 items-center gap-2 rounded bg-white px-3 text-slate-900 shadow-lg shadow-slate-950/20 ring-1 ring-slate-950/10">
-          <Search className="h-4 w-4 shrink-0 text-slate-500" />
+        <div className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-full border border-white/15 bg-[#131316]/92 px-3 text-zinc-100 backdrop-blur-sm">
+          <Search className="h-4 w-4 shrink-0 text-zinc-500" />
           <Input
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
@@ -511,13 +565,13 @@ export function ImprovedMapPanel() {
               }
             }}
             placeholder="Search maps"
-            className="h-full border-0 bg-transparent px-0 text-sm text-slate-900 shadow-none placeholder:text-slate-500 focus-visible:ring-0"
+            className="h-full border-0 bg-transparent px-0 text-sm text-zinc-100 shadow-none placeholder:text-zinc-500 focus-visible:ring-0"
           />
           {searchQuery && (
             <Button
               variant="ghost"
               size="icon"
-              className="h-7 w-7 shrink-0 text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+              className="h-7 w-7 shrink-0 rounded-full text-zinc-500 hover:bg-white/10 hover:text-zinc-100"
               onClick={() => setSearchQuery('')}
               title="Clear search"
               aria-label="Clear search"
@@ -531,22 +585,22 @@ export function ImprovedMapPanel() {
           <Button
             variant="ghost"
             size="icon"
-            className="relative h-11 w-11 rounded bg-white text-slate-700 shadow-lg shadow-slate-950/20 ring-1 ring-slate-950/10 hover:bg-slate-50"
+            className="relative h-10 w-10 rounded-full border border-white/15 bg-[#131316]/92 text-zinc-300 backdrop-blur-sm hover:bg-white/8"
             title="Map filters"
             aria-label="Map filters"
           >
             <SlidersHorizontal className="h-4 w-4" />
-            {hasActiveFilters && <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-blue-600" />}
+            {hasActiveFilters && <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[#ff4d4d]" />}
           </Button>
 
-          <div className="pointer-events-none absolute right-0 top-12 w-[252px] max-w-[calc(100vw-1.5rem)] translate-y-1 rounded bg-white p-3 text-slate-800 opacity-0 shadow-xl shadow-slate-950/20 ring-1 ring-slate-950/10 transition-all duration-150 group-hover/map-filter:pointer-events-auto group-hover/map-filter:translate-y-0 group-hover/map-filter:opacity-100 group-focus-within/map-filter:pointer-events-auto group-focus-within/map-filter:translate-y-0 group-focus-within/map-filter:opacity-100">
+          <div className="pointer-events-none absolute right-0 top-12 w-[252px] max-w-[calc(100vw-1.5rem)] translate-y-1 rounded-2xl border border-white/15 bg-[#131316]/95 p-3 text-zinc-200 opacity-0 backdrop-blur-md transition-all duration-150 group-hover/map-filter:pointer-events-auto group-hover/map-filter:translate-y-0 group-hover/map-filter:opacity-100 group-focus-within/map-filter:pointer-events-auto group-focus-within/map-filter:translate-y-0 group-focus-within/map-filter:opacity-100">
             <div className="space-y-3">
               <div className="space-y-1.5">
-                <Label className="text-[11px] font-medium uppercase tracking-normal text-slate-500">Assets</Label>
+                <Label className="text-[11px] font-medium uppercase tracking-normal text-zinc-500">Assets</Label>
                 <select
                   value={categoryFilter}
                   onChange={(event) => setCategoryFilter(event.target.value as CategoryFilter)}
-                  className="h-8 w-full rounded border border-slate-200 bg-white px-2 text-xs text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                  className="h-8 w-full rounded-lg border border-white/15 bg-[#101012] px-2 text-xs text-zinc-200 outline-none focus:border-white/30"
                 >
                   <option value="all">All Assets</option>
                   <option value="disaster">Incidents</option>
@@ -557,11 +611,11 @@ export function ImprovedMapPanel() {
 
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1.5">
-                  <Label className="text-[11px] font-medium uppercase tracking-normal text-slate-500">Type</Label>
+                  <Label className="text-[11px] font-medium uppercase tracking-normal text-zinc-500">Type</Label>
                   <select
                     value={disasterFilter}
                     onChange={(event) => setDisasterFilter(event.target.value)}
-                    className="h-8 w-full rounded border border-slate-200 bg-white px-2 text-xs text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                    className="h-8 w-full rounded-lg border border-white/15 bg-[#101012] px-2 text-xs text-zinc-200 outline-none focus:border-white/30"
                   >
                     <option value="all">All Types</option>
                     <option value="typhoon">Typhoon</option>
@@ -573,11 +627,11 @@ export function ImprovedMapPanel() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-[11px] font-medium uppercase tracking-normal text-slate-500">Severity</Label>
+                  <Label className="text-[11px] font-medium uppercase tracking-normal text-zinc-500">Severity</Label>
                   <select
                     value={severityFilter}
                     onChange={(event) => setSeverityFilter(event.target.value)}
-                    className="h-8 w-full rounded border border-slate-200 bg-white px-2 text-xs text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                    className="h-8 w-full rounded-lg border border-white/15 bg-[#101012] px-2 text-xs text-zinc-200 outline-none focus:border-white/30"
                   >
                     <option value="all">All Levels</option>
                     <option value="critical">Critical</option>
@@ -588,12 +642,12 @@ export function ImprovedMapPanel() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between border-t border-slate-100 pt-2 text-xs text-slate-500">
+              <div className="flex items-center justify-between border-t border-white/10 pt-2 text-xs text-zinc-500">
                 <span>{visibleMarkers.length} results</span>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-7 px-2 text-xs text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                  className="h-7 px-2 text-xs text-zinc-400 hover:bg-white/10 hover:text-zinc-100"
                   onClick={resetView}
                 >
                   Reset
@@ -608,23 +662,23 @@ export function ImprovedMapPanel() {
         <Button
           variant="ghost"
           size="icon"
-          className="h-10 w-10 rounded bg-white text-slate-700 shadow-lg shadow-slate-950/20 ring-1 ring-slate-950/10 hover:bg-slate-50"
+          className="h-10 w-10 rounded-full border border-white/15 bg-[#131316]/92 text-zinc-300 backdrop-blur-sm hover:bg-white/8"
           title="Map layers"
           aria-label="Map layers"
         >
           <Layers className="h-4 w-4" />
         </Button>
 
-        <div className="pointer-events-none absolute bottom-12 left-0 w-[210px] max-w-[calc(100vw-2rem)] translate-y-1 rounded bg-white p-3 text-xs text-slate-800 opacity-0 shadow-xl shadow-slate-950/20 ring-1 ring-slate-950/10 transition-all duration-150 group-hover/map-layers:pointer-events-auto group-hover/map-layers:translate-y-0 group-hover/map-layers:opacity-100 group-focus-within/map-layers:pointer-events-auto group-focus-within/map-layers:translate-y-0 group-focus-within/map-layers:opacity-100">
+        <div className="pointer-events-none absolute bottom-12 left-0 w-[210px] max-w-[calc(100vw-2rem)] translate-y-1 rounded-2xl border border-white/15 bg-[#131316]/95 p-3 text-xs text-zinc-200 opacity-0 backdrop-blur-md transition-all duration-150 group-hover/map-layers:pointer-events-auto group-hover/map-layers:translate-y-0 group-hover/map-layers:opacity-100 group-focus-within/map-layers:pointer-events-auto group-focus-within/map-layers:translate-y-0 group-focus-within/map-layers:opacity-100">
           <div className="space-y-2">
             {layers.map((layer) => (
               <div key={layer.id} className="flex items-center gap-2">
                 <Switch
                   checked={layer.enabled}
                   onCheckedChange={() => toggleLayer(layer.id)}
-                  className="data-[state=checked]:bg-blue-600"
+                  className="data-[state=checked]:bg-white"
                 />
-                <Label className="cursor-pointer text-xs text-slate-700" onClick={() => toggleLayer(layer.id)}>
+                <Label className="cursor-pointer text-xs text-zinc-300" onClick={() => toggleLayer(layer.id)}>
                   {layer.name}
                 </Label>
               </div>
@@ -637,7 +691,7 @@ export function ImprovedMapPanel() {
         <Button
           variant="ghost"
           size="icon"
-          className="h-10 w-10 rounded bg-white text-slate-700 shadow-lg shadow-slate-950/20 ring-1 ring-slate-950/10 hover:bg-slate-50"
+          className="h-10 w-10 rounded-full border border-white/15 bg-[#131316]/92 text-zinc-300 backdrop-blur-sm hover:bg-white/8"
           onClick={focusVisibleMarkers}
           title="Fit visible markers"
           aria-label="Fit visible markers"
@@ -647,9 +701,21 @@ export function ImprovedMapPanel() {
 
         <Button
           variant="ghost"
+          className={`h-8 rounded-full border border-white/15 px-3 text-[10px] font-mono tracking-[0.12em] ${
+            drawingMode ? 'bg-white/10 text-zinc-100 hover:bg-white/15' : 'bg-[#131316]/92 text-zinc-300 hover:bg-white/8'
+          }`}
+          onClick={cycleGeofenceShape}
+          title="Switch geofence shape"
+          aria-label="Switch geofence shape"
+        >
+          {GEOFENCE_SHAPE_LABEL[geofenceShape].toUpperCase()}
+        </Button>
+
+        <Button
+          variant="ghost"
           size="icon"
-          className={`h-10 w-10 rounded shadow-lg shadow-slate-950/20 ring-1 ring-slate-950/10 ${
-            drawingMode ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-white text-slate-700 hover:bg-slate-50'
+          className={`h-10 w-10 rounded-full border border-white/15 backdrop-blur-sm ${
+            drawingMode ? 'bg-[#ff4d4d]/20 text-[#ff8c8c] hover:bg-[#ff4d4d]/25' : 'bg-[#131316]/92 text-zinc-300 hover:bg-white/8'
           }`}
           onClick={() => setDrawingMode((current) => !current)}
           title="Draw geofence"
@@ -658,22 +724,22 @@ export function ImprovedMapPanel() {
           <Pen className="h-4 w-4" />
         </Button>
 
-        <div className="overflow-hidden rounded bg-white shadow-lg shadow-slate-950/20 ring-1 ring-slate-950/10">
+        <div className="overflow-hidden rounded-full border border-white/15 bg-[#131316]/92 backdrop-blur-sm">
           <Button
             variant="ghost"
             size="icon"
-            className="h-10 w-10 rounded-none text-slate-700 hover:bg-slate-50"
+            className="h-10 w-10 rounded-none text-zinc-300 hover:bg-white/8"
             onClick={() => setZoom((currentZoom) => Math.min(18, currentZoom + 1))}
             title="Zoom in"
             aria-label="Zoom in"
           >
             <Plus className="h-4 w-4" />
           </Button>
-          <div className="h-px bg-slate-200" />
+          <div className="h-px bg-white/10" />
           <Button
             variant="ghost"
             size="icon"
-            className="h-10 w-10 rounded-none text-slate-700 hover:bg-slate-50"
+            className="h-10 w-10 rounded-none text-zinc-300 hover:bg-white/8"
             onClick={() => setZoom((currentZoom) => Math.max(4, currentZoom - 1))}
             title="Zoom out"
             aria-label="Zoom out"
@@ -684,15 +750,17 @@ export function ImprovedMapPanel() {
       </div>
 
       {(drawingMode || selectedMarker) && (
-        <div className="absolute bottom-[4.5rem] left-1/2 z-[500] max-w-[calc(100%-7.5rem)] -translate-x-1/2 rounded bg-slate-950/85 px-3 py-2 text-xs text-white shadow-lg shadow-slate-950/20 backdrop-blur-sm">
+        <div className="absolute bottom-[4.5rem] left-1/2 z-[500] max-w-[calc(100%-7.5rem)] -translate-x-1/2 rounded-full border border-white/15 bg-black/70 px-3 py-2 text-xs text-zinc-100 backdrop-blur-sm">
           {drawingMode ? (
             <div className="flex flex-wrap items-center justify-center gap-2">
-              <span>Drawing geofence ({geofencePoints.length})</span>
+              <span>
+                Drawing {GEOFENCE_SHAPE_LABEL[geofenceShape].toLowerCase()} geofence ({geofencePoints.length})
+              </span>
               {geofencePoints.length > 0 && (
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-7 bg-white/10 px-2 text-xs text-white hover:bg-white/20"
+                  className="h-7 rounded-full bg-white/10 px-2 text-xs text-zinc-100 hover:bg-white/20"
                   onClick={() => setGeofencePoints([])}
                 >
                   <X className="mr-1 h-3 w-3" />

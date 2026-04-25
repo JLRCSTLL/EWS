@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Expand, Layout as LayoutIcon, Library, RotateCcw, Save, Shield, Shrink } from 'lucide-react';
+import { Expand, Layout as LayoutIcon, Library, RotateCcw, Save, Shield, Shrink, Sun } from 'lucide-react';
 import type { Layout } from 'react-grid-layout/legacy';
 import { Toaster, toast } from 'sonner';
 import {
@@ -106,10 +106,11 @@ const STORAGE_KEYS = {
   layouts: 'ecc-dashboard-layouts',
   messages: 'ecc-dashboard-messages',
   auditLogs: 'ecc-dashboard-audit-logs',
+  lightMode: 'ecc-dashboard-light-mode',
 } as const;
 
 const TOOLBAR_BUTTON_CLASS =
-  'h-8 gap-2 border-cyan-900/40 bg-slate-900/80 text-cyan-100 hover:bg-cyan-950/50 hover:text-cyan-50';
+  'nothing-toolbar-button h-8 gap-2 rounded-full border px-3 text-[11px] uppercase tracking-[0.14em]';
 
 function cloneLayouts(layouts: GridLayouts) {
   return JSON.parse(JSON.stringify(layouts)) as GridLayouts;
@@ -160,6 +161,14 @@ function getPresetLayouts(preset: PresetKey) {
   return storedLayout ? cloneLayouts(storedLayout) : cloneLayouts(PRESET_LAYOUTS[preset].layouts as unknown as GridLayouts);
 }
 
+function getStoredLightMode() {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  return window.localStorage.getItem(STORAGE_KEYS.lightMode) === '1';
+}
+
 function createId(prefix: string) {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
     return `${prefix}-${crypto.randomUUID()}`;
@@ -198,7 +207,7 @@ function ClockChip() {
   }, []);
 
   return (
-    <div className="rounded border border-cyan-900/30 bg-slate-900/50 px-3 py-1 font-mono text-xs text-cyan-400/70">
+    <div className="nothing-chip rounded-full px-3 py-1 font-mono text-[11px] tracking-[0.14em]">
       {formatSystemClock(now)}
     </div>
   );
@@ -215,6 +224,7 @@ export default function App() {
   const [hasLayoutChanges, setHasLayoutChanges] = useState(false);
   const [isWidgetLibraryOpen, setIsWidgetLibraryOpen] = useState(false);
   const [activeDragWidgetId, setActiveDragWidgetId] = useState<WidgetId | null>(null);
+  const [isLightMode, setIsLightMode] = useState<boolean>(() => getStoredLightMode());
   const skipNextLayoutChangeRef = useRef(true);
 
   useEffect(() => {
@@ -228,6 +238,10 @@ export default function App() {
   useEffect(() => {
     window.localStorage.setItem(STORAGE_KEYS.auditLogs, JSON.stringify(auditLogs));
   }, [auditLogs]);
+
+  useEffect(() => {
+    window.localStorage.setItem(STORAGE_KEYS.lightMode, isLightMode ? '1' : '0');
+  }, [isLightMode]);
 
   useEffect(() => {
     const syncFullscreenState = () => {
@@ -251,6 +265,14 @@ export default function App() {
       },
       ...currentLogs,
     ].slice(0, 60));
+  }, []);
+
+  const handleLayoutModeToggle = useCallback(() => {
+    setLayoutMode((current) => {
+      const next = !current;
+      setIsWidgetLibraryOpen(next);
+      return next;
+    });
   }, []);
 
   const handleLayoutChange = useCallback(
@@ -278,6 +300,7 @@ export default function App() {
     setLayouts(getPresetLayouts(nextPreset));
     setHasLayoutChanges(false);
     setLayoutMode(false);
+    setIsWidgetLibraryOpen(false);
     toast.info(`Loaded ${PRESET_LAYOUTS[nextPreset].name}`);
   };
 
@@ -285,6 +308,7 @@ export default function App() {
     persistPresetLayouts(currentPreset, layouts);
     setHasLayoutChanges(false);
     setLayoutMode(false);
+    setIsWidgetLibraryOpen(false);
     appendAuditLog({
       type: 'config',
       action: 'Dashboard Layout Saved',
@@ -306,6 +330,7 @@ export default function App() {
     setLayouts(getPresetLayouts(currentPreset));
     setHasLayoutChanges(false);
     setLayoutMode(false);
+    setIsWidgetLibraryOpen(false);
     appendAuditLog({
       type: 'config',
       action: 'Dashboard Layout Reset',
@@ -466,13 +491,14 @@ export default function App() {
     }),
     [auditLogs, handleSendMessage, messages, pendingBroadcasts],
   );
+  const dashboardThemeClass = `nothing-os${isLightMode ? ' nothing-os--light' : ''}`;
 
   if (maximizedWidget) {
     const widget = WIDGETS[maximizedWidget];
     const Widget = widget.component;
 
     return (
-      <div className="fixed inset-0 z-50 bg-black">
+      <div className={`${dashboardThemeClass} fixed inset-0 z-50 ${isLightMode ? 'bg-[#f3f4f6]' : 'bg-black'}`}>
         <DashboardWidget
           title={widget.title}
           icon={widget.icon}
@@ -483,35 +509,33 @@ export default function App() {
         >
           <Widget {...widgetRuntimeProps} />
         </DashboardWidget>
-        <Toaster position="top-right" richColors closeButton theme="dark" />
+        <Toaster position="top-right" richColors closeButton theme={isLightMode ? 'light' : 'dark'} />
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen min-h-0 flex-col overflow-hidden bg-[#0B1220] text-slate-200">
-      <div className="shrink-0 border-b-2 border-cyan-900/50 bg-gradient-to-r from-slate-900 via-slate-950 to-slate-900 p-2 shadow-lg shadow-cyan-900/20">
-        <div className="flex items-center justify-between gap-4 px-4">
-          <div className="flex min-w-0 items-center gap-3">
-            <div className="rounded bg-gradient-to-br from-cyan-500 to-blue-600 p-2 shadow-lg shadow-cyan-500/50">
-              <Shield className="h-5 w-5 text-white" />
+    <div className={`${dashboardThemeClass} flex h-screen min-h-0 flex-col overflow-hidden text-slate-200`}>
+      <div className="nothing-topbar shrink-0 p-2">
+        <div className="flex flex-wrap items-center justify-between gap-3 px-2 sm:px-4">
+          <div className="order-1 flex min-w-0 flex-1 items-center gap-3">
+            <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-white/15 bg-white/[0.02]">
+              <Shield className="h-5 w-5 text-white/90" />
+              <span className="nothing-signal-dot absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-[#ff443a]" />
             </div>
             <div className="min-w-0">
-              <h1 className="truncate text-lg font-mono tracking-widest text-cyan-400 drop-shadow-[0_0_10px_rgba(6,182,212,0.5)]">
-                EMERGENCY COMMAND CENTER
+              <h1 className="truncate text-base font-mono tracking-[0.22em] text-zinc-100 sm:text-lg">
+                E-LIGTAS
               </h1>
-              <p className="truncate text-[10px] font-mono tracking-wider text-slate-500">
-                MODULAR DASHBOARD SYSTEM | DRAGGABLE AND RESIZABLE WIDGETS
-              </p>
             </div>
           </div>
 
-          <div className="flex shrink-0 items-center gap-3">
+          <div className="order-3 flex w-full flex-wrap items-center gap-2 lg:order-2 lg:w-auto lg:shrink-0 lg:flex-nowrap">
             <Select value={currentPreset} onValueChange={handlePresetChange}>
-              <SelectTrigger className="h-8 w-[220px] border-cyan-900/30 bg-slate-800 text-xs text-slate-300">
+              <SelectTrigger className="h-8 w-full border-white/20 bg-white/5 text-xs text-zinc-200 sm:w-[220px]">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="border-cyan-900/30 bg-slate-800">
+              <SelectContent className="border-white/20 bg-[#19191c] text-zinc-100">
                 {(Object.entries(PRESET_LAYOUTS) as [PresetKey, (typeof PRESET_LAYOUTS)[PresetKey]][]).map(([key, layout]) => (
                   <SelectItem key={key} value={key} className="text-xs">
                     <div>
@@ -526,8 +550,8 @@ export default function App() {
             <Button
               variant="outline"
               size="sm"
-              className={`${TOOLBAR_BUTTON_CLASS} ${layoutMode ? 'border-cyan-400/70 bg-cyan-950/60 text-cyan-50' : ''}`}
-              onClick={() => setLayoutMode((current) => !current)}
+              className={`${TOOLBAR_BUTTON_CLASS} ${layoutMode ? 'is-active' : ''}`}
+              onClick={handleLayoutModeToggle}
             >
               <LayoutIcon className="h-4 w-4" />
               <span className="text-xs">{layoutMode ? 'Lock Layout' : 'Edit Layout'}</span>
@@ -536,14 +560,14 @@ export default function App() {
             <Button
               variant="outline"
               size="sm"
-              className={`${TOOLBAR_BUTTON_CLASS} ${isWidgetLibraryOpen ? 'border-cyan-400/70 bg-cyan-950/60 text-cyan-50' : ''}`}
+              className={`${TOOLBAR_BUTTON_CLASS} ${isWidgetLibraryOpen ? 'is-active' : ''}`}
               onClick={() => setIsWidgetLibraryOpen((current) => !current)}
               aria-label="Open widget library"
             >
               <Library className="h-4 w-4" />
               <span className="text-xs">Widget Library</span>
               {hiddenWidgetCount > 0 && (
-                <span className="ml-1 rounded bg-cyan-500/20 px-1.5 py-0.5 text-[10px] text-cyan-200">
+                <span className="nothing-chip ml-1 rounded-full px-1.5 py-0.5 text-[10px]">
                   {hiddenWidgetCount}
                 </span>
               )}
@@ -572,18 +596,29 @@ export default function App() {
               {isBrowserFullscreen ? <Shrink className="h-4 w-4" /> : <Expand className="h-4 w-4" />}
               <span className="text-xs">{isBrowserFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}</span>
             </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              className={`${TOOLBAR_BUTTON_CLASS} ${isLightMode ? 'is-active' : ''}`}
+              onClick={() => setIsLightMode((current) => !current)}
+              aria-label={isLightMode ? 'Disable light mode' : 'Enable light mode'}
+            >
+              <Sun className="h-4 w-4" />
+              <span className="text-xs">Light Mode</span>
+            </Button>
           </div>
 
-          <div className="flex shrink-0 items-center gap-4">
+          <div className="order-2 flex shrink-0 items-center gap-4 lg:order-3">
             <ClockChip />
           </div>
         </div>
       </div>
 
       <main
-        className={`flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-3 transition-[padding] duration-200 ${
+        className={`flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-2 transition-[padding] duration-200 sm:p-3 ${
           layoutMode ? 'pb-24' : ''
-        } ${isWidgetLibraryOpen ? 'lg:pr-[410px]' : ''}`}
+        } ${isWidgetLibraryOpen ? 'xl:pr-[410px]' : ''}`}
       >
         <DashboardGrid
           activeDragWidgetId={activeDragWidgetId}
@@ -608,9 +643,15 @@ export default function App() {
       />
 
       {(layoutMode || hasLayoutChanges) && (
-        <div className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-lg border-2 border-cyan-500/50 bg-cyan-900/90 px-6 py-3 font-mono text-sm text-cyan-100 shadow-[0_0_30px_rgba(6,182,212,0.5)] backdrop-blur-sm">
+        <div
+          className={`fixed bottom-4 left-1/2 z-50 w-[min(92vw,900px)] -translate-x-1/2 rounded-2xl border px-5 py-3 font-mono text-xs backdrop-blur-md sm:text-sm ${
+            isLightMode
+              ? 'border-black/10 bg-white/85 text-slate-900'
+              : 'border-white/15 bg-black/65 text-zinc-100'
+          }`}
+        >
           <div className="flex items-center gap-3">
-            <LayoutIcon className="h-5 w-5 animate-pulse" />
+            <LayoutIcon className="h-5 w-5 text-[#ff443a]" />
             <span>
               {layoutMode
                 ? 'LAYOUT EDIT MODE ACTIVE | Drag widgets to reposition or resize from the lower-right corner'
@@ -620,7 +661,7 @@ export default function App() {
         </div>
       )}
 
-      <Toaster position="top-right" richColors closeButton theme="dark" />
+      <Toaster position="top-right" richColors closeButton theme={isLightMode ? 'light' : 'dark'} />
     </div>
   );
 }

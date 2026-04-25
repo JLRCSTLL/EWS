@@ -90,7 +90,7 @@ export function CenterMapPanel() {
       case 'critical': return '#ef4444';
       case 'high': return '#f97316';
       case 'medium': return '#eab308';
-      default: return '#3b82f6';
+      default: return '#a1a1aa';
     }
   };
 

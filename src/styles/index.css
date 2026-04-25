@@ -208,7 +208,7 @@
 }
 
 .tactical-map-canvas .leaflet-control-attribution a {
-  color: #2563eb;
+  color: #d4d4d8;
 }
 
 .tactical-map-canvas .leaflet-control-scale {
@@ -282,7 +282,7 @@
 
 .tactical-map-popup-meta {
   margin-top: 6px;
-  color: #2563eb;
+  color: #a1a1aa;
   font-size: 10px;
 }
 
@@ -303,4 +303,476 @@
 
 .dashboard-item ::-webkit-scrollbar-thumb:hover {
   background: rgba(6, 182, 212, 0.5);
+}
+
+:root {
+  --nothing-bg: #0a0a0a;
+  --nothing-bg-soft: #111111;
+  --nothing-surface: #141414;
+  --nothing-border: rgba(255, 255, 255, 0.08);
+  --nothing-border-strong: rgba(255, 255, 255, 0.16);
+  --nothing-text: #ffffff;
+  --nothing-muted: #9c9ca1;
+  --nothing-critical: #ff4d4d;
+  --nothing-warning: #ff9f43;
+  --nothing-active: #2bd576;
+  --nothing-accent-soft: rgba(255, 77, 77, 0.2);
+}
+
+body {
+  font-family: 'Space Grotesk', 'Segoe UI', sans-serif;
+}
+
+.nothing-os {
+  position: relative;
+  isolation: isolate;
+  background: linear-gradient(180deg, #0a0a0a 0%, #101010 100%);
+  color: var(--nothing-text);
+}
+
+.nothing-os::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: 0.12;
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.22) 0.6px, transparent 0.6px);
+  background-size: 13px 13px;
+  pointer-events: none;
+}
+
+.nothing-os--light {
+  background: linear-gradient(180deg, #f7f7f8 0%, #ececef 100%);
+  color: #111318;
+}
+
+.nothing-os--light::before {
+  opacity: 0.1;
+  background-image: radial-gradient(circle, rgba(15, 23, 42, 0.2) 0.6px, transparent 0.6px);
+  background-size: 12px 12px;
+}
+
+.nothing-os .font-mono {
+  font-family: 'IBM Plex Mono', 'Consolas', monospace;
+}
+
+.nothing-topbar {
+  border-bottom: 1px solid var(--nothing-border);
+  background: rgba(16, 16, 16, 0.88);
+  backdrop-filter: blur(10px);
+}
+
+.nothing-os--light .nothing-topbar {
+  border-bottom-color: rgba(15, 23, 42, 0.12);
+  background: rgba(252, 252, 253, 0.9);
+}
+
+.nothing-chip {
+  border: 1px solid var(--nothing-border);
+  background: rgba(255, 255, 255, 0.02);
+  color: #f4f4f5;
+}
+
+.nothing-os--light .nothing-chip {
+  border-color: rgba(15, 23, 42, 0.2);
+  background: rgba(255, 255, 255, 0.85);
+  color: #1f2937;
+}
+
+.nothing-signal-dot {
+  box-shadow: 0 0 0 0 var(--nothing-accent-soft);
+  animation: nothing-signal-pulse 2.2s ease-out infinite;
+}
+
+.nothing-toolbar-button {
+  border-color: var(--nothing-border) !important;
+  background: rgba(255, 255, 255, 0.02) !important;
+  color: #f4f4f5 !important;
+}
+
+.nothing-toolbar-button:hover {
+  border-color: var(--nothing-border-strong) !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+}
+
+.nothing-toolbar-button.is-active {
+  border-color: rgba(255, 77, 77, 0.5) !important;
+  background: rgba(255, 77, 77, 0.1) !important;
+  color: #ffe4e2 !important;
+}
+
+.nothing-os--light .nothing-toolbar-button {
+  border-color: rgba(15, 23, 42, 0.18) !important;
+  background: rgba(255, 255, 255, 0.85) !important;
+  color: #111318 !important;
+}
+
+.nothing-os--light .nothing-toolbar-button:hover {
+  border-color: rgba(15, 23, 42, 0.28) !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+}
+
+.nothing-os--light .nothing-toolbar-button.is-active {
+  border-color: rgba(255, 77, 77, 0.45) !important;
+  background: rgba(255, 77, 77, 0.12) !important;
+  color: #7f1d1d !important;
+}
+
+.nothing-os .dashboard-widget {
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  background: #111111;
+  box-shadow: none;
+}
+
+.nothing-os--light .dashboard-widget {
+  border-color: rgba(15, 23, 42, 0.1);
+  background: rgba(255, 255, 255, 0.88);
+}
+
+.nothing-os .dashboard-widget-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.01);
+}
+
+.nothing-os--light .dashboard-widget-header {
+  border-bottom-color: rgba(15, 23, 42, 0.1);
+  background: rgba(15, 23, 42, 0.02);
+}
+
+.nothing-os .dashboard-widget-title {
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.nothing-os .dashboard-control-btn {
+  border: 1px solid transparent;
+  border-radius: 999px;
+}
+
+.nothing-os .dashboard-control-btn:hover {
+  border-color: var(--nothing-border);
+  background: rgba(255, 255, 255, 0.06) !important;
+}
+
+.nothing-os .dashboard-close-btn:hover {
+  border-color: rgba(255, 77, 77, 0.55);
+  background: rgba(255, 77, 77, 0.14) !important;
+}
+
+.nothing-os .react-grid-item.react-grid-placeholder {
+  border-radius: 16px;
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.03);
+  box-shadow: none;
+}
+
+.nothing-os .react-grid-item > .react-resizable-handle::after {
+  border-right-color: rgba(255, 255, 255, 0.48);
+  border-bottom-color: rgba(255, 255, 255, 0.48);
+  filter: none;
+}
+
+.nothing-os .dashboard-item {
+  animation: nothing-panel-boot 220ms ease-out;
+}
+
+.nothing-os .react-grid-item.react-draggable-dragging .dashboard-widget {
+  transform: scale(1.012);
+  filter: brightness(1.08);
+}
+
+.nothing-os .dashboard-item ::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.nothing-os .dashboard-item ::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.nothing-os .dashboard-item ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.24);
+}
+
+.nothing-os [class*='border-cyan-'] {
+  border-color: var(--nothing-border) !important;
+}
+
+.nothing-os [class*='text-cyan-'] {
+  color: #f5f5f5 !important;
+}
+
+.nothing-os [class*='text-blue-'] {
+  color: #d4d4d8 !important;
+}
+
+.nothing-os [class*='border-blue-'] {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.nothing-os [class*='bg-blue-'] {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.nothing-os [class*='text-purple-'] {
+  color: #d4d4d8 !important;
+}
+
+.nothing-os [class*='border-purple-'] {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.nothing-os [class*='bg-purple-'] {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.nothing-os [class*='text-slate-'] {
+  color: #b4b4bb !important;
+}
+
+.nothing-os [class*='border-slate-'] {
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+.nothing-os [class*='bg-slate-'] {
+  background-color: #141416 !important;
+}
+
+.nothing-os [class*='from-purple-'] {
+  --tw-gradient-from: rgba(255, 255, 255, 0.12) var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgba(255, 255, 255, 0) var(--tw-gradient-to-position) !important;
+}
+
+.nothing-os [class*='to-purple-'] {
+  --tw-gradient-to: rgba(255, 255, 255, 0.08) var(--tw-gradient-to-position) !important;
+}
+
+.nothing-os--light [class*='text-zinc-100'],
+.nothing-os--light [class*='text-zinc-200'],
+.nothing-os--light [class*='text-zinc-300'],
+.nothing-os--light [class*='text-slate-200'],
+.nothing-os--light [class*='text-slate-300'],
+.nothing-os--light [class*='text-white'] {
+  color: #111318 !important;
+}
+
+.nothing-os--light [class*='text-zinc-400'],
+.nothing-os--light [class*='text-zinc-500'],
+.nothing-os--light [class*='text-slate-400'],
+.nothing-os--light [class*='text-slate-500'] {
+  color: #4b5563 !important;
+}
+
+.nothing-os--light [class*='text-cyan-'],
+.nothing-os--light [class*='text-blue-'],
+.nothing-os--light [class*='text-purple-'] {
+  color: #334155 !important;
+}
+
+.nothing-os--light [class*='border-cyan-'],
+.nothing-os--light [class*='border-blue-'],
+.nothing-os--light [class*='border-purple-'],
+.nothing-os--light [class*='border-slate-'] {
+  border-color: rgba(15, 23, 42, 0.16) !important;
+}
+
+.nothing-os--light [class*='bg-cyan-'],
+.nothing-os--light [class*='bg-blue-'],
+.nothing-os--light [class*='bg-purple-'],
+.nothing-os--light [class*='bg-slate-'] {
+  background: rgba(255, 255, 255, 0.92) !important;
+}
+
+.nothing-os--light [class*='bg-\\[\\#111111\\]'],
+.nothing-os--light [class*='bg-\\[\\#141416\\]'],
+.nothing-os--light [class*='bg-\\[\\#121214\\]'],
+.nothing-os--light [class*='bg-\\[\\#16161a\\]'] {
+  background: rgba(255, 255, 255, 0.92) !important;
+}
+
+.nothing-os--light [class*='border-white\\/'] {
+  border-color: rgba(15, 23, 42, 0.14) !important;
+}
+
+.nothing-os--light [class*='bg-[#0f0f10'],
+.nothing-os--light [class*='bg-[#101012'],
+.nothing-os--light [class*='bg-[#111111'],
+.nothing-os--light [class*='bg-[#121214'],
+.nothing-os--light [class*='bg-[#131316'],
+.nothing-os--light [class*='bg-[#141416'],
+.nothing-os--light [class*='bg-[#16161a'],
+.nothing-os--light [class*='bg-[#18181b'],
+.nothing-os--light [class*='bg-[#19191c'],
+.nothing-os--light [class*='bg-black'] {
+  background: rgba(255, 255, 255, 0.92) !important;
+}
+
+.nothing-os--light [class*='text-red-400'] {
+  color: #dc2626 !important;
+}
+
+.nothing-os--light [class*='text-orange-400'] {
+  color: #c2410c !important;
+}
+
+.nothing-os--light [class*='text-green-400'] {
+  color: #15803d !important;
+}
+
+.nothing-os--light [class*='bg-white/10'],
+.nothing-os--light [class*='bg-white/8'],
+.nothing-os--light [class*='bg-white/5'],
+.nothing-os--light [class*='bg-white/[0.03]'],
+.nothing-os--light [class*='bg-white/[0.02]'] {
+  background: rgba(15, 23, 42, 0.05) !important;
+}
+
+.nothing-os .tactical-map-canvas.leaflet-container {
+  background: #0e0e0f;
+}
+
+.nothing-os .tactical-map-canvas .leaflet-tile-pane {
+  filter: grayscale(1) saturate(0.25) brightness(0.56) contrast(1.08);
+}
+
+.nothing-os .tactical-map-canvas .leaflet-control-attribution,
+.nothing-os .tactical-map-canvas .leaflet-control-scale-line {
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(12, 12, 14, 0.84);
+  color: #9ca3af;
+  box-shadow: none;
+}
+
+.nothing-os .tactical-map-canvas .leaflet-control-attribution a {
+  color: #d4d4d8;
+}
+
+.nothing-os .tactical-map-pin {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.nothing-os .tactical-map-marker {
+  height: 14px;
+  width: 14px;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  background: var(--marker-color);
+  box-shadow: 0 0 0 3px rgba(15, 15, 17, 0.9);
+}
+
+.nothing-os .tactical-map-pin.is-selected .tactical-map-marker {
+  transform: scale(1.1);
+}
+
+.nothing-os .tactical-map-marker-label {
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #e4e4e7;
+  font-family: 'IBM Plex Mono', monospace;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.65);
+}
+
+.nothing-os .tactical-map-popup .leaflet-popup-content-wrapper {
+  border-color: rgba(255, 255, 255, 0.16);
+  border-radius: 12px;
+  background: rgba(14, 14, 16, 0.96);
+  box-shadow: none;
+  color: #f5f5f5;
+}
+
+.nothing-os .tactical-map-popup .leaflet-popup-tip {
+  background: rgba(20, 20, 24, 0.96);
+}
+
+.nothing-os .tactical-map-popup-title {
+  color: #fff;
+}
+
+.nothing-os .tactical-map-popup-subtitle,
+.nothing-os .tactical-map-popup-line {
+  color: #b4b4bb;
+}
+
+.nothing-os .tactical-map-popup-meta {
+  color: #b4b4bb;
+}
+
+.nothing-os--light .tactical-map-canvas.leaflet-container {
+  background: #dfe4ea;
+}
+
+.nothing-os--light .tactical-map-canvas .leaflet-tile-pane {
+  filter: grayscale(1) saturate(0.2) brightness(1.02) contrast(0.92);
+}
+
+.nothing-os--light .tactical-map-canvas .leaflet-control-attribution,
+.nothing-os--light .tactical-map-canvas .leaflet-control-scale-line {
+  border-color: rgba(15, 23, 42, 0.18);
+  background: rgba(255, 255, 255, 0.95);
+  color: #334155;
+}
+
+.nothing-os--light .tactical-map-canvas .leaflet-control-attribution a {
+  color: #111827;
+}
+
+.nothing-os--light .tactical-map-marker {
+  border-color: rgba(17, 24, 39, 0.55);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.94);
+}
+
+.nothing-os--light .tactical-map-marker-label {
+  color: #1f2937;
+  text-shadow: none;
+}
+
+.nothing-os--light .tactical-map-popup .leaflet-popup-content-wrapper {
+  border-color: rgba(15, 23, 42, 0.18);
+  background: rgba(255, 255, 255, 0.98);
+  color: #111827;
+}
+
+.nothing-os--light .tactical-map-popup .leaflet-popup-tip {
+  background: rgba(255, 255, 255, 0.98);
+}
+
+.nothing-os--light .tactical-map-popup-title {
+  color: #0f172a;
+}
+
+.nothing-os--light .tactical-map-popup-subtitle,
+.nothing-os--light .tactical-map-popup-line,
+.nothing-os--light .tactical-map-popup-meta {
+  color: #475569;
+}
+
+@keyframes nothing-signal-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 77, 77, 0.35);
+  }
+
+  70% {
+    box-shadow: 0 0 0 9px rgba(255, 77, 77, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 77, 77, 0);
+  }
+}
+
+@keyframes nothing-panel-boot {
+  from {
+    opacity: 0.6;
+    transform: translateY(6px) scale(0.995);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }

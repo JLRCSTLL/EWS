@@ -647,9 +647,9 @@ export const users: UserAccount[] = [
 
 export const roleSummaries: RoleSummary[] = [
   { id: 'admin', label: 'Administrator', count: 3, color: 'text-red-400' },
-  { id: 'lgu-official', label: 'LGU Official', count: 45, color: 'text-blue-400' },
+  { id: 'lgu-official', label: 'LGU Official', count: 45, color: 'text-zinc-300' },
   { id: 'responder', label: 'First Responder', count: 120, color: 'text-green-400' },
-  { id: 'operator', label: 'Operator', count: 28, color: 'text-purple-400' },
+  { id: 'operator', label: 'Operator', count: 28, color: 'text-zinc-300' },
 ];
 
 export const systemMetrics: SystemMetric[] = [

@@ -31,7 +31,7 @@ const getPriorityColor = (priority: MessagePriority) => {
     case 'high':
       return 'bg-orange-500/20 text-orange-400 border-orange-500';
     case 'normal':
-      return 'bg-blue-500/20 text-blue-400 border-blue-500';
+      return 'bg-white/10 text-zinc-300 border-white/20';
     default:
       return 'bg-slate-500/20 text-slate-400 border-slate-500';
   }
@@ -82,12 +82,12 @@ export function MessagingPanel({ onSendMessage, pendingCount }: MessagingPanelPr
   };
 
   return (
-    <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-lg border border-cyan-900/30 bg-slate-950">
-      <div className="shrink-0 border-b border-cyan-900/30 bg-gradient-to-r from-slate-900 to-slate-950 p-3">
+    <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-2xl border border-white/8 bg-[#111111]">
+      <div className="shrink-0 border-b border-white/10 bg-white/[0.01] p-3">
         <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
           <div className="flex min-w-0 flex-1 items-center gap-2">
-            <MessageSquare className="h-5 w-5 shrink-0 text-purple-400" />
-            <h2 className="truncate font-mono tracking-wider text-purple-400">BROADCAST CONTROL</h2>
+            <MessageSquare className="h-5 w-5 shrink-0 text-zinc-200" />
+            <h2 className="truncate font-mono tracking-wider text-zinc-100">BROADCAST CONTROL</h2>
           </div>
           {pendingCount > 0 && (
             <Badge variant="outline" className="border-yellow-900/50 text-xs text-yellow-400">
@@ -99,14 +99,14 @@ export function MessagingPanel({ onSendMessage, pendingCount }: MessagingPanelPr
 
       <div className="min-h-0 min-w-0 flex-1 overflow-auto">
         <div className="space-y-4 p-3">
-          <div className="grid grid-cols-[repeat(auto-fit,minmax(90px,1fr))] gap-3 rounded-lg border border-slate-800 bg-slate-900/50 p-3 text-xs">
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(90px,1fr))] gap-3 rounded-xl border border-white/10 bg-[#141416] p-3 text-xs">
             <div>
               <div className="mb-1 text-slate-500">Target Reach</div>
               <div className="font-mono text-slate-200">{formatCompactNumber(target.audience)}</div>
             </div>
             <div>
               <div className="mb-1 text-slate-500">Geo Scope</div>
-              <div className="font-mono text-cyan-400">{Math.round(selectedGeoFence.coverage * 100)}%</div>
+              <div className="font-mono text-zinc-300">{Math.round(selectedGeoFence.coverage * 100)}%</div>
             </div>
             <div>
               <div className="mb-1 text-slate-500">Estimated Delivery</div>
@@ -115,7 +115,7 @@ export function MessagingPanel({ onSendMessage, pendingCount }: MessagingPanelPr
           </div>
 
           <div className="space-y-2">
-            <Label className="text-xs font-mono text-cyan-400/70">MESSAGE TEMPLATES</Label>
+            <Label className="text-xs font-mono text-zinc-400">MESSAGE TEMPLATES</Label>
             <div className="grid grid-cols-[repeat(auto-fit,minmax(130px,1fr))] gap-2">
               {messageTemplates.map((template) => (
                 <button
@@ -123,8 +123,8 @@ export function MessagingPanel({ onSendMessage, pendingCount }: MessagingPanelPr
                   onClick={() => handleTemplateSelect(template.id)}
                   className={`rounded border p-2 text-left text-xs transition-colors ${
                     selectedTemplate === template.id
-                      ? 'border-cyan-500 bg-cyan-900/30 text-cyan-300'
-                      : 'border-slate-800 bg-slate-900/50 text-slate-400 hover:border-cyan-900/50'
+                      ? 'border-white/30 bg-white/10 text-zinc-100'
+                      : 'border-white/10 bg-[#141416] text-zinc-400 hover:border-white/20 hover:bg-[#18181b]'
                   }`}
                 >
                   <div className="font-medium">{template.label}</div>
@@ -135,12 +135,12 @@ export function MessagingPanel({ onSendMessage, pendingCount }: MessagingPanelPr
           </div>
 
           <div className="space-y-2">
-            <Label className="text-xs font-mono text-cyan-400/70">MESSAGE CONTENT</Label>
+            <Label className="text-xs font-mono text-zinc-400">MESSAGE CONTENT</Label>
             <Textarea
               value={message}
               onChange={(event) => setMessage(event.target.value.slice(0, MESSAGE_LIMIT))}
               placeholder="Enter emergency broadcast message..."
-              className="min-h-[88px] resize-none border-cyan-900/30 bg-slate-900 text-slate-200"
+              className="min-h-[88px] resize-none border-white/15 bg-[#121214] text-zinc-100"
             />
             <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
               <div className="min-w-0 flex-1 text-slate-500">
@@ -153,12 +153,12 @@ export function MessagingPanel({ onSendMessage, pendingCount }: MessagingPanelPr
           </div>
 
           <div className="space-y-2">
-            <Label className="text-xs font-mono text-cyan-400/70">TARGET GROUP</Label>
+            <Label className="text-xs font-mono text-zinc-400">TARGET GROUP</Label>
             <Select value={targetGroup} onValueChange={setTargetGroup}>
-              <SelectTrigger className="border-cyan-900/30 bg-slate-900 text-slate-300">
+              <SelectTrigger className="border-white/15 bg-[#121214] text-zinc-200">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="border-cyan-900/30 bg-slate-800">
+              <SelectContent className="border-white/15 bg-[#16161a] text-zinc-100">
                 {targetGroups.map((group) => (
                   <SelectItem key={group.id} value={group.id}>
                     <div className="flex w-full min-w-0 items-center justify-between gap-3">
@@ -174,15 +174,15 @@ export function MessagingPanel({ onSendMessage, pendingCount }: MessagingPanelPr
           </div>
 
           <div className="space-y-2">
-            <Label className="flex items-center gap-2 text-xs font-mono text-cyan-400/70">
+            <Label className="flex items-center gap-2 text-xs font-mono text-zinc-400">
               <MapPin className="h-3 w-3" />
               GEO-FENCE TARGETING
             </Label>
             <Select value={geoFence} onValueChange={setGeoFence}>
-              <SelectTrigger className="border-cyan-900/30 bg-slate-900 text-slate-300">
+              <SelectTrigger className="border-white/15 bg-[#121214] text-zinc-200">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="border-cyan-900/30 bg-slate-800">
+              <SelectContent className="border-white/15 bg-[#16161a] text-zinc-100">
                 {geoFenceOptions.map((option) => (
                   <SelectItem key={option.id} value={option.id}>
                     <div className="flex w-full min-w-0 items-center justify-between gap-3">
@@ -196,15 +196,15 @@ export function MessagingPanel({ onSendMessage, pendingCount }: MessagingPanelPr
           </div>
 
           <div className="space-y-2">
-            <Label className="flex items-center gap-2 text-xs font-mono text-cyan-400/70">
+            <Label className="flex items-center gap-2 text-xs font-mono text-zinc-400">
               <AlertCircle className="h-3 w-3" />
               PRIORITY LEVEL
             </Label>
             <Select value={priority} onValueChange={(value) => setPriority(value as MessagePriority)}>
-              <SelectTrigger className="border-cyan-900/30 bg-slate-900 text-slate-300">
+              <SelectTrigger className="border-white/15 bg-[#121214] text-zinc-200">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="border-cyan-900/30 bg-slate-800">
+              <SelectContent className="border-white/15 bg-[#16161a] text-zinc-100">
                 <SelectItem value="critical">
                   <Badge className={getPriorityColor('critical')}>CRITICAL</Badge>
                 </SelectItem>
@@ -218,7 +218,7 @@ export function MessagingPanel({ onSendMessage, pendingCount }: MessagingPanelPr
             </Select>
           </div>
 
-          <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-3 text-xs">
+          <div className="rounded-xl border border-white/10 bg-[#141416] p-3 text-xs">
             <div className="mb-2 flex items-center gap-2 text-slate-400">
               <Users className="h-3 w-3" />
               Delivery Preview
@@ -230,7 +230,7 @@ export function MessagingPanel({ onSendMessage, pendingCount }: MessagingPanelPr
               </div>
               <div>
                 <div className="text-slate-500">Recipients</div>
-                <div className="font-mono text-cyan-400">{formatFullNumber(estimatedRecipients)}</div>
+                <div className="font-mono text-zinc-200">{formatFullNumber(estimatedRecipients)}</div>
               </div>
             </div>
           </div>
@@ -238,7 +238,7 @@ export function MessagingPanel({ onSendMessage, pendingCount }: MessagingPanelPr
           <Button
             onClick={handleSend}
             disabled={!message.trim()}
-            className="w-full bg-gradient-to-r from-purple-600 to-purple-700 text-white hover:from-purple-500 hover:to-purple-600"
+            className="w-full rounded-full border border-white/20 bg-white/10 text-zinc-100 hover:bg-white/15"
           >
             <Send className="mr-2 h-4 w-4" />
             SEND BROADCAST

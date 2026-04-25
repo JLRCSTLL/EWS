@@ -20,7 +20,7 @@ const getStatusConfig = (status: ResponderTeam['status']) => {
       };
     case 'standby':
       return {
-        color: 'bg-blue-500/20 text-blue-400 border-blue-500',
+        color: 'bg-white/10 text-zinc-300 border-white/20',
         icon: <Clock className="h-3 w-3" />,
         label: 'STANDBY',
       };
@@ -44,8 +44,8 @@ export function ResponderDeployment() {
   const activeTeams = responderTeams.filter((team) => team.status === 'deployed' || team.status === 'active').length;
 
   return (
-    <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-lg border border-cyan-900/30 bg-slate-950">
-      <div className="shrink-0 border-b border-cyan-900/30 bg-gradient-to-r from-slate-900 to-slate-950 p-3">
+    <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-2xl border border-white/8 bg-[#111111]">
+      <div className="shrink-0 border-b border-white/10 bg-white/[0.01] p-3">
         <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
           <div className="flex min-w-0 flex-1 items-center gap-2">
             <Users className="h-5 w-5 shrink-0 text-green-400" />
@@ -57,14 +57,14 @@ export function ResponderDeployment() {
         </div>
       </div>
 
-      <div className="grid shrink-0 grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-3 border-b border-cyan-900/30 bg-slate-900/50 p-3">
+      <div className="grid shrink-0 grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-3 border-b border-white/10 bg-[#141416] p-3">
         <div className="rounded bg-slate-800/50 p-2">
           <div className="mb-1 text-xs text-slate-400">Total Personnel</div>
           <div className="font-mono text-2xl text-green-400">{totalPersonnel}</div>
         </div>
         <div className="rounded bg-slate-800/50 p-2">
           <div className="mb-1 text-xs text-slate-400">Active Teams</div>
-          <div className="font-mono text-2xl text-cyan-400">
+          <div className="font-mono text-2xl text-zinc-300">
             {activeTeams}/{responderTeams.length}
           </div>
         </div>
@@ -78,7 +78,7 @@ export function ResponderDeployment() {
             return (
               <div
                 key={team.id}
-                className="space-y-2 rounded-lg border border-slate-800 bg-slate-900/50 p-3 transition-colors hover:border-cyan-900/50"
+                className="space-y-2 rounded-xl border border-white/10 bg-[#141416] p-3 transition-colors hover:border-white/20"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
@@ -109,7 +109,7 @@ export function ResponderDeployment() {
                   ) : (
                     <div />
                   )}
-                  <div className="font-mono text-xs text-cyan-400/70">Updated {formatRelativeTime(team.lastUpdateAt)}</div>
+                  <div className="font-mono text-xs text-zinc-400">Updated {formatRelativeTime(team.lastUpdateAt)}</div>
                 </div>
               </div>
             );

@@ -36,8 +36,8 @@ export function RiskMonitoring() {
   const highestRisk = Math.max(...riskAreas.map((area) => area.riskLevel));
 
   return (
-    <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-lg border border-cyan-900/30 bg-slate-950">
-      <div className="shrink-0 border-b border-cyan-900/30 bg-gradient-to-r from-slate-900 to-slate-950 p-3">
+    <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-2xl border border-white/8 bg-[#111111]">
+      <div className="shrink-0 border-b border-white/10 bg-white/[0.01] p-3">
         <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
           <div className="flex min-w-0 flex-1 items-center gap-2">
             <Shield className="h-5 w-5 shrink-0 text-orange-400" />
@@ -55,7 +55,7 @@ export function RiskMonitoring() {
           {riskAreas.map((area) => (
             <div
               key={area.id}
-              className="space-y-3 rounded-lg border border-slate-800 bg-slate-900/50 p-3 transition-colors hover:border-cyan-900/50"
+              className="space-y-3 rounded-xl border border-white/10 bg-[#141416] p-3 transition-colors hover:border-white/20"
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">

@@ -1,25 +1,25 @@
 import { AlertTriangle, MapPin, Radio, Satellite, Users } from 'lucide-react';
+import { motion } from 'motion/react';
 import { disasterEvents, type DisasterEvent } from '../lib/dashboard-data';
 import { formatRelativeTime } from '../lib/formatting';
-import { Badge } from './ui/badge';
 import { ScrollArea } from './ui/scroll-area';
 
-const getSeverityColor = (severity: DisasterEvent['severity']) => {
+function getSeverityMeta(severity: DisasterEvent['severity']) {
   switch (severity) {
     case 'critical':
-      return 'bg-red-500/20 text-red-400 border-red-500';
+      return { label: 'CRITICAL', dotClass: 'bg-[#ff4d4d]', textClass: 'text-[#ff8080]' };
     case 'high':
-      return 'bg-orange-500/20 text-orange-400 border-orange-500';
+      return { label: 'HIGH', dotClass: 'bg-[#ff9f43]', textClass: 'text-[#ffc285]' };
     case 'medium':
-      return 'bg-yellow-500/20 text-yellow-400 border-yellow-500';
+      return { label: 'MEDIUM', dotClass: 'bg-[#a8a8a8]', textClass: 'text-zinc-300' };
     case 'low':
-      return 'bg-blue-500/20 text-blue-400 border-blue-500';
+      return { label: 'LOW', dotClass: 'bg-[#6b7280]', textClass: 'text-zinc-400' };
     default:
-      return 'bg-slate-500/20 text-slate-400 border-slate-500';
+      return { label: 'INFO', dotClass: 'bg-zinc-500', textClass: 'text-zinc-300' };
   }
-};
+}
 
-const getSourceIcon = (source: DisasterEvent['source']) => {
+function getSourceIcon(source: DisasterEvent['source']) {
   switch (source) {
     case 'satellite':
       return <Satellite className="h-3 w-3" />;
@@ -30,69 +30,62 @@ const getSourceIcon = (source: DisasterEvent['source']) => {
     default:
       return <AlertTriangle className="h-3 w-3" />;
   }
-};
+}
 
 export function DisasterEventFeed() {
-  const criticalCount = disasterEvents.filter((event) => event.severity === 'critical' || event.severity === 'high').length;
+  const highImpactCount = disasterEvents.filter((event) => event.severity === 'critical' || event.severity === 'high').length;
 
   return (
-    <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-lg border border-cyan-900/30 bg-slate-950">
-      <div className="shrink-0 border-b border-cyan-900/30 bg-gradient-to-r from-slate-900 to-slate-950 p-3">
-        <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
-          <div className="flex min-w-0 flex-1 items-center gap-2">
-            <AlertTriangle className="h-5 w-5 shrink-0 text-red-400" />
-            <h2 className="truncate font-mono tracking-wider text-red-400">DISASTER EVENT FEED</h2>
+    <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-2xl border border-white/5 bg-[#111111]">
+      <div className="shrink-0 border-b border-white/8 px-4 py-3">
+        <div className="flex min-w-0 items-center justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-2">
+            <AlertTriangle className="h-4 w-4 shrink-0 text-zinc-200" />
+            <h2 className="truncate font-mono text-xs tracking-[0.18em] text-zinc-100">INCIDENT/DISASTER FEED</h2>
           </div>
-          <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
-            <Badge variant="outline" className="border-red-900/50 text-xs text-red-400">
-              {criticalCount} HIGH IMPACT
-            </Badge>
-            <div className="flex items-center gap-2">
-              <div className="h-2 w-2 animate-pulse rounded-full bg-red-400" />
-              <span className="font-mono text-xs text-red-400/70">LIVE</span>
-            </div>
+          <div className="font-mono text-[10px] tracking-[0.14em] text-zinc-400">
+            {highImpactCount} HIGH IMPACT
           </div>
         </div>
       </div>
 
       <ScrollArea className="min-h-0 flex-1">
-        <div className="space-y-3 p-3">
-          {disasterEvents.map((event) => (
-            <div
-              key={event.id}
-              className={`rounded-r border-l-4 bg-slate-900/50 p-3 transition-colors hover:bg-slate-900/80 ${
-                getSeverityColor(event.severity).split(' ')[2]
-              }`}
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0 flex-1">
-                  <div className="mb-1 flex flex-wrap items-center gap-2">
-                    <Badge className={getSeverityColor(event.severity)}>{event.severity.toUpperCase()}</Badge>
-                    <Badge variant="outline" className="border-cyan-900/50 text-xs text-cyan-400">
-                      {event.type.toUpperCase()}
-                    </Badge>
-                  </div>
-                  <h3 className="text-sm font-medium text-slate-200">{event.title}</h3>
-                </div>
-              </div>
+        <div className="px-4">
+          {disasterEvents.map((event, index) => {
+            const severity = getSeverityMeta(event.severity);
 
-              <div className="mt-2 space-y-1">
-                <p className="text-xs text-slate-400">{event.description}</p>
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
+            return (
+              <motion.article
+                key={event.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2, delay: index * 0.03, ease: 'easeOut' }}
+                className="border-b border-white/6 py-3 last:border-b-0"
+              >
+                <div className="mb-1.5 flex items-center gap-2 text-[10px] font-mono tracking-[0.12em] text-zinc-400">
+                  <span className={`h-2 w-2 rounded-full ${severity.dotClass}`} />
+                  <span className={severity.textClass}>● {severity.label}</span>
+                  <span className="text-zinc-500">|</span>
+                  <span>{event.type.toUpperCase()}</span>
+                </div>
+
+                <h3 className="text-sm font-medium text-zinc-100">{event.title}</h3>
+                <p className="mt-1 text-xs leading-5 text-zinc-400">{event.description}</p>
+
+                <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-zinc-500">
                   <div className="flex items-center gap-1">
                     <MapPin className="h-3 w-3" />
                     <span>{event.location}</span>
                   </div>
                   <div className="flex items-center gap-1">
                     {getSourceIcon(event.source)}
-                    <span>{event.source}</span>
+                    <span>{event.source.toUpperCase()}</span>
                   </div>
+                  <div className="font-mono tracking-[0.12em]">{formatRelativeTime(event.createdAt).toUpperCase()}</div>
                 </div>
-              </div>
-
-              <div className="mt-2 font-mono text-xs text-cyan-400/70">{formatRelativeTime(event.createdAt)}</div>
-            </div>
-          ))}
+              </motion.article>
+            );
+          })}
         </div>
       </ScrollArea>
     </div>
