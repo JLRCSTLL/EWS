@@ -1,6 +1,7 @@
 import { CheckCircle, Clock, MessageSquare, XCircle } from 'lucide-react';
 import type { DashboardMessage } from '../lib/dashboard-data';
 import { formatFullNumber, formatRelativeTime } from '../lib/formatting';
+import { formatGeofenceArea } from '../lib/geofencing';
 import { Badge } from './ui/badge';
 import { ScrollArea } from './ui/scroll-area';
 
@@ -104,6 +105,7 @@ export function MessageHistory({ messages }: MessageHistoryProps) {
                 </div>
 
                 <p className="text-sm text-slate-300">{message.content}</p>
+                {message.geofence && <p className="text-xs text-zinc-400">Drawn boundary: {message.geofence.name} · {message.geofence.shape} · {formatGeofenceArea(message.geofence)} · simulated delivery</p>}
 
                 <div className="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-2 border-t border-slate-800 pt-2 text-xs">
                   <div>
@@ -116,7 +118,7 @@ export function MessageHistory({ messages }: MessageHistoryProps) {
                   </div>
                   <div>
                     <div className="text-slate-500">Recipients</div>
-                    <div className="text-slate-400">{formatFullNumber(message.recipients)}</div>
+                    <div className="text-slate-400">{message.recipients === null ? 'Not estimated' : formatFullNumber(message.recipients)}</div>
                   </div>
                   <div>
                     <div className="text-slate-500">Time</div>

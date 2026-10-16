@@ -1,3 +1,5 @@
+import type { AlertGeofence } from './geofencing';
+
 const minutesAgo = (minutes: number) => new Date(Date.now() - minutes * 60_000).toISOString();
 const hoursAgo = (hours: number) => new Date(Date.now() - hours * 3_600_000).toISOString();
 
@@ -33,7 +35,8 @@ export interface DashboardMessage {
   priority: MessagePriority;
   status: MessageStatus;
   createdAt: string;
-  recipients: number;
+  recipients: number | null;
+  geofence?: AlertGeofence;
 }
 
 export interface AuditLogEntry {

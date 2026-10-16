@@ -2,6 +2,7 @@ import { AlertCircle, MapPin, MessageSquare, Send, Users } from 'lucide-react';
 import { useState } from 'react';
 import { geoFenceOptions, messageTemplates, targetGroups, type MessagePriority } from '../lib/dashboard-data';
 import { formatCompactNumber, formatFullNumber } from '../lib/formatting';
+import { formatGeofenceArea, isAlertGeofence, type AlertGeofence } from '../lib/geofencing';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Label } from './ui/label';
@@ -17,11 +18,13 @@ export interface OutboundMessageDraft {
   priority: MessagePriority;
   geoFenceId: string;
   templateLabel?: string;
+  geofence?: AlertGeofence;
 }
 
 interface MessagingPanelProps {
   onSendMessage: (draft: OutboundMessageDraft) => void;
   pendingCount: number;
+  mapGeofence?: AlertGeofence | null;
 }
 
 const getPriorityColor = (priority: MessagePriority) => {
@@ -37,17 +40,19 @@ const getPriorityColor = (priority: MessagePriority) => {
   }
 };
 
-export function MessagingPanel({ onSendMessage, pendingCount }: MessagingPanelProps) {
+export function MessagingPanel({ onSendMessage, pendingCount, mapGeofence }: MessagingPanelProps) {
   const [message, setMessage] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState('');
   const [targetGroup, setTargetGroup] = useState('all');
   const [priority, setPriority] = useState<MessagePriority>('normal');
-  const [geoFence, setGeoFence] = useState('all-areas');
+  const [geoFence, setGeoFence] = useState(mapGeofence ? 'map-area' : 'all-areas');
 
   const target = targetGroups.find((group) => group.id === targetGroup) ?? targetGroups[0];
   const selectedGeoFence = geoFenceOptions.find((option) => option.id === geoFence) ?? geoFenceOptions[0];
   const remainingCharacters = MESSAGE_LIMIT - message.length;
-  const estimatedRecipients = Math.max(1, Math.round(target.audience * selectedGeoFence.coverage));
+  const usesMapArea = geoFence === 'map-area';
+  const invalidMapArea = usesMapArea && !isAlertGeofence(mapGeofence);
+  const estimatedRecipients = usesMapArea ? null : Math.max(1, Math.round(target.audience * selectedGeoFence.coverage));
   const activeTemplate = messageTemplates.find((template) => template.id === selectedTemplate);
 
   const handleTemplateSelect = (templateId: string) => {
@@ -63,7 +68,7 @@ export function MessagingPanel({ onSendMessage, pendingCount }: MessagingPanelPr
 
   const handleSend = () => {
     const trimmedMessage = message.trim();
-    if (!trimmedMessage) {
+    if (!trimmedMessage || invalidMapArea) {
       return;
     }
 
@@ -74,6 +79,7 @@ export function MessagingPanel({ onSendMessage, pendingCount }: MessagingPanelPr
       priority,
       geoFenceId: geoFence,
       templateLabel: activeTemplate?.label,
+      geofence: usesMapArea && mapGeofence ? mapGeofence : undefined,
     });
 
     setMessage('');
@@ -101,16 +107,16 @@ export function MessagingPanel({ onSendMessage, pendingCount }: MessagingPanelPr
         <div className="space-y-4 p-3">
           <div className="grid grid-cols-[repeat(auto-fit,minmax(90px,1fr))] gap-3 rounded-xl border border-white/10 bg-[#141416] p-3 text-xs">
             <div>
-              <div className="mb-1 text-slate-500">Target Reach</div>
+              <div className="mb-1 text-slate-500">{usesMapArea ? 'Group size' : 'Target Reach'}</div>
               <div className="font-mono text-slate-200">{formatCompactNumber(target.audience)}</div>
             </div>
             <div>
               <div className="mb-1 text-slate-500">Geo Scope</div>
-              <div className="font-mono text-zinc-300">{Math.round(selectedGeoFence.coverage * 100)}%</div>
+              <div className="font-mono text-zinc-300">{usesMapArea ? 'Drawn map area' : `${Math.round(selectedGeoFence.coverage * 100)}%`}</div>
             </div>
             <div>
               <div className="mb-1 text-slate-500">Estimated Delivery</div>
-              <div className="font-mono text-green-400">{formatCompactNumber(estimatedRecipients)}</div>
+              <div className="font-mono text-green-400">{estimatedRecipients === null ? 'Not estimated' : formatCompactNumber(estimatedRecipients)}</div>
             </div>
           </div>
 
@@ -155,7 +161,7 @@ export function MessagingPanel({ onSendMessage, pendingCount }: MessagingPanelPr
           <div className="space-y-2">
             <Label className="text-xs font-mono text-zinc-400">TARGET GROUP</Label>
             <Select value={targetGroup} onValueChange={setTargetGroup}>
-              <SelectTrigger className="border-white/15 bg-[#121214] text-zinc-200">
+              <SelectTrigger aria-label="Target group" className="border-white/15 bg-[#121214] text-zinc-200">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="border-white/15 bg-[#16161a] text-zinc-100">
@@ -179,10 +185,11 @@ export function MessagingPanel({ onSendMessage, pendingCount }: MessagingPanelPr
               GEO-FENCE TARGETING
             </Label>
             <Select value={geoFence} onValueChange={setGeoFence}>
-              <SelectTrigger className="border-white/15 bg-[#121214] text-zinc-200">
+              <SelectTrigger aria-label="Alert target area" className="border-white/15 bg-[#121214] text-zinc-200">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="border-white/15 bg-[#16161a] text-zinc-100">
+                {mapGeofence && <SelectItem value="map-area">Drawn area · {mapGeofence.name || 'Unnamed area'}</SelectItem>}
                 {geoFenceOptions.map((option) => (
                   <SelectItem key={option.id} value={option.id}>
                     <div className="flex w-full min-w-0 items-center justify-between gap-3">
@@ -193,6 +200,12 @@ export function MessagingPanel({ onSendMessage, pendingCount }: MessagingPanelPr
                 ))}
               </SelectContent>
             </Select>
+            {usesMapArea && mapGeofence && <div className="ops-fence-target" role="status">
+              <strong>{mapGeofence.name || 'Unnamed area'}</strong>
+              <p><span className="capitalize">{mapGeofence.shape}</span> · {formatGeofenceArea(mapGeofence)} · {mapGeofence.points.length} boundary points</p>
+              <p>This alert targets the drawn boundary. Recipient counts need location data; this demo saves the area and simulates delivery.</p>
+            </div>}
+            {invalidMapArea && <p role="alert" className="text-xs text-red-300">Save a valid, named geofence before sending to this area.</p>}
           </div>
 
           <div className="space-y-2">
@@ -230,14 +243,14 @@ export function MessagingPanel({ onSendMessage, pendingCount }: MessagingPanelPr
               </div>
               <div>
                 <div className="text-slate-500">Recipients</div>
-                <div className="font-mono text-zinc-200">{formatFullNumber(estimatedRecipients)}</div>
+                <div className="font-mono text-zinc-200">{estimatedRecipients === null ? 'Not estimated' : formatFullNumber(estimatedRecipients)}</div>
               </div>
             </div>
           </div>
 
           <Button
             onClick={handleSend}
-            disabled={!message.trim()}
+            disabled={!message.trim() || invalidMapArea}
             className="w-full rounded-full border border-white/20 bg-white/10 text-zinc-100 hover:bg-white/15"
           >
             <Send className="mr-2 h-4 w-4" />

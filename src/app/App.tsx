@@ -10,11 +10,13 @@ import {
   type AuditLogEntry,
 } from './lib/dashboard-data';
 import { formatSystemClock } from './lib/formatting';
+import { formatGeofenceArea, isAlertGeofence } from './lib/geofencing';
 import { allWidgetIds, WIDGETS, type WidgetId, type WidgetRuntimeProps } from './lib/widget-registry';
 import { DashboardGrid } from './components/DashboardGrid';
 import { DashboardWidget } from './components/DashboardWidget';
 import type { OutboundMessageDraft } from './components/MessagingPanel';
 import { WidgetLibrary } from './components/WidgetLibrary';
+import { OperationsDashboard } from './components/operations/OperationsDashboard';
 import { Button } from './components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './components/ui/select';
 import 'react-grid-layout/css/styles.css';
@@ -214,6 +216,7 @@ function ClockChip() {
 }
 
 export default function App() {
+  const [workspaceMode, setWorkspaceMode] = useState(false);
   const [layoutMode, setLayoutMode] = useState(false);
   const [currentPreset, setCurrentPreset] = useState<PresetKey>(() => getStoredPreset());
   const [layouts, setLayouts] = useState<GridLayouts>(() => getPresetLayouts(getStoredPreset()));
@@ -403,18 +406,27 @@ export default function App() {
     (draft: OutboundMessageDraft) => {
       const targetGroup = targetGroups.find((group) => group.id === draft.targetGroupId) ?? targetGroups[0];
       const geoFence = geoFenceOptions.find((option) => option.id === draft.geoFenceId) ?? geoFenceOptions[0];
-      const recipients = Math.max(1, Math.round(targetGroup.audience * geoFence.coverage));
+      if (draft.geoFenceId === 'map-area' && !isAlertGeofence(draft.geofence)) {
+        toast.error('Save a valid geofence before sending an alert to the map area.');
+        return;
+      }
+      const drawnArea = draft.geoFenceId === 'map-area' && draft.geofence
+        ? { ...draft.geofence, points: draft.geofence.points.map((point) => ({ ...point })) }
+        : undefined;
+      const areaLabel = drawnArea ? `${drawnArea.name} (${drawnArea.shape}, ${formatGeofenceArea(drawnArea)})` : geoFence.label;
+      const recipients = drawnArea ? null : Math.max(1, Math.round(targetGroup.audience * geoFence.coverage));
 
       const queuedMessage = {
         id: createId('msg'),
         content: draft.content,
         sender: 'Command Center Alpha',
         category: draft.category,
-        targetGroup: `${targetGroup.label} | ${geoFence.label}`,
+        targetGroup: `${targetGroup.label} | ${areaLabel}`,
         priority: draft.priority,
         status: 'sending' as const,
         createdAt: new Date().toISOString(),
         recipients,
+        geofence: drawnArea,
       };
 
       setMessages((currentMessages) => [queuedMessage, ...currentMessages].slice(0, 60));
@@ -422,12 +434,12 @@ export default function App() {
         type: 'system',
         action: 'Broadcast Queued',
         user: 'Command Center Alpha',
-        details: `${draft.priority.toUpperCase()} broadcast queued for ${targetGroup.label} in ${geoFence.label}.`,
+        details: `${draft.priority.toUpperCase()} broadcast queued for ${targetGroup.label} in ${areaLabel}.${drawnArea ? ' Drawn coordinates saved; delivery simulated.' : ''}`,
         severity: draft.priority === 'critical' ? 'critical' : draft.priority === 'high' ? 'warning' : 'info',
       });
 
-      toast.success('Broadcast queued', {
-        description: `${targetGroup.label} | ${recipients.toLocaleString()} recipients`,
+      toast.success(drawnArea ? 'Demo alert queued' : 'Broadcast queued', {
+        description: recipients === null ? `${targetGroup.label} | ${areaLabel}` : `${targetGroup.label} | ${recipients.toLocaleString()} recipients`,
       });
 
       window.setTimeout(() => {
@@ -443,15 +455,15 @@ export default function App() {
             type: 'system',
             action: 'Broadcast Delivered',
             user: 'Command Center Alpha',
-            details: `${draft.category} broadcast delivered to ${targetGroup.label} in ${geoFence.label}.`,
+            details: `${draft.category} broadcast ${drawnArea ? 'simulated' : 'delivered'} to ${targetGroup.label} in ${areaLabel}.`,
             createdAt: new Date().toISOString(),
             severity: 'info',
           },
           ...currentLogs,
         ].slice(0, 60));
 
-        toast.success('Broadcast delivered', {
-          description: `${targetGroup.label} receipt confirmed.`,
+        toast.success(drawnArea ? 'Demo alert delivered' : 'Broadcast delivered', {
+          description: drawnArea ? `${drawnArea.name} boundary saved; delivery is simulated.` : `${targetGroup.label} receipt confirmed.`,
         });
       }, draft.priority === 'critical' ? 900 : 1400);
     },
@@ -514,6 +526,15 @@ export default function App() {
     );
   }
 
+  if (!workspaceMode) {
+    return <OperationsDashboard
+      {...widgetRuntimeProps}
+      onOpenWorkspace={() => setWorkspaceMode(true)}
+      onFullscreen={handleBrowserFullscreenToggle}
+      isFullscreen={isBrowserFullscreen}
+    />;
+  }
+
   return (
     <div className={`${dashboardThemeClass} flex h-screen min-h-0 flex-col overflow-hidden text-slate-200`}>
       <div className="nothing-topbar shrink-0 p-2">
@@ -524,9 +545,10 @@ export default function App() {
               <span className="nothing-signal-dot absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-[#ff443a]" />
             </div>
             <div className="min-w-0">
-              <h1 className="truncate text-base font-mono tracking-[0.22em] text-zinc-100 sm:text-lg">
-                E-LIGTAS
-              </h1>
+              <button onClick={() => setWorkspaceMode(false)} className="text-left" aria-label="Back to live overview">
+                <span className="block truncate text-base font-mono tracking-[0.22em] text-zinc-100 sm:text-lg">E-LIGTAS</span>
+                <span className="text-[10px] text-zinc-400">← Live overview</span>
+              </button>
             </div>
           </div>
 
