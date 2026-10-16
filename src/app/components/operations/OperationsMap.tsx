@@ -93,11 +93,11 @@ export const OperationsMap = forwardRef<OperationsMapHandle, OperationsMapProps>
     const satellite = basemap === 'satellite';
     const tiles = L.tileLayer(satellite
       ? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
-      : 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
+      : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 18,
       attribution: satellite
         ? 'Imagery © <a href="https://www.esri.com/" target="_blank" rel="noopener noreferrer">Esri</a>, Maxar, Earthstar Geographics, GIS User Community'
-        : '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> © <a href="https://carto.com/attributions" target="_blank" rel="noopener noreferrer">CARTO</a>',
+        : '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors',
     });
     tiles.on('tileload', () => { loaded++; setTileState('ready'); });
     tiles.on('tileerror', () => { if (++errors > 3 && !loaded) setTileState('error'); });

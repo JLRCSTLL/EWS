@@ -28,7 +28,7 @@
 .ops-map { position: absolute; inset: 0; z-index: -2; background: #1f1f1f; }
 .ops-map-canvas { width: 100%; height: 100%; background: #202020; }
 .ops-map--satellite .leaflet-tile-pane { filter: brightness(.76) contrast(1.08); }
-.ops-map--street .leaflet-tile-pane { filter: brightness(1.05); }
+.ops-map--street .leaflet-tile-pane { filter: brightness(.7); }
 .ops-map-shade { position: absolute; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(90deg, rgba(22, 22, 22, .76), rgba(22, 22, 22, .48) 22%, rgba(22, 22, 22, .09) 48%, rgba(22, 22, 22, .06) 72%, rgba(22, 22, 22, .2)), linear-gradient(0deg, rgba(19, 19, 19, .6), transparent 38%, transparent 74%, rgba(19, 19, 19, .42)); }
 .ops-map .leaflet-control-attribution { max-width: 68vw; margin: 0 12px 37px 0; padding: 2px 6px; font: 10px/1.5 'Inter', sans-serif; background: rgba(17, 17, 17, .8); color: #afafaf; border-radius: 4px; }
 .ops-map .leaflet-control-attribution a { color: #d2d2d2; }

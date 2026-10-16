@@ -52,7 +52,7 @@ data, not a connected emergency feed. Broadcast delivery is simulated locally an
 stored in browser local storage, as in the original project. The interface labels
 this demo state. No production service or authentication backend was added.
 
-Satellite imagery uses Esri; the street map uses CARTO/OpenStreetMap. Both require
+Satellite imagery uses Esri; the street map uses OpenStreetMap Standard. Both require
 network access. Provider attribution remains visible, and a loading/failure message
 appears when imagery cannot be loaded. See `ATTRIBUTIONS.md`.
 

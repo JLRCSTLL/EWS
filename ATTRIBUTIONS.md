@@ -3,9 +3,11 @@ This Figma Make file includes components from [shadcn/ui](https://ui.shadcn.com/
 This Figma Make file includes photos from [Unsplash](https://unsplash.com) used under [license](https://unsplash.com/license).
 
 The operations view displays satellite tiles from Esri World Imagery (Esri, Maxar,
-Earthstar Geographics, and the GIS User Community) and street tiles from CARTO
-with OpenStreetMap data. Provider attribution is displayed on the map. These
-external map services require network access; imagery is not bundled in the app.
+Earthstar Geographics, and the GIS User Community) and Standard street tiles from
+[OpenStreetMap contributors](https://www.openstreetmap.org/copyright).
+Provider attribution is displayed on the map. These external map services require
+network access; imagery is not bundled in the app. OpenStreetMap tiles use normal
+browser caching and are subject to the [tile usage policy](https://operations.osmfoundation.org/policies/tiles/).
 
 The interface uses Inter, Space Grotesk, and IBM Plex Mono through Google Fonts,
 with local system font fallbacks. Icons are provided by the existing Lucide package.
