@@ -70,7 +70,7 @@ export const OperationsMap = forwardRef<OperationsMapHandle, OperationsMapProps>
     if (!containerRef.current) return;
     const map = L.map(containerRef.current, {
       zoomControl: false, attributionControl: false, minZoom: 5, maxZoom: 18,
-      zoomSnap: 0.5, scrollWheelZoom: false,
+      zoomSnap: 0.5, scrollWheelZoom: true, touchZoom: true,
     });
     mapRef.current = map;
     markerLayerRef.current = L.layerGroup().addTo(map);
@@ -196,7 +196,7 @@ export const OperationsMap = forwardRef<OperationsMapHandle, OperationsMapProps>
   return <>
     <div className={`ops-map ops-map--${basemap}${drawing ? ' ops-map--drawing' : ''}`}>
       {/* Keep this className stable: Leaflet adds container/interaction classes here. */}
-      <div ref={containerRef} className="ops-map-canvas" aria-label="Interactive emergency operations map. Use arrow keys to pan and plus or minus to zoom." />
+      <div ref={containerRef} className="ops-map-canvas" aria-label="Interactive emergency operations map. Scroll or pinch to zoom. Use arrow keys to pan and plus or minus to zoom." />
     </div>
     <div className="ops-map-shade" />
     {tileState !== 'ready' && <div className="ops-map-notice" role="status">

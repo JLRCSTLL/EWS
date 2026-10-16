@@ -18,6 +18,9 @@ selectable teams and facilities, priority alerts, operational summaries, and glo
 search (`Ctrl+K` / `Cmd+K`). The region selector switches between Metro Manila and
 all sample regions. Search can locate results outside the current region.
 
+Over the map, use the mouse wheel, a two-finger touchpad scroll, or a pinch gesture
+to zoom. Drag to pan. The plus/minus controls and keyboard navigation also work.
+
 The Incident priorities card summarizes critical, high, medium, and low incidents
 for the selected region. **Review priorities** opens the incident center filtered
 to critical and high severity, and clears any previous incident search.
