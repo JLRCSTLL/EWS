@@ -34,6 +34,24 @@ const orient = (a: GeofencePoint, b: GeofencePoint, c: GeofencePoint) =>
 const onSegment = (a: GeofencePoint, b: GeofencePoint, p: GeofencePoint) =>
   Math.abs(orient(a, b, p)) < 1e-12 && p.lng >= Math.min(a.lng, b.lng) && p.lng <= Math.max(a.lng, b.lng) &&
   p.lat >= Math.min(a.lat, b.lat) && p.lat <= Math.max(a.lat, b.lat);
+
+/** Boundary points count as inside. Coordinates use latitude/longitude, not screen pixels. */
+export function isPointInGeofence(point: GeofencePoint, geometry: GeofenceGeometry): boolean {
+  if (!Number.isFinite(point.lat) || !Number.isFinite(point.lng) || Math.abs(point.lat) > 85 || Math.abs(point.lng) > 180 || getGeofenceError(geometry)) return false;
+  const { shape, points } = geometry;
+  if (shape === 'circle') return geofenceDistance(points[0], point) <= geofenceDistance(points[0], points[1]) + .01;
+  if (shape === 'rectangle') return point.lat >= Math.min(points[0].lat, points[1].lat) &&
+    point.lat <= Math.max(points[0].lat, points[1].lat) && point.lng >= Math.min(points[0].lng, points[1].lng) &&
+    point.lng <= Math.max(points[0].lng, points[1].lng);
+  let inside = false;
+  for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
+    const a = points[j], b = points[i];
+    if (onSegment(a, b, point)) return true;
+    if ((a.lat > point.lat) !== (b.lat > point.lat) &&
+      point.lng < (b.lng - a.lng) * (point.lat - a.lat) / (b.lat - a.lat) + a.lng) inside = !inside;
+  }
+  return inside;
+}
 const intersects = (a: GeofencePoint, b: GeofencePoint, c: GeofencePoint, d: GeofencePoint) =>
   (orient(a, b, c) * orient(a, b, d) < 0 && orient(c, d, a) * orient(c, d, b) < 0) ||
   onSegment(a, b, c) || onSegment(a, b, d) || onSegment(c, d, a) || onSegment(c, d, b);

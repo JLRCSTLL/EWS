@@ -11,6 +11,7 @@ import {
 } from './lib/dashboard-data';
 import { formatSystemClock } from './lib/formatting';
 import { formatGeofenceArea, isAlertGeofence } from './lib/geofencing';
+import { audienceLabel, createAudienceSnapshot, demoResidents, demoSnapshotAt, type AudienceSnapshot } from './lib/residents';
 import { allWidgetIds, WIDGETS, type WidgetId, type WidgetRuntimeProps } from './lib/widget-registry';
 import { DashboardGrid } from './components/DashboardGrid';
 import { DashboardWidget } from './components/DashboardWidget';
@@ -404,6 +405,10 @@ export default function App() {
 
   const handleSendMessage = useCallback(
     (draft: OutboundMessageDraft) => {
+      if (!draft.content.trim() || draft.content.length > 500) {
+        toast.error('Enter an alert of 1–500 characters.');
+        return;
+      }
       const targetGroup = targetGroups.find((group) => group.id === draft.targetGroupId) ?? targetGroups[0];
       const geoFence = geoFenceOptions.find((option) => option.id === draft.geoFenceId) ?? geoFenceOptions[0];
       if (draft.geoFenceId === 'map-area' && !isAlertGeofence(draft.geofence)) {
@@ -413,20 +418,32 @@ export default function App() {
       const drawnArea = draft.geoFenceId === 'map-area' && draft.geofence
         ? { ...draft.geofence, points: draft.geofence.points.map((point) => ({ ...point })) }
         : undefined;
-      const areaLabel = drawnArea ? `${drawnArea.name} (${drawnArea.shape}, ${formatGeofenceArea(drawnArea)})` : geoFence.label;
-      const recipients = drawnArea ? null : Math.max(1, Math.round(targetGroup.audience * geoFence.coverage));
+      let audience: AudienceSnapshot | undefined;
+      if (draft.appAudience) {
+        if (!['map-area', 'all-areas'].includes(draft.geoFenceId)) {
+          toast.error('Choose a saved geofence or all demo app users.');
+          return;
+        }
+        try { audience = createAudienceSnapshot(demoResidents, drawnArea || null, draft.appAudience, demoSnapshotAt); }
+        catch { toast.error('Choose a valid area and at least one eligible recipient.'); return; }
+      }
+      const groupLabel = audience ? audienceLabel(audience) : targetGroup.label;
+      const areaLabel = drawnArea ? `${drawnArea.name} (${drawnArea.shape}, ${formatGeofenceArea(drawnArea)})` : audience ? 'All demo app users with a location' : geoFence.label;
+      const recipients = audience ? audience.recipientIds.length : drawnArea ? null : Math.max(1, Math.round(targetGroup.audience * geoFence.coverage));
+      const simulated = !!drawnArea || !!audience;
 
       const queuedMessage = {
         id: createId('msg'),
         content: draft.content,
         sender: 'Command Center Alpha',
         category: draft.category,
-        targetGroup: `${targetGroup.label} | ${areaLabel}`,
+        targetGroup: `${groupLabel} | ${areaLabel}`,
         priority: draft.priority,
         status: 'sending' as const,
         createdAt: new Date().toISOString(),
         recipients,
         geofence: drawnArea,
+        audience,
       };
 
       setMessages((currentMessages) => [queuedMessage, ...currentMessages].slice(0, 60));
@@ -434,12 +451,12 @@ export default function App() {
         type: 'system',
         action: 'Broadcast Queued',
         user: 'Command Center Alpha',
-        details: `${draft.priority.toUpperCase()} broadcast queued for ${targetGroup.label} in ${areaLabel}.${drawnArea ? ' Drawn coordinates saved; delivery simulated.' : ''}`,
+        details: `${draft.priority.toUpperCase()} broadcast queued for ${groupLabel} in ${areaLabel}.${audience ? ` ${recipients} unique recipient IDs saved; ${audience.activeOnly ? 'active' : 'active and recent'} locations.` : ''}${simulated ? ' Delivery simulated.' : ''}`,
         severity: draft.priority === 'critical' ? 'critical' : draft.priority === 'high' ? 'warning' : 'info',
       });
 
-      toast.success(drawnArea ? 'Demo alert queued' : 'Broadcast queued', {
-        description: recipients === null ? `${targetGroup.label} | ${areaLabel}` : `${targetGroup.label} | ${recipients.toLocaleString()} recipients`,
+      toast.success(simulated ? 'Demo alert queued' : 'Broadcast queued', {
+        description: recipients === null ? `${groupLabel} | ${areaLabel}` : `${groupLabel} | ${recipients.toLocaleString()} recipients`,
       });
 
       window.setTimeout(() => {
@@ -453,17 +470,17 @@ export default function App() {
           {
             id: createId('audit'),
             type: 'system',
-            action: 'Broadcast Delivered',
+            action: simulated ? 'Demo Broadcast Simulated' : 'Broadcast Delivered',
             user: 'Command Center Alpha',
-            details: `${draft.category} broadcast ${drawnArea ? 'simulated' : 'delivered'} to ${targetGroup.label} in ${areaLabel}.`,
+            details: `${draft.category} broadcast ${simulated ? 'simulated' : 'delivered'} to ${groupLabel} in ${areaLabel}.${audience ? ` ${recipients} recipients; no real messages sent.` : ''}`,
             createdAt: new Date().toISOString(),
             severity: 'info',
           },
           ...currentLogs,
         ].slice(0, 60));
 
-        toast.success(drawnArea ? 'Demo alert delivered' : 'Broadcast delivered', {
-          description: drawnArea ? `${drawnArea.name} boundary saved; delivery is simulated.` : `${targetGroup.label} receipt confirmed.`,
+        toast.success(simulated ? 'Demo delivery simulated' : 'Broadcast delivered', {
+          description: simulated ? 'Saved to delivery history. No real messages were sent.' : `${groupLabel} receipt confirmed.`,
         });
       }, draft.priority === 'critical' ? 900 : 1400);
     },

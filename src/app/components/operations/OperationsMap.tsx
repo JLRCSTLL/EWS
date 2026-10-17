@@ -3,7 +3,9 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { infrastructureSites, responderTeams, type DisasterEvent } from '../../lib/dashboard-data';
 import { getSelection, severityColors, type MapLayers, type MapSelection, type Region } from '../../lib/operations';
-import { geofenceDistance, type GeofenceGeometry, type GeofencePoint } from '../../lib/geofencing';
+import { geofenceDistance, type AlertGeofence, type GeofenceGeometry, type GeofencePoint } from '../../lib/geofencing';
+import { demoResidents, demoSnapshotAt, getExposure } from '../../lib/residents';
+import { fenceLayer, residentMarker } from './resident-map';
 
 export interface OperationsMapHandle {
   zoomIn: () => void;
@@ -24,6 +26,10 @@ interface OperationsMapProps {
   drawing: boolean;
   onGeofencePoint: (point: GeofencePoint) => void;
   onGeofenceMove: (index: number, point: GeofencePoint) => void;
+  areas: AlertGeofence[];
+  selectedAreaId: string | null;
+  onSelectGeofence: (id: string) => void;
+  showResidents: boolean;
 }
 
 const incidentCodes = { typhoon: 'TY', flood: 'FL', earthquake: 'EQ', landslide: 'LS', fire: 'FR' };
@@ -34,7 +40,7 @@ const mapHome = (map: L.Map, region: Region) => {
 };
 
 export const OperationsMap = forwardRef<OperationsMapHandle, OperationsMapProps>(function OperationsMap(
-  { incidents, layers, region, basemap, selection, onSelect, geofence, drawing, onGeofencePoint, onGeofenceMove }, ref,
+  { incidents, layers, region, basemap, selection, onSelect, geofence, drawing, onGeofencePoint, onGeofenceMove, areas, selectedAreaId, onSelectGeofence, showResidents }, ref,
 ) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -42,10 +48,12 @@ export const OperationsMap = forwardRef<OperationsMapHandle, OperationsMapProps>
   const onSelectRef = useRef(onSelect);
   const onGeofencePointRef = useRef(onGeofencePoint);
   const onGeofenceMoveRef = useRef(onGeofenceMove);
+  const onSelectGeofenceRef = useRef(onSelectGeofence);
   const [tileState, setTileState] = useState<'loading' | 'ready' | 'error'>('loading');
   onSelectRef.current = onSelect;
   onGeofencePointRef.current = onGeofencePoint;
   onGeofenceMoveRef.current = onGeofenceMove;
+  onSelectGeofenceRef.current = onSelectGeofence;
 
   useImperativeHandle(ref, () => ({
     zoomIn: () => mapRef.current?.zoomIn(),
@@ -145,6 +153,40 @@ export const OperationsMap = forwardRef<OperationsMapHandle, OperationsMapProps>
 
   useEffect(() => {
     const map = mapRef.current;
+    if (!map) return;
+    const group = L.layerGroup().addTo(map);
+    areas.forEach(area => {
+      const selected = area.id === selectedAreaId;
+      const boundary = fenceLayer(area, {
+        color: selected ? '#dceef2' : '#adc1c4', weight: selected ? 2.5 : 1.5,
+        fillColor: '#b8dce4', fillOpacity: selected && !drawing ? .12 : .025,
+        dashArray: selected ? undefined : '5 6', interactive: !drawing,
+      }).addTo(group);
+      boundary.on('click', () => onSelectGeofenceRef.current(area.id));
+      const label = document.createElement('span');
+      label.textContent = area.name || 'Unnamed area';
+      const marker = L.marker(boundary.getBounds().getNorthWest(), {
+        title: `Select geofence: ${area.name || 'Unnamed area'}`, alt: `Select geofence: ${area.name || 'Unnamed area'}`,
+        icon: L.divIcon({ className: `ops-area-label${selected ? ' is-selected' : ''}`, html: label, iconSize: [160, 26], iconAnchor: [0, 26] }),
+        keyboard: !drawing, interactive: !drawing, zIndexOffset: 1100,
+      }).addTo(group).on('click', () => onSelectGeofenceRef.current(area.id));
+      marker.getElement()?.setAttribute('aria-label', `Select geofence: ${area.name || 'Unnamed area'}`);
+    });
+    return () => { group.remove(); };
+  }, [areas, selectedAreaId, drawing]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !showResidents) return;
+    const group = L.layerGroup().addTo(map);
+    getExposure(demoResidents, geofence, demoSnapshotAt).located.forEach(user => {
+      residentMarker(user, demoSnapshotAt, { interactive: !drawing })?.addTo(group);
+    });
+    return () => { group.remove(); };
+  }, [geofence, showResidents, drawing]);
+
+  useEffect(() => {
+    const map = mapRef.current;
     if (!map || !drawing) return;
     const addPoint = (event: L.LeafletMouseEvent) => {
       onGeofencePointRef.current({ lat: event.latlng.lat, lng: event.latlng.lng });
@@ -156,7 +198,7 @@ export const OperationsMap = forwardRef<OperationsMapHandle, OperationsMapProps>
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !geofence) return;
+    if (!map || !geofence || !drawing) return;
     const group = L.layerGroup().addTo(map);
     const coordinates = geofence.points.map((point) => L.latLng(point.lat, point.lng));
     const style: L.PathOptions = { color: '#dceef2', fillColor: '#b8dce4', weight: 2, fillOpacity: .13, dashArray: drawing ? '6 5' : undefined, interactive: false, className: 'ops-geofence-boundary' };

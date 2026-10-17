@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { geoFenceOptions, messageTemplates, targetGroups, type MessagePriority } from '../lib/dashboard-data';
 import { formatCompactNumber, formatFullNumber } from '../lib/formatting';
 import { formatGeofenceArea, isAlertGeofence, type AlertGeofence } from '../lib/geofencing';
+import type { AudienceFilter } from '../lib/residents';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Label } from './ui/label';
@@ -19,6 +20,7 @@ export interface OutboundMessageDraft {
   geoFenceId: string;
   templateLabel?: string;
   geofence?: AlertGeofence;
+  appAudience?: AudienceFilter;
 }
 
 interface MessagingPanelProps {

@@ -100,12 +100,13 @@ export function MessageHistory({ messages }: MessageHistoryProps) {
                   </div>
                   <div className={`flex items-center gap-1 text-xs ${statusConfig.color}`}>
                     {statusConfig.icon}
-                    <span>{statusConfig.label}</span>
+                    <span>{message.audience?.mode === 'demo' && message.status === 'delivered' ? 'SIMULATED' : statusConfig.label}</span>
                   </div>
                 </div>
 
                 <p className="text-sm text-slate-300">{message.content}</p>
                 {message.geofence && <p className="text-xs text-zinc-400">Drawn boundary: {message.geofence.name} · {message.geofence.shape} · {formatGeofenceArea(message.geofence)} · simulated delivery</p>}
+                {message.audience && <details className="ops-message-audience"><summary>{message.audience.recipientIds.length} saved recipient IDs · {message.audience.activeOnly ? 'active users only' : 'active & recent users'}</summary><p>Location snapshot: {new Date(message.audience.locationSnapshotAt).toLocaleString('en-PH')} · {message.audience.activeCount} active recipients · {message.audience.excludedCount} excluded</p><p>{message.audience.recipientIds.join(', ')}</p></details>}
 
                 <div className="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-2 border-t border-slate-800 pt-2 text-xs">
                   <div>

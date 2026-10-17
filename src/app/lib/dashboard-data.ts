@@ -1,4 +1,5 @@
 import type { AlertGeofence } from './geofencing';
+import type { AudienceSnapshot } from './residents';
 
 const minutesAgo = (minutes: number) => new Date(Date.now() - minutes * 60_000).toISOString();
 const hoursAgo = (hours: number) => new Date(Date.now() - hours * 3_600_000).toISOString();
@@ -37,6 +38,7 @@ export interface DashboardMessage {
   createdAt: string;
   recipients: number | null;
   geofence?: AlertGeofence;
+  audience?: AudienceSnapshot;
 }
 
 export interface AuditLogEntry {
