@@ -1,0 +1,23 @@
+E-Ligtas CCTV demo footage
+
+The camera names, locations, alerts, readings, and session timestamps in this
+application are fictional demonstration assignments. These clips are prerecorded
+illustrative footage, not live feeds from the named locations. No actual accident
+is asserted or detected in the road incident clips.
+
+river.mp4 / river.jpg
+Tom Fisk — Drone Footage Of An Overflowing River Causing Flood
+https://www.pexels.com/video/drone-footage-of-an-overflowing-river-causing-flood-3574631/
+
+traffic.mp4 / traffic.jpg
+German Korb — Traffic In a City
+https://www.pexels.com/video/traffic-in-a-city-3684251/
+
+wet-road.mp4 / wet-road.jpg
+Magda Ehlers — Vehicular Traffic On A City Street On A Rainy Day
+https://www.pexels.com/video/vehicular-traffic-on-a-city-street-on-a-rainy-day-2821900/
+
+License: Pexels License, https://www.pexels.com/license/
+Retrieved 2026-10-18. Clips trimmed, resized to 960x540, encoded at 20 fps,
+and muted for the demo wall. Poster images are still frames from each clip.
+The creators and Pexels do not endorse this project.

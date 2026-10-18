@@ -1,11 +1,11 @@
 /* The map-led operations view is scoped separately from the configurable workspace. */
 .ops-app, .ops-dialog, .ops-popover {
   --ops-text: #f0f0f0;
-  --ops-muted: #b8b8b8;
-  --ops-faint: #969696;
+  --ops-muted: #cccccc;
+  --ops-faint: #b8b8b8;
   --ops-line: rgba(255, 255, 255, .2);
   --ops-accent: #dedede;
-  --ops-glass: linear-gradient(135deg, rgba(255, 255, 255, .15), rgba(255, 255, 255, .025) 42%, rgba(255, 255, 255, .055)), rgba(29, 29, 29, .46);
+  --ops-glass: linear-gradient(135deg, rgba(255, 255, 255, .065), rgba(255, 255, 255, .012) 42%, rgba(255, 255, 255, .025)), rgba(27, 27, 27, .94);
   --ops-glass-shadow: inset 0 1px 0 rgba(255, 255, 255, .22), inset 1px 0 0 rgba(255, 255, 255, .055), inset 0 -1px 0 rgba(255, 255, 255, .035), 0 10px 32px rgba(0, 0, 0, .16), 0 2px 6px rgba(0, 0, 0, .08);
   font-family: 'Inter', 'Segoe UI', sans-serif;
   color: var(--ops-text);
@@ -73,7 +73,7 @@
 .ops-demo-badge { font-size: 10px; color: #ababab; border: 1px solid #d2d2d218; border-radius: 4px; padding: 2px 5px; }
 .ops-quick-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
 .ops-quick-stats > button { border: 1px solid var(--ops-line); background: var(--ops-glass); border-radius: 12px; text-align: left; padding: 13px; backdrop-filter: blur(24px) saturate(0); -webkit-backdrop-filter: blur(24px) saturate(0); box-shadow: var(--ops-glass-shadow); }
-.ops-quick-stats > button:hover { background: linear-gradient(135deg, #ffffff20, #ffffff09), #33333370; border-color: #ffffff36; }
+.ops-quick-stats > button:hover { background: linear-gradient(135deg, #ffffff12, #ffffff04), #333333f5; border-color: #ffffff36; }
 .ops-quick-stats button > span:first-child { display: flex; align-items: center; gap: 6px; color: #b9b9b9; font-size: 10px; }
 .ops-quick-stats button > span:first-child svg { color: #b3b3b3; }
 .ops-quick-stats strong { display: block; font-size: 31px; font-weight: 300; line-height: 1; margin: 10px 0 8px; letter-spacing: -.06em; font-variant-numeric: tabular-nums; }
@@ -102,7 +102,7 @@
 .ops-section-heading > button { display: flex; align-items: center; gap: 4px; background: none; border: 0; color: #a9a9a9; font-size: 10px; }
 .ops-team-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .ops-team-card { min-width: 0; text-align: left; border-radius: 12px; border: 1px solid var(--ops-line); background: var(--ops-glass); padding: 12px 11px 10px; overflow: hidden; color: #ebebeb; backdrop-filter: blur(24px) saturate(0); -webkit-backdrop-filter: blur(24px) saturate(0); box-shadow: var(--ops-glass-shadow); }
-.ops-team-card:hover { background: linear-gradient(140deg, #ffffff25, #ffffff08), #37373775; border-color: #ffffff40; }
+.ops-team-card:hover { background: linear-gradient(140deg, #ffffff12, #ffffff04), #373737f5; border-color: #ffffff40; }
 .ops-team-card .ops-card-heading { font-size: 10px; gap: 2px; }
 .ops-team-card .ops-card-heading svg { color: #aeaeae; width: 11px; }
 .ops-team-type { display: block; font-size: 10px; color: #a7a7a7; margin-top: 4px; }
@@ -122,8 +122,8 @@
 .ops-team-location { display: flex; align-items: center; gap: 3px; color: #a9a9a9; font-size: 10px; margin-top: 9px; padding-top: 8px; border-top: 1px solid #ffffff08; }
 .ops-team-location span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ops-team-updated { font-size: 10px; color: #929292; padding-top: 4px; }
-.ops-broadcast-button { display: flex; align-items: center; width: 100%; gap: 9px; background: linear-gradient(120deg, #ffffff17, #ffffff06); border: 1px solid #ffffff26; border-radius: 11px; color: #e6e6e6; padding: 13px 12px; margin-top: 12px; text-align: left; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); box-shadow: inset 0 1px 0 #ffffff0a; }
-.ops-broadcast-button:hover { background: #c7c7c728; }
+.ops-broadcast-button { display: flex; align-items: center; width: 100%; gap: 9px; background: var(--ops-glass); border: 1px solid #ffffff26; border-radius: 11px; color: #e6e6e6; padding: 13px 12px; margin-top: 12px; text-align: left; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); box-shadow: inset 0 1px 0 #ffffff0a; }
+.ops-broadcast-button:hover { background: #3b3b3bf5; }
 .ops-broadcast-icon { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: #cccccc13; color: #cecece; }
 .ops-broadcast-button strong { font-size: 10px; font-weight: 400; display: block; }
 .ops-broadcast-button small { font-size: 10px; color: #a9a9a9; display: block; margin-top: 4px; }
@@ -139,7 +139,7 @@
 .ops-command-card { padding: 11px 13px; }
 .ops-command-card .ops-card-heading h2 { font-size: 11px; gap: 6px; }
 .ops-command-tag { color: #bcbcbc; font-size: 9px; }
-.ops-app .ops-command-note { color: #b4b4b4; font-size: 9px; line-height: 1.5; margin: 6px 0 0; }
+.ops-app .ops-command-note { color: #cccccc; font-size: 9px; line-height: 1.5; margin: 6px 0 0; }
 .ops-reach-metric { display: flex; align-items: center; gap: 10px; margin-top: 8px; font-variant-numeric: tabular-nums; }
 .ops-reach-metric > strong { font-size: 38px; line-height: 1; font-weight: 300; letter-spacing: -.06em; }
 .ops-reach-metric > span { font-size: 11px; color: #e2e2e2; }
@@ -154,7 +154,7 @@
 .ops-command-card .ops-command-link { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; border: 0; border-top: 1px solid #ffffff16; background: transparent; color: #e4e4e4; font-size: 10px; padding: 8px 0 0; margin-top: 8px; text-align: left; }
 .ops-command-link strong { font-weight: 500; margin-left: 3px; }
 .ops-command-card .ops-command-link:hover:not(:disabled) { color: #fff; }
-.ops-command-sidebar button:disabled { opacity: .5; cursor: not-allowed; }
+.ops-command-sidebar button:disabled { opacity: .7; cursor: not-allowed; }
 .ops-app .ops-unlocated-note { margin-top: 7px; font-size: 9px; }
 .ops-quick-audience-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 5px; margin-top: 8px; }
 .ops-quick-audience-grid > button { display: flex; align-items: center; gap: 5px; padding: 6px 7px; border: 1px solid #ffffff18; border-radius: 7px; background: #ffffff04; color: #d8d8d8; min-width: 0; text-align: left; }
@@ -186,15 +186,15 @@
 .ops-map-heading h1 > span { color: #cecece; }
 .ops-title-break { display: none; }
 .ops-map-tools { display: flex; gap: 7px; pointer-events: auto; }
-.ops-region, .ops-map-tool { display: inline-flex; align-items: center; gap: 7px; padding: 7px 11px; background: linear-gradient(135deg, #ffffff16, #ffffff04), #29292978; border: 1px solid #ffffff2b; border-radius: 7px; font-size: 10px; color: #e0e0e0; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); box-shadow: inset 0 1px 0 #ffffff0c; }
+.ops-region, .ops-map-tool { display: inline-flex; align-items: center; gap: 7px; padding: 7px 11px; background: var(--ops-glass); border: 1px solid #ffffff2b; border-radius: 7px; font-size: 10px; color: #ededed; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); box-shadow: inset 0 1px 0 #ffffff0c; }
 .ops-region { position: relative; padding-right: 26px; }
 .ops-region select { appearance: none; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; outline-offset: 7px; }
 .ops-region option, .ops-incident-toolbar option { background: #262626; color: #e8e8e8; }
 .ops-region > svg:last-child { position: absolute; right: 8px; pointer-events: none; }
 .ops-map-tool span { font-size: 10px; color: #c6c6c6; margin-left: 2px; }
 .ops-map-filters { display: flex; align-items: center; gap: 5px; margin-top: 18px; pointer-events: auto; }
-.ops-map-filters button { font-size: 10px; color: #cacaca; background: #1d1d1d55; border: 1px solid #ffffff12; border-radius: 20px; padding: 5px 10px; backdrop-filter: blur(8px); }
-.ops-map-filters button:hover, .ops-map-filters button.is-active { color: #e8e8e8; background: #c4c4c423; border-color: #d1d1d149; }
+.ops-map-filters button { font-size: 10px; color: #dedede; background: #242424ef; border: 1px solid #ffffff20; border-radius: 20px; padding: 5px 10px; backdrop-filter: blur(8px); }
+.ops-map-filters button:hover, .ops-map-filters button.is-active { color: #fff; background: #474747f5; border-color: #d1d1d170; }
 .ops-alerts { position: absolute; z-index: 3; top: 28px; right: 23px; width: 260px; padding: 16px 13px 0; }
 .ops-alerts .ops-card-heading h2 { font-size: 11px; }
 .ops-alert-dot { display: inline-block; width: 5px; height: 5px; background: #eda08c; border-radius: 50%; }
@@ -259,7 +259,7 @@
 .ops-priority-footer { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: auto; padding-top: 9px; color: #b3b3b3; font-size: 10px; }
 .ops-priority-footer button { display: inline-flex; align-items: center; gap: 5px; border: 0; border-radius: 4px; background: transparent; color: #ededed; font-size: 10px; padding: 2px 0 2px 5px; }
 .ops-priority-footer button:hover { color: #fff; background: #ffffff0d; }
-.ops-footer { position: relative; z-index: 2; height: 34px; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; border-top: 1px solid #ffffff14; background: #25252580; backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px); color: #b5b5b5; font-size: 10px; }
+.ops-footer { position: relative; z-index: 2; height: 34px; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; border-top: 1px solid #ffffff14; background: #222222f0; backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px); color: #cccccc; font-size: 10px; }
 .ops-footer > div { display: flex; align-items: center; gap: 8px; }
 .ops-footer-separator { margin: 0 3px; opacity: .4; }
 .ops-footer .ops-map-legend { gap: 18px; }
@@ -271,12 +271,12 @@
 .ops-clock { font-variant-numeric: tabular-nums; letter-spacing: .06em; }
 .ops-clock span { margin-left: 6px; opacity: .7; font-size: 10px; }
 .ops-footer .ops-small-icon { margin-left: 8px; }
-.ops-popover { width: 220px; padding: 17px; background: linear-gradient(135deg, #ffffff15, transparent), #292929d9; backdrop-filter: blur(30px) saturate(0); -webkit-backdrop-filter: blur(30px) saturate(0); border: 1px solid #ffffff30; border-radius: 12px; box-shadow: var(--ops-glass-shadow); z-index: 60; }
+.ops-popover { width: 220px; padding: 17px; background: linear-gradient(135deg, #ffffff0c, transparent), #292929f5; backdrop-filter: blur(30px) saturate(0); -webkit-backdrop-filter: blur(30px) saturate(0); border: 1px solid #ffffff30; border-radius: 12px; box-shadow: var(--ops-glass-shadow); z-index: 60; }
 .ops-popover h3 { font-size: 12px; font-weight: 500; margin-bottom: 14px; }
 .ops-popover label { display: flex; align-items: center; gap: 9px; padding: 8px 0; font-size: 11px; font-weight: 400; color: #cccccc; cursor: pointer; }
 .ops-popover input { accent-color: #cbcbcb; width: 14px; height: 14px; }
 .ops-popover p { margin-top: 12px; font-size: 10px; line-height: 1.5; color: #a9a9a9; }
-.ops-dialog { display: flex; flex-direction: column; gap: 20px; width: min(1000px, calc(100vw - 40px)); max-width: none !important; max-height: calc(100dvh - 64px); padding: 28px; border: 1px solid #ffffff30; border-radius: 18px; background: linear-gradient(130deg, #ffffff12, transparent 60%), #252525c9; backdrop-filter: blur(36px) saturate(0); -webkit-backdrop-filter: blur(36px) saturate(0); box-shadow: inset 0 1px 0 #ffffff17, 0 25px 100px #0007; }
+.ops-dialog { display: flex; flex-direction: column; gap: 20px; width: min(1000px, calc(100vw - 40px)); max-width: none !important; max-height: calc(100dvh - 64px); padding: 28px; border: 1px solid #ffffff30; border-radius: 18px; background: linear-gradient(130deg, #ffffff09, transparent 60%), #252525fa; backdrop-filter: blur(36px) saturate(0); -webkit-backdrop-filter: blur(36px) saturate(0); box-shadow: inset 0 1px 0 #ffffff17, 0 25px 100px #0007; }
 .ops-dialog--compact { width: min(560px, calc(100vw - 32px)); }
 .ops-dialog [data-slot='dialog-header'] { text-align: left; gap: 10px; }
 .ops-dialog [data-slot='dialog-title'] { font-size: 27px; font-weight: 300; letter-spacing: -.04em; margin-top: 3px; }
@@ -550,7 +550,7 @@
 .ops-population-footer { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 9px; color: #bcbcbc; margin-top: 10px; }
 .ops-population-footer button { display: flex; align-items: center; gap: 4px; background: none; border: 0; color: #eee; font-size: 10px; white-space: nowrap; }
 .ops-population-footer button:disabled { opacity: .55; cursor: default; }
-.ops-population-note { font-size: 9px; color: #aaa; line-height: 1.5; margin-top: 8px !important; }
+.ops-population-note { font-size: 9px; color: #c4c4c4; line-height: 1.5; margin-top: 8px !important; }
 .ops-population-empty { min-height: 137px; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 12px; }
 .ops-population-empty p { color: #ccc; font-size: 11px; line-height: 1.65; }
 .ops-user-popup .leaflet-popup-content-wrapper, .ops-user-popup .leaflet-popup-tip { background: #252b2c; color: #efefef; border: 1px solid #ffffff28; }
@@ -679,6 +679,55 @@
   .ops-quick-audience-grid > button { min-height: 44px; padding: 10px; }
   .ops-quick-audience-grid > button > span { font-size: 11px; }
   .ops-quick-audience-grid > button > strong { font-size: 17px; }
+}
+
+/* Vehicle routes are separate from incident and geofence layers. */
+.ops-route-vehicle, .ops-route-destination { background: none; border: 0; }
+.ops-vehicle-body { position: relative; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; border: 1.5px solid var(--route-color); background: radial-gradient(circle at 35% 25%, #394652, #1c242c 75%); color: var(--route-color); box-shadow: 0 2px 4px #0009, 0 5px 14px #0007, inset 0 1px 0 #ffffff25; }
+.ops-vehicle-body > .ops-vehicle-glyph { width: 24px; height: 36px; position: relative; transform-origin: center; filter: drop-shadow(0 1px 1px #0009); }
+.ops-vehicle-heading { position: absolute; left: 16px; top: -9px; width: 9px; height: 8px; background: var(--route-color); clip-path: polygon(50% 0, 100% 100%, 50% 75%, 0 100%); transform-origin: 4.5px 29.5px; }
+.ops-vehicle-label { position: absolute; top: 47px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 5px; width: max-content; padding: 4px 7px; border: 1px solid #ffffff30; border-radius: 5px; background: #20272dfa; color: #f7f9fb; font: 500 10px/1.3 'Inter', sans-serif; letter-spacing: .01em; box-shadow: 0 2px 5px #0005; }
+.ops-vehicle-label > i { width: 4px; height: 4px; border-radius: 50%; }
+.ops-route-vehicle.is-selected .ops-vehicle-body { box-shadow: 0 0 0 4px #ffffff20, 0 0 0 5px #ffffff35, 0 4px 14px #000b; }
+.ops-route-vehicle:focus-visible { outline: 2px solid #fff; outline-offset: 6px; border-radius: 50%; }
+.ops-route-vehicle.is-arrived .ops-vehicle-heading { display: none; }
+.ops-route-destination > span { display: grid; place-items: center; width: 28px; height: 28px; color: var(--route-color); background: #192129f5; border: 2px solid var(--route-color); border-radius: 50% 50% 50% 2px; box-shadow: 0 3px 8px #0007; }
+.ops-route-destination svg { height: 17px; width: 17px; }
+.ops-route-target-label { font-weight: 500 !important; }
+.ops-map-controls { flex-wrap: wrap; }
+.ops-map-controls > .ops-route-playback { gap: 3px; }
+.ops-map-controls .ops-route-playback-label { background: none; height: auto; width: auto; margin: 0 5px; font-size: 10px; color: #dedede; white-space: nowrap; }
+.ops-map-controls .ops-ambulance-shortcut { display: flex; gap: 6px; padding: 0 7px; font-size: 10px; color: #ffd2dd; border-left: 1px solid #ffffff25; margin-left: 3px; border-radius: 0 5px 5px 0; }
+.ops-route-playback button:disabled { opacity: .65; cursor: not-allowed; }
+.ops-selection.ops-route-detail { top: 28px; bottom: auto; right: 23px; left: auto; width: 260px; max-height: calc(100% - 300px); overflow-y: auto; padding: 14px; }
+.ops-route-demo { color: #cecece; font-size: 9px; letter-spacing: .1em; }
+.ops-route-title { display: flex; gap: 10px; align-items: center; margin-top: 9px; }
+.ops-route-title > span { display: grid; place-items: center; border: 1px solid #ffffff25; background: #ffffff05; width: 36px; height: 36px; border-radius: 9px; }
+.ops-route-title h2 { font-size: 15px; margin: 0; }
+.ops-route-title small { display: block; font-size: 10px; color: #c8c8c8; margin-top: 3px; }
+.ops-route-assignment { display: flex; align-items: center; gap: 6px; font-size: 10px; color: #d2d2d2; margin-top: 11px; }
+.ops-route-target { display: flex; align-items: center; gap: 10px; border: 1px solid #ffffff25; background: #ffffff05; border-radius: 7px; padding: 9px; margin-top: 10px; }
+.ops-route-target small { display: block; font-size: 8px; color: #c4c4c4; letter-spacing: .09em; }
+.ops-route-target strong { display: block; font-size: 11px; font-weight: 500; line-height: 1.5; margin-top: 2px; }
+.ops-route-metrics { display: grid; grid-template-columns: 1fr 1fr; margin: 12px 0 0; }
+.ops-route-metrics > div + div { border-left: 1px solid #ffffff20; padding-left: 14px; }
+.ops-route-metrics dt { color: #c8c8c8; font-size: 10px; }
+.ops-route-metrics dd { color: #f3f3f3; font-size: 20px; line-height: 1.3; font-weight: 300; margin: 4px 0 0; font-variant-numeric: tabular-nums; }
+.ops-route-progress { height: 4px; border-radius: 4px; overflow: hidden; background: #ffffff20; margin-top: 11px; }
+.ops-route-progress > span { display: block; height: 100%; border-radius: inherit; }
+.ops-route-actions { display: flex; justify-content: space-between; gap: 8px; margin-top: 11px; }
+.ops-route-actions > button { display: flex; gap: 5px; align-items: center; justify-content: center; border: 1px solid #ffffff28; border-radius: 6px; background: #ffffff07; color: #ededed; font-size: 10px; padding: 6px 9px; }
+.ops-route-actions > button:hover { background: #ffffff15; }
+.ops-route-detail p.ops-route-note { font-size: 9px; line-height: 1.5; color: #c2c2c2; margin-top: 9px; }
+@media (min-width: 901px) and (max-width: 1100px) {
+  .ops-selection.ops-route-detail { width: 220px; right: 18px; }
+}
+@media (max-width: 900px) {
+  .ops-map, .ops-map-shade { height: 685px; }
+  .ops-map-heading { height: 490px; }
+  .ops-selection.ops-route-detail { position: relative; inset: auto; width: auto; max-height: none; order: 0; padding: 17px; }
+  .ops-route-actions > button { min-height: 40px; padding: 8px 15px; }
+  .ops-route-target strong { font-size: 13px; }
 }
 
 /* Solid surfaces preserve contrast on devices without backdrop filtering. */

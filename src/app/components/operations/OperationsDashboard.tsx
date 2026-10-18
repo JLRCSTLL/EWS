@@ -2,8 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Activity, ArrowUpRight, Bell, ChevronDown, ChevronRight,
   CircleHelp, Crosshair, Expand, Flame, Layers, LayoutGrid, MapPin, Minus,
-  Mountain, PenLine, Plus, Radio, Search, Send, ShieldCheck,
-  Users, Waves, Wind, X,
+  Ambulance, Mountain, Pause, PenLine, Play, Plus, Radio, RotateCcw, Search, Send, ShieldCheck,
+  Users, Video, Waves, Wind, X,
 } from 'lucide-react';
 import { Toaster } from 'sonner';
 import {
@@ -28,6 +28,9 @@ import { GeofenceTools } from './GeofenceTools';
 import { PopulationPanel } from './PopulationPanel';
 import { AudienceBroadcastPanel } from './AudienceBroadcastPanel';
 import { CommandSidebar } from './CommandSidebar';
+import { ResponderRouteCard } from './ResponderRouteCard';
+import { CctvMonitoring } from './CctvMonitoring';
+import { RESPONDER_DEMO_DURATION, responderRoutes } from '../../lib/responder-routes';
 import { demoGeofences, type AudienceGroup } from '../../lib/residents';
 import { getGeofenceError, isAlertGeofence, type AlertGeofence, type GeofenceGeometry, type GeofencePoint, type GeofenceShape } from '../../lib/geofencing';
 
@@ -88,6 +91,7 @@ function IncidentIcon({ event }: { event: DisasterEvent }) {
 
 function TeamCard({ team, onSelect }: { team: ResponderTeam; onSelect: () => void }) {
   const active = team.status === 'deployed' || team.status === 'active';
+  const route = responderRoutes.find(item => item.teamId === team.id);
   return <button className="ops-team-card" onClick={onSelect} aria-label={`Locate ${team.name}`}>
     <div className="ops-card-heading"><span>{team.name}</span><ArrowUpRight size={13} /></div>
     <span className="ops-team-type">{team.type}</span>
@@ -96,8 +100,8 @@ function TeamCard({ team, onSelect }: { team: ResponderTeam; onSelect: () => voi
       <div className="ops-team-personnel"><strong>{team.personnel}</strong><span>personnel</span></div>
     </div>
     <div className="ops-team-meta"><span className={active ? 'ops-status' : 'ops-status is-muted'}><i />{team.status}</span><Radio size={12} /></div>
-    <div className="ops-team-location"><MapPin size={10} /><span>{team.location}</span></div>
-    <div className="ops-team-updated">Updated {formatRelativeTime(team.lastUpdateAt)}</div>
+    <div className="ops-team-location" title={route?.destination || team.location}><MapPin size={10} /><span>{route ? `To ${route.destination}` : team.location}</span></div>
+    <div className="ops-team-updated">{route ? `${route.label} · demo route` : `Updated ${formatRelativeTime(team.lastUpdateAt)}`}</div>
   </button>;
 }
 
@@ -115,6 +119,7 @@ function OperationsClock() {
 
 export function OperationsDashboard({ auditLogs, messages, onSendMessage, onOpenWorkspace, onFullscreen, isFullscreen }: Props) {
   const [section, setSection] = useState<Section>(null);
+  const [activeView, setActiveView] = useState<'map' | 'cctv'>(() => window.location.hash === '#/cctv' ? 'cctv' : 'map');
   const [region, setRegion] = useState<Region>('metro-manila');
   const [filter, setFilter] = useState<IncidentFilter>('all');
   const [selection, setSelection] = useState<MapSelection | null>(null);
@@ -131,6 +136,11 @@ export function OperationsDashboard({ auditLogs, messages, onSendMessage, onOpen
   const [broadcastGroup, setBroadcastGroup] = useState<AudienceGroup>('all');
   const [broadcastActiveOnly, setBroadcastActiveOnly] = useState(true);
   const [showResidents, setShowResidents] = useState(true);
+  const [simulationPaused, setSimulationPaused] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const [simulationReplay, setSimulationReplay] = useState(0);
+  const [simulationElapsed, setSimulationElapsed] = useState(0);
+  const simulationFinished = simulationElapsed >= RESPONDER_DEMO_DURATION;
+  const selectedRoute = selection?.kind === 'responder' ? responderRoutes.find(route => route.teamId === selection.id) : null;
   const [fenceEditor, setFenceEditor] = useState(false);
   const [fenceDraft, setFenceDraft] = useState<GeofenceGeometry | null>(null);
   const [draftName, setDraftName] = useState('');
@@ -153,6 +163,19 @@ export function OperationsDashboard({ auditLogs, messages, onSendMessage, onOpen
     if (geofences.every(isAlertGeofence)) localStorage.setItem(GEOFENCE_STORAGE_KEY, JSON.stringify(geofences));
   }, [geofences]);
   useEffect(() => { localStorage.setItem('ecc-map-selected-geofence', JSON.stringify(selectedFenceId)); }, [selectedFenceId]);
+
+  useEffect(() => {
+    const syncView = () => { setActiveView(window.location.hash === '#/cctv' ? 'cctv' : 'map'); setSection(null); };
+    window.addEventListener('popstate', syncView);
+    window.addEventListener('hashchange', syncView);
+    return () => { window.removeEventListener('popstate', syncView); window.removeEventListener('hashchange', syncView); };
+  }, []);
+  useEffect(() => { document.title = activeView === 'cctv' ? 'CCTV Monitoring — E-Ligtas' : 'E-Ligtas — Emergency Operations'; }, [activeView]);
+  const openView = (view: 'map' | 'cctv') => {
+    const hash = view === 'cctv' ? '#/cctv' : '';
+    if (window.location.hash !== hash) window.history.pushState(null, '', `${window.location.pathname}${window.location.search}${hash}`);
+    setActiveView(view); setSection(null);
+  };
 
   const reviewRecipients = (group: AudienceGroup = 'all', activeOnly = true) => {
     setBroadcastGroup(group); setBroadcastActiveOnly(activeOnly); setBroadcastTab('compose'); setSection('broadcast');
@@ -192,6 +215,7 @@ export function OperationsDashboard({ auditLogs, messages, onSendMessage, onOpen
   }, []);
 
   const locate = (next: MapSelection) => {
+    openView('map');
     const event = disasterEvents.find((item) => item.id === next.id);
     if (event && event.lat >= 15) setRegion('all');
     if (next.kind === 'incident') setFilter('all');
@@ -208,32 +232,36 @@ export function OperationsDashboard({ auditLogs, messages, onSendMessage, onOpen
     }
   };
   const changeFilter = (value: IncidentFilter) => { setFilter(value); setSelection(null); };
+  const replayRoutes = () => { setLayers(current => ({ ...current, responders: true })); setSimulationElapsed(0); setSimulationReplay(value => value + 1); setSimulationPaused(false); };
+  const toggleRoutes = () => { if (simulationFinished) replayRoutes(); else if (!layers.responders) { setLayers(current => ({ ...current, responders: true })); setSimulationPaused(false); } else setSimulationPaused(value => !value); };
 
-  return <div className="ops-app">
-    <a className="ops-skip-link" href="#operations-main">Skip to operations</a>
+  return <div className={`ops-app${activeView === 'cctv' ? ' ops-app--cctv' : ''}`}>
+    <a className="ops-skip-link" href={activeView === 'cctv' ? '#cctv-main' : '#operations-main'} onClick={event => { event.preventDefault(); document.getElementById(activeView === 'cctv' ? 'cctv-main' : 'operations-main')?.focus(); }}>Skip to operations</a>
     <OperationsMap ref={mapRef} incidents={incidents} layers={layers} region={region} basemap={basemap} selection={selection} onSelect={setSelection}
       geofence={fenceDraft || alertGeofence} drawing={!!fenceDraft} onGeofencePoint={addFencePoint}
       areas={geofences} selectedAreaId={selectedFenceId} onSelectGeofence={selectFence} showResidents={showResidents}
+      simulationPaused={simulationPaused || activeView === 'cctv'} simulationReplay={simulationReplay} onSimulationTick={setSimulationElapsed}
       onGeofenceMove={(index, point) => setFenceDraft((current) => current ? { ...current, points: current.points.map((previous, i) => i === index ? point : previous) } : current)} />
     <header className="ops-header">
-      <button className="ops-brand" onClick={() => { setSection(null); setSelection(null); mapRef.current?.reset(); }} aria-label="E-Ligtas home">
+      <button className="ops-brand" onClick={() => { openView('map'); setSelection(null); mapRef.current?.reset(); }} aria-label="E-Ligtas home">
         <span className="ops-brand-mark"><ShieldCheck size={23} strokeWidth={1.35} /></span>
         <span>E-LIGTAS<span className="ops-brand-caption">EARLY WARNING SYSTEM</span></span>
       </button>
       <nav className="ops-nav" aria-label="Main navigation">
-        <button className={!section ? 'is-active' : ''} aria-current={!section ? 'page' : undefined} onClick={() => setSection(null)}>Live overview<span className="ops-live-dot" /></button>
+        <button className={activeView === 'map' && !section ? 'is-active' : ''} aria-current={activeView === 'map' && !section ? 'page' : undefined} onClick={() => openView('map')}>Live overview<span className="ops-live-dot" /></button>
+        <button className={activeView === 'cctv' && !section ? 'is-active' : ''} aria-current={activeView === 'cctv' && !section ? 'page' : undefined} onClick={() => openView('cctv')}><Video size={12} />CCTV</button>
         {navigation.map(([id, label]) => <button key={id} className={section === id ? 'is-active' : ''} onClick={() => setSection(id)}>{label}{id === 'incidents' && <span className="ops-nav-count">{regionalIncidents.length}</span>}</button>)}
         <button onClick={onOpenWorkspace}>Workspace<ArrowUpRight size={12} /></button>
       </nav>
       <div className="ops-header-actions">
         <button className="ops-search-button" onClick={() => setSection('search')} aria-label="Search operations"><Search size={15} /><span>Search anything</span><kbd>⌘ K</kbd></button>
         <span className="ops-header-divider" />
-        <button className="ops-icon-button ops-notifications" onClick={() => setAlertsVisible((value) => !value)} aria-label={alertsVisible ? 'Hide priority alerts' : 'Show priority alerts'} aria-pressed={alertsVisible}><Bell size={17} /><i /></button>
+        <button className="ops-icon-button ops-notifications" onClick={() => { if (activeView === 'cctv') { openView('map'); setAlertsVisible(true); } else setAlertsVisible((value) => !value); }} aria-label={activeView === 'map' && alertsVisible ? 'Hide priority alerts' : 'Show priority alerts'} aria-pressed={activeView === 'map' && alertsVisible}><Bell size={17} /><i /></button>
         <button className="ops-avatar" onClick={() => setSection('users')} aria-label="Open team and access">MS</button>
       </div>
     </header>
 
-    <main id="operations-main" className="ops-main" tabIndex={-1}>
+    <main id="operations-main" className="ops-main" tabIndex={-1} style={activeView === 'cctv' ? { display: 'none' } : undefined}>
       <div className="ops-mobile-heading"><span>Emergency operations</span><span className="ops-demo-badge">Demo data</span></div>
       <CommandSidebar saved={alertGeofence} draft={fenceDraft} messages={messages} onReview={reviewRecipients}
         onChooseArea={() => setFenceEditor(true)} onHistory={() => { setBroadcastTab('history'); setSection('broadcast'); }} />
@@ -267,7 +295,7 @@ export function OperationsDashboard({ auditLogs, messages, onSendMessage, onOpen
         onFocus={() => mapRef.current?.focusGeofence()}
         onBroadcast={() => reviewRecipients()} />}
 
-      {alertsVisible && !fenceEditor && <aside className="ops-alerts ops-glass" aria-label="Priority alerts">
+      {alertsVisible && !fenceEditor && !selectedRoute && <aside className="ops-alerts ops-glass" aria-label="Priority alerts">
         <div className="ops-card-heading"><h2><span className="ops-alert-dot" />Priority alerts<span className="ops-count-badge">{priorityIncidents.length}</span></h2><button className="ops-small-icon" onClick={() => setAlertsVisible(false)} aria-label="Close priority alerts"><X size={14} /></button></div>
         <div className="ops-alerts-caption">Events that need your attention</div>
         {priorityIncidents.map((event) => <article key={event.id} className={`ops-alert-card severity-${event.severity}`}>
@@ -277,12 +305,17 @@ export function OperationsDashboard({ auditLogs, messages, onSendMessage, onOpen
         <button className="ops-all-alerts" onClick={() => { changeFilter('all'); setSection('incidents'); }}>View all {regionalIncidents.length} incidents<ChevronRight size={13} /></button>
       </aside>}
 
-      {selected && <section className="ops-selection ops-glass" aria-label="Selected map location">
+      {selectedRoute && !fenceEditor && <ResponderRouteCard route={selectedRoute} elapsed={simulationElapsed} paused={simulationPaused || !layers.responders}
+        onToggle={toggleRoutes} onReplay={replayRoutes} onClose={() => setSelection(null)}
+        onFocus={() => { setLayers(current => ({ ...current, responders: true })); mapRef.current?.focusRoute(selectedRoute.teamId); }} />}
+      {selected && !selectedRoute && <section className="ops-selection ops-glass" aria-label="Selected map location">
         <div className="ops-card-heading"><span className="ops-selection-kind">{selection?.kind} details</span><button className="ops-small-icon" onClick={() => setSelection(null)} aria-label="Close location details"><X size={14} /></button></div>
         <h2>{selected.name}</h2><p><MapPin size={12} />{selected.location}</p><p>{selected.detail}</p><span className="ops-selection-status" style={{ color: selected.color }}><i style={{ background: selected.color }} />{selected.status.replaceAll('-', ' ')}</span>
       </section>}
 
-      <div className="ops-map-controls" aria-label="Map controls"><div><button onClick={() => mapRef.current?.zoomIn()} aria-label="Zoom in"><Plus size={17} /></button><button onClick={() => mapRef.current?.zoomOut()} aria-label="Zoom out"><Minus size={17} /></button><span /><button onClick={() => { setSelection(null); mapRef.current?.reset(); }} aria-label="Reset map view"><Crosshair size={17} /></button><button onClick={onFullscreen} aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}><Expand size={16} /></button></div><div className="ops-basemap-controls"><button className={basemap === 'satellite' ? 'is-active' : ''} aria-pressed={basemap === 'satellite'} onClick={() => setBasemap('satellite')}>Satellite</button><button className={basemap === 'street' ? 'is-active' : ''} aria-pressed={basemap === 'street'} onClick={() => setBasemap('street')}>Street</button></div></div>
+      <div className="ops-map-controls" aria-label="Map controls"><div><button onClick={() => mapRef.current?.zoomIn()} aria-label="Zoom in"><Plus size={17} /></button><button onClick={() => mapRef.current?.zoomOut()} aria-label="Zoom out"><Minus size={17} /></button><span /><button onClick={() => { setSelection(null); mapRef.current?.reset(); }} aria-label="Reset map view"><Crosshair size={17} /></button><button onClick={onFullscreen} aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}><Expand size={16} /></button></div><div className="ops-basemap-controls"><button className={basemap === 'satellite' ? 'is-active' : ''} aria-pressed={basemap === 'satellite'} onClick={() => setBasemap('satellite')}>Satellite</button><button className={basemap === 'street' ? 'is-active' : ''} aria-pressed={basemap === 'street'} onClick={() => setBasemap('street')}>Street</button></div>
+        <div className="ops-route-playback"><span className="ops-route-playback-label">Demo routes · 8×</span><button onClick={toggleRoutes} disabled={!!fenceDraft || !layers.responders} aria-label={simulationFinished ? 'Replay responder simulation' : simulationPaused ? 'Play responder simulation' : 'Pause responder simulation'}>{simulationFinished ? <RotateCcw size={14} /> : simulationPaused ? <Play size={14} /> : <Pause size={14} />}</button><button onClick={replayRoutes} disabled={!!fenceDraft || !layers.responders} aria-label="Restart responder routes"><RotateCcw size={13} /></button><button className="ops-ambulance-shortcut" disabled={!!fenceDraft} onClick={() => { setFenceEditor(false); locate({ kind: 'responder', id: 'team-2' }); }}><Ambulance size={15} />Ambulance</button></div>
+      </div>
 
       <div className="ops-bottom-panels">
         <PopulationPanel saved={alertGeofence} draft={fenceDraft} onReview={reviewRecipients} onChooseArea={() => setFenceEditor(true)} />
@@ -313,6 +346,10 @@ export function OperationsDashboard({ auditLogs, messages, onSendMessage, onOpen
         </section>
       </div>
     </main>
+
+    {activeView === 'cctv' && <CctvMonitoring areas={geofences}
+      onOpenArea={id => { openView('map'); setSelectedFenceId(id); setFenceDraft(null); setFenceEditor(true); setSelection(null); requestAnimationFrame(() => mapRef.current?.focusGeofence()); }}
+      onPreviewAlert={id => { setSelectedFenceId(id); reviewRecipients(); }} />}
 
     <footer className="ops-footer"><div><ShieldCheck size={12} /><span>E-Ligtas command center</span><span className="ops-footer-separator">/</span><span>Demo workspace</span></div><div className="ops-map-legend"><span><i className="ops-legend-incident" />Incidents</span><span><i className="ops-legend-team" />Responders</span><span><i className="ops-legend-site" />Facilities</span></div><div><OperationsClock /><button className="ops-small-icon" aria-label="Help and keyboard shortcuts" onClick={() => setSection('help')}><CircleHelp size={14} /></button></div></footer>
 

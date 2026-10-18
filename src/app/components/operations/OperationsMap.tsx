@@ -6,6 +6,8 @@ import { getSelection, severityColors, type MapLayers, type MapSelection, type R
 import { geofenceDistance, type AlertGeofence, type GeofenceGeometry, type GeofencePoint } from '../../lib/geofencing';
 import { demoResidents, demoSnapshotAt, getExposure } from '../../lib/residents';
 import { fenceLayer, residentMarker } from './resident-map';
+import { responderRoutes } from '../../lib/responder-routes';
+import { useResponderRoutes } from './useResponderRoutes';
 
 export interface OperationsMapHandle {
   zoomIn: () => void;
@@ -13,6 +15,7 @@ export interface OperationsMapHandle {
   reset: () => void;
   addCenterPoint: () => void;
   focusGeofence: () => void;
+  focusRoute: (teamId: string) => void;
 }
 
 interface OperationsMapProps {
@@ -30,17 +33,31 @@ interface OperationsMapProps {
   selectedAreaId: string | null;
   onSelectGeofence: (id: string) => void;
   showResidents: boolean;
+  simulationPaused: boolean;
+  simulationReplay: number;
+  onSimulationTick: (elapsed: number) => void;
 }
 
 const incidentCodes = { typhoon: 'TY', flood: 'FL', earthquake: 'EQ', landslide: 'LS', fire: 'FR' };
 const escapeHtml = (text: string) => text.replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]!);
 const mapHome = (map: L.Map, region: Region) => {
   if (region === 'all') map.fitBounds([[14.38, 120.45], [16.62, 121.38]], { padding: [80, 80] });
-  else map.setView([14.64, 121.025], 11, { animate: false });
+  else map.setView([14.60, 121.025], 11, { animate: false });
 };
 
+function focusRoute(map: L.Map, teamId: string) {
+  const route = responderRoutes.find(item => item.teamId === teamId);
+  if (!route) return;
+  const desktop = map.getSize().x > 900;
+  map.fitBounds(L.latLngBounds(route.points), {
+    paddingTopLeft: desktop ? [325, 225] : [25, 240],
+    paddingBottomRight: desktop ? [285, 285] : [25, 155],
+    maxZoom: 15, animate: false,
+  });
+}
+
 export const OperationsMap = forwardRef<OperationsMapHandle, OperationsMapProps>(function OperationsMap(
-  { incidents, layers, region, basemap, selection, onSelect, geofence, drawing, onGeofencePoint, onGeofenceMove, areas, selectedAreaId, onSelectGeofence, showResidents }, ref,
+  { incidents, layers, region, basemap, selection, onSelect, geofence, drawing, onGeofencePoint, onGeofenceMove, areas, selectedAreaId, onSelectGeofence, showResidents, simulationPaused, simulationReplay, onSimulationTick }, ref,
 ) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -59,6 +76,7 @@ export const OperationsMap = forwardRef<OperationsMapHandle, OperationsMapProps>
     zoomIn: () => mapRef.current?.zoomIn(),
     zoomOut: () => mapRef.current?.zoomOut(),
     reset: () => { if (mapRef.current) mapHome(mapRef.current, region); },
+    focusRoute: (teamId) => { if (mapRef.current) focusRoute(mapRef.current, teamId); },
     addCenterPoint: () => {
       const point = mapRef.current?.getCenter();
       if (point && drawing) onGeofencePointRef.current({ lat: point.lat, lng: point.lng });
@@ -87,6 +105,10 @@ export const OperationsMap = forwardRef<OperationsMapHandle, OperationsMapProps>
     observer.observe(containerRef.current);
     return () => { observer.disconnect(); map.stop(); map.remove(); mapRef.current = null; markerLayerRef.current = null; };
   }, []);
+
+  useResponderRoutes({ mapRef, visible: layers.responders, drawing, paused: simulationPaused, replay: simulationReplay,
+    selectedId: selection?.kind === 'responder' ? selection.id : null,
+    onSelect: (id) => onSelectRef.current({ kind: 'responder', id }), onTick: onSimulationTick });
 
   useEffect(() => {
     if (mapRef.current) mapHome(mapRef.current, region);
@@ -138,7 +160,8 @@ export const OperationsMap = forwardRef<OperationsMapHandle, OperationsMapProps>
       }).addTo(group);
       if (layers.incidents) addMarker(event, 'incident', event.title, incidentCodes[event.type], severityColors[event.severity]);
     });
-    if (layers.responders) responderTeams.forEach((team) => addMarker(team, 'responder', team.name, team.name.slice(0, 1), '#d0d0d0'));
+    if (layers.responders) responderTeams.filter(team => !responderRoutes.some(route => route.teamId === team.id))
+      .forEach((team) => addMarker(team, 'responder', team.name, team.name.slice(0, 1), '#d0d0d0'));
     if (layers.infrastructure) infrastructureSites.forEach((site) => addMarker(site, 'infrastructure', site.name, '+', '#aac6d1'));
     if (basemap === 'satellite') [
       { name: 'MANILA BAY', lat: 14.58, lng: 120.8 },
@@ -231,6 +254,10 @@ export const OperationsMap = forwardRef<OperationsMapHandle, OperationsMapProps>
     const item = getSelection(selection);
     const map = mapRef.current;
     if (!item || !map) return;
+    if (selection?.kind === 'responder' && responderRoutes.some(route => route.teamId === selection.id)) {
+      focusRoute(map, selection.id);
+      return;
+    }
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     map.flyTo([item.lat, item.lng], Math.max(map.getZoom(), 12), { animate: !reduceMotion, duration: 0.8 });
   }, [selection]);
