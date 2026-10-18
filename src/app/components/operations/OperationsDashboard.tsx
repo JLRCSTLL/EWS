@@ -27,6 +27,7 @@ import { OperationsMap, type OperationsMapHandle } from './OperationsMap';
 import { GeofenceTools } from './GeofenceTools';
 import { PopulationPanel } from './PopulationPanel';
 import { AudienceBroadcastPanel } from './AudienceBroadcastPanel';
+import { CommandSidebar } from './CommandSidebar';
 import { demoGeofences, type AudienceGroup } from '../../lib/residents';
 import { getGeofenceError, isAlertGeofence, type AlertGeofence, type GeofenceGeometry, type GeofencePoint, type GeofenceShape } from '../../lib/geofencing';
 
@@ -128,6 +129,7 @@ export function OperationsDashboard({ auditLogs, messages, onSendMessage, onOpen
   const [selectedFenceId, setSelectedFenceId] = useState<string | null>(readSelectedGeofence);
   const alertGeofence = geofences.find(area => area.id === selectedFenceId) || null;
   const [broadcastGroup, setBroadcastGroup] = useState<AudienceGroup>('all');
+  const [broadcastActiveOnly, setBroadcastActiveOnly] = useState(true);
   const [showResidents, setShowResidents] = useState(true);
   const [fenceEditor, setFenceEditor] = useState(false);
   const [fenceDraft, setFenceDraft] = useState<GeofenceGeometry | null>(null);
@@ -140,7 +142,6 @@ export function OperationsDashboard({ auditLogs, messages, onSendMessage, onOpen
   const activeTeams = responderTeams.filter((team) => ['deployed', 'active'].includes(team.status));
   const totalPersonnel = responderTeams.reduce((total, team) => total + team.personnel, 0);
   const fieldPersonnel = activeTeams.reduce((total, team) => total + team.personnel, 0);
-  const readiness = fieldPersonnel / totalPersonnel * 100;
   const priorityIncidents = regionalIncidents.filter((event) => ['critical', 'high'].includes(event.severity));
   const searchItems = [
     ...disasterEvents.map((item) => ({ id: item.id, name: item.title, detail: item.location, kind: 'incident' as const })),
@@ -153,8 +154,8 @@ export function OperationsDashboard({ auditLogs, messages, onSendMessage, onOpen
   }, [geofences]);
   useEffect(() => { localStorage.setItem('ecc-map-selected-geofence', JSON.stringify(selectedFenceId)); }, [selectedFenceId]);
 
-  const reviewRecipients = (group: AudienceGroup = 'all') => {
-    setBroadcastGroup(group); setBroadcastTab('compose'); setSection('broadcast');
+  const reviewRecipients = (group: AudienceGroup = 'all', activeOnly = true) => {
+    setBroadcastGroup(group); setBroadcastActiveOnly(activeOnly); setBroadcastTab('compose'); setSection('broadcast');
   };
   const selectFence = (id: string) => {
     setSelectedFenceId(id); setFenceDraft(null); setSelection(null); setFenceEditor(true);
@@ -234,25 +235,8 @@ export function OperationsDashboard({ auditLogs, messages, onSendMessage, onOpen
 
     <main id="operations-main" className="ops-main" tabIndex={-1}>
       <div className="ops-mobile-heading"><span>Emergency operations</span><span className="ops-demo-badge">Demo data</span></div>
-      <aside className="ops-sidebar" aria-label="Operations summary">
-        <div className="ops-sidebar-heading"><span>OPERATIONS AT A GLANCE</span><span className="ops-demo-badge">Demo data</span></div>
-        <div className="ops-quick-stats">
-          <button onClick={() => { changeFilter('all'); setSection('incidents'); }}><span><Activity size={13} />Incidents</span><strong>{String(regionalIncidents.length).padStart(2, '0')}</strong><span className="ops-stat-caption">Under monitoring</span></button>
-          <button onClick={() => setSection('responders')}><span><Users size={13} />Active teams</span><strong>{String(activeTeams.length).padStart(2, '0')}<small> / {responderTeams.length}</small></strong><span className="ops-stat-caption"><i className="ops-live-dot" />In the field</span></button>
-        </div>
-        <section className="ops-glass ops-readiness">
-          <div className="ops-card-heading"><h2>Response readiness</h2><ShieldCheck size={15} /></div>
-          <div className="ops-readiness-value">{readiness.toFixed(1)}<span>%</span><span className="ops-positive"><span className="ops-live-dot" />Personnel deployed</span></div>
-          <div className="ops-segment-meter" aria-label={`${fieldPersonnel} of ${totalPersonnel} personnel in the field`}>
-            {Array.from({ length: 32 }, (_, index) => <i key={index} className={index < Math.round(readiness / 100 * 32) ? 'is-filled' : ''} />)}
-          </div>
-          <div className="ops-meter-labels"><span>{fieldPersonnel} in the field</span><span>{totalPersonnel - fieldPersonnel} available / returning</span></div>
-          <div className="ops-readiness-footer"><span><i className="ops-live-dot" />{activeTeams.length} active</span><span>{responderTeams.filter((team) => team.status === 'standby').length} standby</span><button onClick={() => setSection('responders')}>View teams<ArrowUpRight size={12} /></button></div>
-        </section>
-        <div className="ops-section-heading"><h2>Field teams<span>{responderTeams.length}</span></h2><button onClick={() => setSection('responders')}>View all<ArrowUpRight size={13} /></button></div>
-        <div className="ops-team-grid">{responderTeams.slice(0, 4).map((team) => <TeamCard key={team.id} team={team} onSelect={() => locate({ kind: 'responder', id: team.id })} />)}</div>
-        <button className="ops-broadcast-button" disabled={!!fenceDraft} onClick={() => reviewRecipients()}><span className="ops-broadcast-icon"><Radio size={17} /></span><span><strong>Create broadcast</strong><small>{fenceDraft ? 'Save or cancel the boundary first' : 'Target groups and preview locations'}</small></span><ArrowUpRight size={17} /></button>
-      </aside>
+      <CommandSidebar saved={alertGeofence} draft={fenceDraft} messages={messages} onReview={reviewRecipients}
+        onChooseArea={() => setFenceEditor(true)} onHistory={() => { setBroadcastTab('history'); setSection('broadcast'); }} />
 
       <div className="ops-map-heading">
         <div className="ops-eyebrow"><span className="ops-live-dot" />SITUATIONAL AWARENESS<span className="ops-eyebrow-line" /></div>
@@ -340,7 +324,7 @@ export function OperationsDashboard({ auditLogs, messages, onSendMessage, onOpen
       {section === 'analytics' && <div className="ops-legacy-panels ops-analytics-grid"><RiskMonitoring /><SystemHealth /></div>}
       {section === 'activity' && <div className="ops-legacy-panels"><AuditLogs logs={auditLogs} /></div>}
       {section === 'users' && <div className="ops-legacy-panels"><UserManagement /></div>}
-      {section === 'broadcast' && <><div className="ops-dialog-tabs" role="group" aria-label="Broadcast view"><button className={broadcastTab === 'compose' ? 'is-active' : ''} aria-pressed={broadcastTab === 'compose'} onClick={() => setBroadcastTab('compose')}><Send size={14} />Compose broadcast</button><button className={broadcastTab === 'history' ? 'is-active' : ''} aria-pressed={broadcastTab === 'history'} onClick={() => setBroadcastTab('history')}>Delivery history<span>{messages.length}</span></button></div>{broadcastTab === 'compose' ? <AudienceBroadcastPanel areas={geofences} selectedId={selectedFenceId} initialGroup={broadcastGroup} onSelectArea={setSelectedFenceId} onSendMessage={onSendMessage} onHistory={() => setBroadcastTab('history')} /> : <div className="ops-legacy-panels"><MessageHistory messages={messages} /></div>}</>}
+      {section === 'broadcast' && <><div className="ops-dialog-tabs" role="group" aria-label="Broadcast view"><button className={broadcastTab === 'compose' ? 'is-active' : ''} aria-pressed={broadcastTab === 'compose'} onClick={() => setBroadcastTab('compose')}><Send size={14} />Compose broadcast</button><button className={broadcastTab === 'history' ? 'is-active' : ''} aria-pressed={broadcastTab === 'history'} onClick={() => setBroadcastTab('history')}>Delivery history<span>{messages.length}</span></button></div>{broadcastTab === 'compose' ? <AudienceBroadcastPanel areas={geofences} selectedId={selectedFenceId} initialGroup={broadcastGroup} initialActiveOnly={broadcastActiveOnly} onSelectArea={setSelectedFenceId} onSendMessage={onSendMessage} onHistory={() => setBroadcastTab('history')} /> : <div className="ops-legacy-panels"><MessageHistory messages={messages} /></div>}</>}
       {section === 'help' && <div className="ops-help"><p>Select any incident or team to see its location and details. Use <strong>Layers</strong> to adjust the map, or switch between satellite and street views. Select <strong>Geofence</strong> to draw a polygon, rectangle, or circle, save the area, and send an alert to it. Undo removes the last point; drag handles to edit. Keyboard users can pan the focused map with arrow keys and use <strong>Add center point</strong>.</p><p><kbd>Ctrl / ⌘ K</kbd> opens global search. Map controls support keyboard navigation. Press <kbd>Esc</kbd> to dismiss details.</p><p><strong>Workspace</strong> opens your customizable dashboard, including the original geofence tools, widget library, layout presets, and light mode.</p><p className="ops-help-note">This project currently uses sample operational data. Broadcasts and audit changes stay in this browser. Connect production data and delivery services before operational use.</p><button className="ops-secondary-button" onClick={onOpenWorkspace}><LayoutGrid size={15} />Open workspace<ArrowUpRight size={14} /></button></div>}
     </DialogContent></Dialog>
     <Toaster position="bottom-right" theme="dark" richColors closeButton />

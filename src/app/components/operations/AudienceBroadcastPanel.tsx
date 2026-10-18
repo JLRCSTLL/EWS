@@ -10,13 +10,14 @@ interface Props {
   areas: AlertGeofence[];
   selectedId: string | null;
   initialGroup: AudienceGroup;
+  initialActiveOnly?: boolean;
   onSelectArea: (id: string | null) => void;
   onSendMessage: (draft: OutboundMessageDraft) => void;
   onHistory: () => void;
 }
 
-export function AudienceBroadcastPanel({ areas, selectedId, initialGroup, onSelectArea, onSendMessage, onHistory }: Props) {
-  const [filter, setFilter] = useState<AudienceFilter>({ groups: [initialGroup], activeOnly: true });
+export function AudienceBroadcastPanel({ areas, selectedId, initialGroup, initialActiveOnly = true, onSelectArea, onSendMessage, onHistory }: Props) {
+  const [filter, setFilter] = useState<AudienceFilter>({ groups: [initialGroup], activeOnly: initialActiveOnly });
   const [message, setMessage] = useState('');
   const [templateId, setTemplateId] = useState('');
   const [priority, setPriority] = useState<MessagePriority>('high');
