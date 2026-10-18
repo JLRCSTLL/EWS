@@ -30,6 +30,19 @@ draggable/resizable widgets, the widget library, geofence tools, and light mode.
 Select **Live overview** under the E-Ligtas name to return to the new interface.
 Broadcasts, delivery history, user roles, analytics, and audit logs remain available.
 
+### Automatic presentation demo
+
+Select **Demo** in the header to start an approximately two-minute walkthrough.
+A visible cursor operates the real controls: it switches map views, draws and
+names a geofence, reviews population and recipient groups, types an alert,
+previews delivery, follows an ambulance, and opens a flood-monitoring camera.
+No further clicks are needed. **Pause**, previous/next, restart, and **Esc** are
+available to the presenter. Playback also pauses when the tab is hidden.
+
+Presentation boundaries are temporary. Its delivery confirmation sends no
+message and adds no history. Finishing or exiting restores the prior page,
+map view, selected area, and unfinished boundary.
+
 ### Send an alert to a drawn area
 
 1. Click a named geofence on the map, or select **Geofence** beside **Layers**.

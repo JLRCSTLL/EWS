@@ -55,7 +55,7 @@ export function CommandSidebar({ saved, draft, messages, onChooseArea, onReview,
       <p className="ops-command-note">Eligible active users · groups may overlap</p>
       <div className="ops-quick-audience-grid">{reach.groups.map(group => {
         const Icon = groupIcons[group.id];
-        return <button key={group.id} disabled={!canReview || !group.eligible} onClick={() => onReview(group.id)} title={group.description} aria-label={`Preview ${group.label} alert: ${group.eligible} eligible active users`}>
+        return <button key={group.id} data-demo={`audience-${group.id}`} disabled={!canReview || !group.eligible} onClick={() => onReview(group.id)} title={group.description} aria-label={`Preview ${group.label} alert: ${group.eligible} eligible active users`}>
           <Icon size={14} /><span>{group.label}</span><strong>{reach.valid ? group.eligible : '—'}</strong><ChevronRight size={12} />
         </button>;
       })}</div>

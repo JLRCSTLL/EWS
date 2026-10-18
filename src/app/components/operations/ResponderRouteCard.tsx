@@ -23,7 +23,7 @@ export function ResponderRouteCard({ route, elapsed, paused, onToggle, onReplay,
     <div className="ops-route-target"><Flag size={15} style={{ color: route.color }} /><span><small>DESTINATION</small><strong>{route.destination}</strong></span></div>
     <dl className="ops-route-metrics"><div><dt>Remaining</dt><dd>{formatRouteDistance(trip.remainingMeters)}</dd></div><div><dt>Model ETA</dt><dd>{trip.arrived ? 'Arrived' : `${Math.ceil(trip.remainingSeconds / 60)} min`}</dd></div></dl>
     <div className="ops-route-progress" role="progressbar" aria-label="Route progress" aria-valuenow={Math.round(trip.progress * 100)} aria-valuemin={0} aria-valuemax={100}><span style={{ width: `${trip.progress * 100}%`, background: route.color }} /></div>
-    <div className="ops-route-actions"><button onClick={onFocus}>Fit route<ArrowUpRight size={12} /></button><button onClick={trip.arrived ? onReplay : onToggle}>{trip.arrived ? <RotateCcw size={12} /> : paused ? <Play size={12} /> : <Pause size={12} />}{trip.arrived ? 'Replay demo' : paused ? 'Resume' : 'Pause'}</button></div>
+    <div className="ops-route-actions"><button data-demo="fit-route" onClick={onFocus}>Fit route<ArrowUpRight size={12} /></button><button onClick={trip.arrived ? onReplay : onToggle}>{trip.arrived ? <RotateCcw size={12} /> : paused ? <Play size={12} /> : <Pause size={12} />}{trip.arrived ? 'Replay demo' : paused ? 'Resume' : 'Pause'}</button></div>
     <p className="ops-route-note">Simulated movement on a cached road route. ETA excludes live traffic and closures.</p>
   </section>;
 }

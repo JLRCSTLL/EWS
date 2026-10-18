@@ -1,0 +1,45 @@
+.ops-header-actions .ops-demo-button { display: flex; align-items: center; justify-content: center; gap: 6px; border: 1px solid #ffffff3b; background: #282e2bf2; color: #e6eee9; border-radius: 7px; padding: 7px 10px; min-height: 32px; font-size: 10px; white-space: nowrap; }
+.ops-header-actions .ops-demo-button:hover { background: #3c4941; border-color: #c1d8ca; }
+.ops-tour-overlay { position: fixed; inset: 0; z-index: 10000; pointer-events: auto; font-family: 'Inter', 'Segoe UI', sans-serif; color: #eef3f0; }
+.ops-tour-spotlight { position: fixed; border-radius: 9px; border: 2px solid #d4eedc; box-shadow: 0 0 0 9999px #040a101c, 0 0 16px #b6d2c240; pointer-events: none; }
+.ops-demo-cursor { position: fixed; top: 0; left: 0; z-index: 2; pointer-events: none; will-change: transform; filter: drop-shadow(0 2px 4px #0009); }
+.ops-demo-cursor > svg { position: relative; display: block; transform-origin: 3px 2px; }
+.ops-demo-cursor.is-clicking > svg { transform: scale(.87); }
+.ops-demo-cursor-label { position: absolute; top: 32px; left: 20px; padding: 4px 6px; background: #d4eadd; color: #203429; border: 1px solid #f1fff5; border-radius: 4px; font: 600 8px/1 'Inter', sans-serif; letter-spacing: .06em; }
+.ops-demo-click-ring { display: none; position: absolute; top: -17px; left: -17px; width: 38px; height: 38px; border: 2px solid #d7ffe6; border-radius: 50%; background: #b5efca35; }
+.ops-demo-cursor.is-clicking .ops-demo-click-ring { display: block; animation: ops-demo-click .45s ease-out both; }
+@keyframes ops-demo-click { from { transform: scale(.4); opacity: 1; } to { transform: scale(1.6); opacity: 0; } }
+.ops-tour-card { position: fixed; width: 310px; max-width: calc(100vw - 36px); max-height: calc(100dvh - 36px); overflow-y: auto; padding: 17px; border: 1px solid #ffffff45; border-radius: 13px; background: linear-gradient(140deg, #323a36, #242a28 55%, #242826); box-shadow: 0 12px 45px #0008, inset 0 1px #ffffff19; }
+.ops-tour-card button { font: inherit; cursor: pointer; }
+.ops-tour-card button:focus-visible { outline: 2px solid #d7eee0; outline-offset: 3px; }
+.ops-tour-top { display: flex; align-items: center; justify-content: space-between; gap: 15px; }
+.ops-tour-top > span { display: flex; align-items: center; gap: 7px; font-size: 9px; letter-spacing: .12em; color: #bdd5c7; }
+.ops-tour-top button { display: grid; place-items: center; width: 24px; height: 24px; border: 0; background: transparent; color: #c3d1c9; border-radius: 5px; }
+.ops-tour-top button:hover { background: #ffffff10; }
+.ops-tour-progress { display: flex; gap: 4px; margin: 10px 0 13px; }
+.ops-tour-progress > span { flex: 1; height: 2px; border-radius: 5px; background: #ffffff1a; }
+.ops-tour-progress > span.is-complete { background: #bdd9c8; }
+.ops-tour-chapter { display: flex; align-items: center; gap: 9px; color: #b3c1ba; font-size: 9px; font-variant-numeric: tabular-nums; }
+.ops-tour-chapter > span { color: #dae8df; }
+.ops-tour-card h2 { margin: 7px 0 8px; font-size: 19px; line-height: 1.25; font-weight: 500; letter-spacing: -.03em; outline: none; }
+.ops-tour-card > p { font-size: 11px; line-height: 1.65; color: #c8d1cc; margin: 0; }
+.ops-tour-current { display: flex; gap: 7px; align-items: center; margin-top: 12px; min-height: 32px; color: #d5e9dd; font-size: 10px; line-height: 1.5; }
+.ops-tour-current > i { width: 5px; height: 5px; border-radius: 50%; background: #a6b3ac; flex-shrink: 0; }
+.ops-tour-current > i.is-playing { background: #bce4cc; box-shadow: 0 0 0 3px #bce4cc18; }
+.ops-tour-countdown { height: 2px; border-radius: 2px; background: #ffffff13; overflow: hidden; margin-top: 8px; }
+.ops-tour-countdown > i { display: block; height: 100%; background: #94b7a2; }
+.ops-tour-actions { display: flex; justify-content: space-between; align-items: center; gap: 7px; margin-top: 12px; }
+.ops-tour-actions button { display: flex; align-items: center; justify-content: center; gap: 7px; min-height: 33px; padding: 7px 10px; font-size: 10px; border: 1px solid #ffffff27; background: #ffffff05; color: #d5e3da; border-radius: 6px; }
+.ops-tour-actions button:disabled { opacity: .35; cursor: default; }
+.ops-tour-actions button.ops-tour-play { flex: 1; background: #d7e8de; color: #213129; border-color: #d7e8de; font-weight: 500; }
+.ops-tour-actions button.ops-tour-play:hover { background: #eef8f1; }
+.ops-tour-footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 11px; color: #a9bcb0; font-size: 8px; }
+.ops-tour-delivery { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; padding: 13px; border: 1px solid #b2d4bf55; border-radius: 9px; background: #b2d4bf10; color: #e0f1e6; }
+.ops-tour-delivery strong { font-size: 12px; }
+.ops-tour-delivery p { font-size: 11px; line-height: 1.65; margin: 0; color: #d1ded6; }
+.ops-tour-delivery small { font-size: 10px; color: #b6c8bd; }
+@media (max-width: 1100px) and (min-width: 901px) { .ops-header { gap: 10px; } .ops-header-actions { gap: 6px; } .ops-brand { min-width: 175px; } .ops-brand-caption { font-size: 8px; } .ops-nav { gap: 1px; } .ops-nav button { padding-left: 6px; padding-right: 6px; } }
+@media (max-width: 700px) { .ops-tour-card { width: calc(100vw - 36px); padding: 13px 16px; } .ops-tour-card h2 { font-size: 17px; } .ops-tour-card > p { font-size: 10px; line-height: 1.5; } .ops-tour-progress { margin: 5px 0 8px; } .ops-tour-chapter { display: none; } .ops-tour-current { margin-top: 5px; min-height: 25px; } .ops-tour-actions { margin-top: 8px; } .ops-tour-actions button { min-height: 38px; } .ops-tour-footer { margin-top: 7px; } }
+@media (max-width: 450px) { .ops-header-actions { gap: 7px; } .ops-brand-caption { font-size: 8px; letter-spacing: .1em; } .ops-brand { gap: 7px; } .ops-header-actions .ops-demo-button { padding: 7px; min-height: 34px; } }
+@media (prefers-reduced-motion: reduce) { .ops-demo-click-ring { animation: none !important; } }
+

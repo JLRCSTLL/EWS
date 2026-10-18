@@ -14,11 +14,13 @@ interface Props {
   onSelectArea: (id: string | null) => void;
   onSendMessage: (draft: OutboundMessageDraft) => void;
   onHistory: () => void;
+  presentationMode?: boolean;
 }
 
-export function AudienceBroadcastPanel({ areas, selectedId, initialGroup, initialActiveOnly = true, onSelectArea, onSendMessage, onHistory }: Props) {
+export function AudienceBroadcastPanel({ areas, selectedId, initialGroup, initialActiveOnly = true, onSelectArea, onSendMessage, onHistory, presentationMode = false }: Props) {
   const [filter, setFilter] = useState<AudienceFilter>({ groups: [initialGroup], activeOnly: initialActiveOnly });
   const [message, setMessage] = useState('');
+  const [presented, setPresented] = useState(false);
   const [templateId, setTemplateId] = useState('');
   const [priority, setPriority] = useState<MessagePriority>('high');
   const [focusId, setFocusId] = useState<string | null>(null);
@@ -33,6 +35,7 @@ export function AudienceBroadcastPanel({ areas, selectedId, initialGroup, initia
   };
   const send = () => {
     if (!message.trim() || !audience.recipients.length || invalidArea) return;
+    if (presentationMode) { setPresented(true); return; }
     onSendMessage({ content: message.trim(), category: template?.category || 'Community Alert', priority,
       targetGroupId: 'app-users', geoFenceId: area ? 'map-area' : 'all-areas', geofence: area || undefined,
       templateLabel: template?.label, appAudience: filter });
@@ -48,7 +51,7 @@ export function AudienceBroadcastPanel({ areas, selectedId, initialGroup, initia
       </select></label>
       <fieldset className="ops-audience-groups"><legend>Recipient groups <span>Match any selected group</span></legend>
         <label><input type="checkbox" checked={filter.groups.includes('all')} onChange={() => toggleGroup('all')} /><span>All app users</span><strong>{audience.total}</strong></label>
-        {residentGroups.map(group => <label key={group.id} title={group.description}><input type="checkbox" checked={filter.groups.includes(group.id)} onChange={() => toggleGroup(group.id)} /><span>{group.label}</span><strong>{audience.counts[group.id]}</strong></label>)}
+        {residentGroups.map(group => <label key={group.id} title={group.description}><input data-demo={`group-${group.id}`} type="checkbox" checked={filter.groups.includes(group.id)} onChange={() => toggleGroup(group.id)} /><span>{group.label}</span><strong>{audience.counts[group.id]}</strong></label>)}
       </fieldset>
       <label className="ops-active-filter"><input type="checkbox" checked={filter.activeOnly} onChange={event => { setFocusId(null); setFilter(current => ({ ...current, activeOnly: event.target.checked })); }} /><span>Active users only<small>Location shared within 5 minutes of snapshot</small></span></label>
       <p className="ops-audience-help">{filter.activeOnly ? 'Only active locations are eligible.' : 'Active and recent locations (up to 60 min) are eligible.'} Stale locations and disabled notifications are excluded. Each person receives one message, even if groups overlap.</p>
@@ -83,8 +86,9 @@ export function AudienceBroadcastPanel({ areas, selectedId, initialGroup, initia
       <label className="ops-form-label">Message<textarea aria-label="Alert message" value={message} maxLength={500} onChange={event => setMessage(event.target.value)} placeholder="Describe the emergency, where to go, and what residents should do." rows={4} /></label>
       <div className="ops-message-limit">{message.length} / 500</div>
       <div className="ops-send-scope"><strong>{audienceLabel(filter) || 'No group selected'}</strong><span>{area?.name || 'All demo app users'} · {filter.activeOnly ? 'active locations' : 'locations up to 60 min old'}</span></div>
-      <button className="ops-send-demo" disabled={!message.trim() || !audience.recipients.length || invalidArea} onClick={send}><Send size={15} />Send demo alert to {audience.recipients.length} users</button>
-      <p className="ops-audience-help">Simulated delivery. Recipient IDs and the boundary are saved to history.</p>
+      <button className="ops-send-demo" disabled={!message.trim() || !audience.recipients.length || invalidArea} onClick={send}><Send size={15} />{presentationMode ? `Simulate alert to ${audience.recipients.length} users` : `Send demo alert to ${audience.recipients.length} users`}</button>
+      <p className="ops-audience-help">{presentationMode ? 'Presentation preview. No messages are sent or saved to history.' : 'Simulated delivery. Recipient IDs and the boundary are saved to history.'}</p>
+      {presentationMode && presented && <div className="ops-tour-delivery" role="status"><strong>Demo delivery preview · {audience.recipients.length} recipients</strong><p>{message}</p><small>{audienceLabel(filter)} · {area?.name} · {priority} priority</small><small>Presentation only — no real notification sent.</small></div>}
     </section>
   </div>;
 }

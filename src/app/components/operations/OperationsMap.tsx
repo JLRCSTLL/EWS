@@ -16,6 +16,10 @@ export interface OperationsMapHandle {
   addCenterPoint: () => void;
   focusGeofence: () => void;
   focusRoute: (teamId: string) => void;
+  captureView: () => { lat: number; lng: number; zoom: number } | null;
+  restoreView: (view: { lat: number; lng: number; zoom: number }) => void;
+  projectPoint: (point: GeofencePoint) => { x: number; y: number } | null;
+  frameDemoArea: (geometry: GeofenceGeometry) => void;
 }
 
 interface OperationsMapProps {
@@ -77,6 +81,24 @@ export const OperationsMap = forwardRef<OperationsMapHandle, OperationsMapProps>
     zoomOut: () => mapRef.current?.zoomOut(),
     reset: () => { if (mapRef.current) mapHome(mapRef.current, region); },
     focusRoute: (teamId) => { if (mapRef.current) focusRoute(mapRef.current, teamId); },
+    captureView: () => { const map = mapRef.current; if (!map) return null; const center = map.getCenter(); return { lat: center.lat, lng: center.lng, zoom: map.getZoom() }; },
+    restoreView: view => { mapRef.current?.stop().setView([view.lat, view.lng], view.zoom, { animate: false }); },
+    projectPoint: point => {
+      const map = mapRef.current;
+      if (!map || !containerRef.current) return null;
+      const pixel = map.latLngToContainerPoint([point.lat, point.lng]);
+      const bounds = containerRef.current.getBoundingClientRect();
+      return { x: bounds.left + pixel.x, y: bounds.top + pixel.y };
+    },
+    frameDemoArea: geometry => {
+      const map = mapRef.current;
+      if (!map || !geometry.points.length) return;
+      const desktop = map.getSize().x > 900;
+      map.stop().fitBounds(L.latLngBounds(geometry.points.map(point => [point.lat, point.lng])), {
+        paddingTopLeft: desktop ? [335, 240] : [35, 200],
+        paddingBottomRight: desktop ? [320, 295] : [35, 180], maxZoom: 13, animate: false,
+      });
+    },
     addCenterPoint: () => {
       const point = mapRef.current?.getCenter();
       if (point && drawing) onGeofencePointRef.current({ lat: point.lat, lng: point.lng });

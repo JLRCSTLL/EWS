@@ -40,7 +40,7 @@ export function GeofenceTools(props: Props) {
       </div>
       <div className="ops-fence-actions ops-fence-actions--primary">
         <button onClick={props.onCancel}>Cancel</button>
-        <button onClick={props.onSave} disabled={!!error || !props.draftName.trim()}><Check size={13} />Save area</button>
+        <button data-demo="save-area" onClick={props.onSave} disabled={!!error || !props.draftName.trim()}><Check size={13} />Save area</button>
       </div>
     </> : saved && <>
       <label className="ops-fence-name">Area name<input aria-label="Geofence area name" value={saved.name} maxLength={60} onChange={(event) => props.onRename(event.target.value)} /></label>

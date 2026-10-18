@@ -37,11 +37,13 @@ function CameraVideo({ camera, paused, time, onStatus }: { camera: DemoCamera; p
 
 interface Props {
   areas: AlertGeofence[];
+  presentationMode?: boolean;
+  presentationPaused?: boolean;
   onOpenArea: (id: string) => void;
   onPreviewAlert: (id: string) => void;
 }
 
-export function CctvMonitoring({ areas, onOpenArea, onPreviewAlert }: Props) {
+export function CctvMonitoring({ areas, onOpenArea, onPreviewAlert, presentationMode = false, presentationPaused = false }: Props) {
   const [category, setCategory] = useState<CameraCategory | 'all'>('all');
   const [query, setQuery] = useState('');
   const [attentionOnly, setAttentionOnly] = useState(false);
@@ -54,7 +56,7 @@ export function CctvMonitoring({ areas, onOpenArea, onPreviewAlert }: Props) {
   const [selectedId, setSelectedId] = useState(demoCameras[0].id);
   const [expanded, setExpanded] = useState<DemoCamera | null>(null);
   const [compact, setCompact] = useState(true);
-  const [paused, setPaused] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const [paused, setPaused] = useState(() => !presentationMode && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const [background, setBackground] = useState(document.hidden);
   const [now, setNow] = useState(() => Date.now());
   const [startedAt] = useState(() => Date.now());
@@ -82,7 +84,7 @@ export function CctvMonitoring({ areas, onOpenArea, onPreviewAlert }: Props) {
     <div className="cctv-page-heading"><div><div className="ops-eyebrow"><Video size={12} />VISUAL OPERATIONS</div><h1>CCTV monitoring<span>.</span></h1><p>Watch conditions. Verify an incident. Coordinate the response.</p></div><div className="cctv-demo-label"><Radio size={13} /><span>DEMO CONTROL ROOM<small>Looping sample footage · simulated readings</small></span></div></div>
     <div className="cctv-summary"><span><Video size={15} /><strong>{demoCameras.length}</strong> demo cameras</span><span><CircleAlert size={15} /><strong>{pending.length}</strong> need review</span><span><ShieldCheck size={15} /><strong>{reviewed.size}</strong> reviewed</span><span className="cctv-session-clock">SESSION CLOCK <time>{time}</time> PHT</span></div>
     <div className="cctv-toolbar">
-      <div className="cctv-category-tabs" role="group" aria-label="Camera category">{(['all', 'flood', 'traffic', 'accidents'] as const).map(value => <button key={value} aria-pressed={category === value} className={category === value ? 'is-active' : ''} onClick={() => setCategory(value)}>{value === 'all' ? 'All cameras' : cameraCategoryLabels[value]}<span>{value === 'all' ? demoCameras.length : demoCameras.filter(camera => camera.category === value).length}</span></button>)}</div>
+      <div className="cctv-category-tabs" role="group" aria-label="Camera category">{(['all', 'flood', 'traffic', 'accidents'] as const).map(value => <button key={value} data-demo={`cctv-${value}`} aria-pressed={category === value} className={category === value ? 'is-active' : ''} onClick={() => setCategory(value)}>{value === 'all' ? 'All cameras' : cameraCategoryLabels[value]}<span>{value === 'all' ? demoCameras.length : demoCameras.filter(camera => camera.category === value).length}</span></button>)}</div>
       <div className="cctv-view-actions"><button className={attentionOnly ? 'is-active' : ''} aria-pressed={attentionOnly} onClick={() => setAttentionOnly(value => !value)}><CircleAlert size={13} />Needs review</button><button onClick={() => setPaused(value => !value)}>{paused ? <Play size={13} /> : <Pause size={13} />}{paused ? 'Play feeds' : 'Pause feeds'}</button><button aria-label={compact ? 'Use larger camera tiles' : 'Use compact camera wall'} onClick={() => setCompact(value => !value)}>{compact ? <Grid2X2 size={16} /> : <Grid3X3 size={16} />}</button></div>
     </div>
     <div className="cctv-content">
@@ -90,7 +92,7 @@ export function CctvMonitoring({ areas, onOpenArea, onPreviewAlert }: Props) {
         <div className="cctv-wall-tools"><span>{cameras.length} cameras in view</span><label className="cctv-search"><Search size={14} /><input aria-label="Search cameras" value={query} onChange={event => setQuery(event.target.value)} placeholder="Search camera or location…" />{query && <button aria-label="Clear camera search" onClick={() => setQuery('')}>×</button>}</label></div>
         <div className={`cctv-wall${compact ? ' is-compact' : ''}`}>
           {cameras.map(camera => { const Icon = categoryIcons[camera.category]; const needsReview = !!camera.event && !reviewed.has(camera.id); return <article key={camera.id} className={`cctv-camera${selected?.id === camera.id ? ' is-selected' : ''}`} aria-label={camera.name}>
-            <div className="cctv-camera-visual"><CameraVideo camera={camera} time={time} paused={paused || background || !!expanded} onStatus={reportStatus} /><button className="cctv-expand" aria-label={`Expand ${camera.name}`} onClick={() => { setSelectedId(camera.id); setExpanded(camera); }}><Expand size={14} /></button></div>
+            <div className="cctv-camera-visual"><CameraVideo camera={camera} time={time} paused={paused || (presentationMode && presentationPaused) || background || !!expanded} onStatus={reportStatus} /><button className="cctv-expand" aria-label={`Expand ${camera.name}`} onClick={() => { setSelectedId(camera.id); setExpanded(camera); }}><Expand size={14} /></button></div>
             <button className="cctv-camera-info" aria-label={`Select ${camera.name}`} aria-pressed={selected?.id === camera.id} onClick={() => setSelectedId(camera.id)}><span className="cctv-camera-name"><strong>{camera.name}</strong><small><Icon size={11} />{cameraCategoryLabels[camera.category]}<span>·</span>{camera.location}</small></span><ChevronRight size={14} /></button>
             <div className={`cctv-camera-condition${needsReview ? ` is-${camera.event?.severity}` : ''}`}><span><i />{needsReview ? camera.event?.title : reviewed.has(camera.id) ? 'Reviewed by operator' : 'Routine monitoring'}</span><span>{camera.metric.value} {camera.metric.unit}</span></div>
           </article>; })}
@@ -109,6 +111,6 @@ export function CctvMonitoring({ areas, onOpenArea, onPreviewAlert }: Props) {
         <section className="cctv-event-list"><div className="cctv-detail-eyebrow"><span>DEMO EVENT QUEUE</span><span>{pending.length} open</span></div>{demoCameras.filter(camera => camera.event).sort((a, b) => a.event!.minutesAgo - b.event!.minutesAgo).map(camera => <button key={camera.id} onClick={() => { clearFilters(); setSelectedId(camera.id); }}><span className={`cctv-event-dot is-${reviewed.has(camera.id) ? 'reviewed' : camera.event!.severity}`} /><span><strong>{camera.event!.title}</strong><small>{camera.id} · {clockFormat.format(startedAt - camera.event!.minutesAgo * 60_000)} · {reviewed.has(camera.id) ? 'Reviewed' : 'Open'}</small></span><ChevronRight size={12} /></button>)}</section>
       </aside>
     </div>
-    <Dialog open={!!expanded} onOpenChange={open => { if (!open) setExpanded(null); }}><DialogContent className="ops-dialog cctv-dialog"><DialogHeader><div className="ops-eyebrow">CCTV / DEMO FEED</div><DialogTitle>{expanded?.name}</DialogTitle><DialogDescription>Illustrative prerecorded footage. Locations, alerts, and readings are simulated.</DialogDescription></DialogHeader>{expanded && <><CameraVideo camera={expanded} paused={paused || background} time={time} /><div className="cctv-expanded-footer"><span><MapPin size={13} />{expanded.location} · {expanded.id}</span><button onClick={() => setPaused(value => !value)}>{paused ? <Play size={14} /> : <Pause size={14} />}{paused ? 'Play feeds' : 'Pause feeds'}</button></div></>}</DialogContent></Dialog>
+    <Dialog modal={!presentationMode} open={!!expanded} onOpenChange={open => { if (!open) setExpanded(null); }}><DialogContent className="ops-dialog cctv-dialog" onInteractOutside={event => { if (presentationMode) event.preventDefault(); }} onOpenAutoFocus={event => { if (presentationMode) event.preventDefault(); }} onCloseAutoFocus={event => { if (presentationMode) event.preventDefault(); }}><DialogHeader><div className="ops-eyebrow">CCTV / DEMO FEED</div><DialogTitle>{expanded?.name}</DialogTitle><DialogDescription>Illustrative prerecorded footage. Locations, alerts, and readings are simulated.</DialogDescription></DialogHeader>{expanded && <><CameraVideo camera={expanded} paused={paused || (presentationMode && presentationPaused) || background} time={time} /><div className="cctv-expanded-footer"><span><MapPin size={13} />{expanded.location} · {expanded.id}</span><button onClick={() => setPaused(value => !value)}>{paused ? <Play size={14} /> : <Pause size={14} />}{paused ? 'Play feeds' : 'Pause feeds'}</button></div></>}</DialogContent></Dialog>
   </main>;
 }
