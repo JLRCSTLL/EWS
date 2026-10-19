@@ -21,6 +21,7 @@ export interface OperationsMapHandle {
   projectPoint: (point: GeofencePoint) => { x: number; y: number } | null;
   frameDemoArea: (geometry: GeofenceGeometry) => void;
   focusPoint: (point: GeofencePoint) => void;
+  focusResidents: () => void;
 }
 
 interface OperationsMapProps {
@@ -54,6 +55,16 @@ const mapHome = (map: L.Map, region: Region) => {
   else map.setView([14.60, 121.025], 11, { animate: false });
 };
 
+function frameLocations(map: L.Map, points: GeofencePoint[]) {
+  if (!points.length) return;
+  const desktop = map.getSize().x > 900;
+  map.stop().fitBounds(L.latLngBounds(points.map(point => [point.lat, point.lng])), {
+    paddingTopLeft: desktop ? [340, 270] : [24, 360],
+    paddingBottomRight: desktop ? [55, 300] : [24, 115],
+    maxZoom: 15, animate: false,
+  });
+}
+
 function focusRoute(map: L.Map, teamId: string) {
   const route = responderRoutes.find(item => item.teamId === teamId);
   if (!route) return;
@@ -75,6 +86,7 @@ export const OperationsMap = forwardRef<OperationsMapHandle, OperationsMapProps>
   const onGeofencePointRef = useRef(onGeofencePoint);
   const onGeofenceMoveRef = useRef(onGeofenceMove);
   const onSelectGeofenceRef = useRef(onSelectGeofence);
+  const framedLiveLocations = useRef(false);
   const [tileState, setTileState] = useState<'loading' | 'ready' | 'error'>('loading');
   onSelectRef.current = onSelect;
   onGeofencePointRef.current = onGeofencePoint;
@@ -84,11 +96,27 @@ export const OperationsMap = forwardRef<OperationsMapHandle, OperationsMapProps>
   useImperativeHandle(ref, () => ({
     zoomIn: () => mapRef.current?.zoomIn(),
     zoomOut: () => mapRef.current?.zoomOut(),
-    reset: () => { if (mapRef.current) mapHome(mapRef.current, region); },
+    reset: () => {
+      const map = mapRef.current;
+      if (!map) return;
+      const located = live && showResidents ? getExposure(residents, null, snapshotAt).located : [];
+      if (located.length) frameLocations(map, located.map(user => user.location!));
+      else mapHome(map, region);
+    },
     focusRoute: (teamId) => { if (mapRef.current) focusRoute(mapRef.current, teamId); },
     captureView: () => { const map = mapRef.current; if (!map) return null; const center = map.getCenter(); return { lat: center.lat, lng: center.lng, zoom: map.getZoom() }; },
     restoreView: view => { mapRef.current?.stop().setView([view.lat, view.lng], view.zoom, { animate: false }); },
-    focusPoint: point => { mapRef.current?.stop().setView([point.lat, point.lng], 14, { animate: false }); },
+    focusPoint: point => {
+      if (!mapRef.current) return;
+      frameLocations(mapRef.current, [point]);
+      framedLiveLocations.current = true;
+    },
+    focusResidents: () => {
+      if (!mapRef.current) return;
+      const located = getExposure(residents, null, snapshotAt).located;
+      frameLocations(mapRef.current, located.map(user => user.location!));
+      if (located.length) framedLiveLocations.current = true;
+    },
     projectPoint: point => {
       const map = mapRef.current;
       if (!map || !containerRef.current) return null;
@@ -118,7 +146,7 @@ export const OperationsMap = forwardRef<OperationsMapHandle, OperationsMapProps>
         : L.latLngBounds(coordinates);
       map.fitBounds(bounds, { padding: [60, 60], maxZoom: 15, animate: false });
     },
-  }), [region, geofence, drawing]);
+  }), [region, geofence, drawing, residents, snapshotAt, live, showResidents]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -246,6 +274,16 @@ export const OperationsMap = forwardRef<OperationsMapHandle, OperationsMapProps>
     });
     return () => { group.remove(); };
   }, [geofence, showResidents, drawing, residents, snapshotAt, live]);
+
+  useEffect(() => {
+    const located = getExposure(residents, null, snapshotAt).located;
+    if (!live || !located.length) { framedLiveLocations.current = false; return; }
+    // Frame the first received locations once; polling must not interrupt map navigation.
+    if (mapRef.current && showResidents && !drawing && !framedLiveLocations.current) {
+      frameLocations(mapRef.current, located.map(user => user.location!));
+      framedLiveLocations.current = true;
+    }
+  }, [live, residents, snapshotAt, showResidents, drawing]);
 
   useEffect(() => {
     const map = mapRef.current;

@@ -13,11 +13,11 @@ export function residentMarker(user: Resident, at: string, options: { muted?: bo
   if (!user.location) return null;
   const status = locationStatus(user, at);
   const marker = L.circleMarker([user.location.lat, user.location.lng], {
-    radius: options.muted ? 3 : 5,
-    color: options.muted ? '#b0b0b0' : status === 'active' ? '#aff0ce' : status === 'recent' ? '#f0d29b' : '#9b9b9b',
+    radius: options.muted ? 3 : options.live ? 8 : 5,
+    color: options.muted ? '#b0b0b0' : options.live ? '#fff' : status === 'active' ? '#aff0ce' : status === 'recent' ? '#f0d29b' : '#9b9b9b',
     fillColor: status === 'active' ? '#8ddab4' : status === 'recent' ? '#d9b477' : '#999',
-    weight: options.muted ? 1 : 1.5, opacity: options.muted ? .35 : 1,
-    fillOpacity: options.muted ? .15 : status === 'stale' ? .25 : .85,
+    weight: options.muted ? 1 : options.live ? 3 : 1.5, opacity: options.muted ? .35 : 1,
+    fillOpacity: options.muted ? .15 : options.live ? 1 : status === 'stale' ? .25 : .85,
     interactive: options.interactive !== false,
   });
   const popup = document.createElement('div');
@@ -34,5 +34,10 @@ export function residentMarker(user: Resident, at: string, options: { muted?: bo
   const delivery = document.createElement('small');
   delivery.textContent = user.notificationsEnabled ? 'Notifications enabled' : 'Notifications disabled · excluded from alerts';
   popup.append(title, details, location, coordinates, delivery);
+  if (options.live) {
+    const label = document.createElement('span');
+    label.textContent = user.name;
+    marker.bindTooltip(label, { direction: 'top', offset: [0, -9], className: 'ops-map-tooltip' });
+  }
   return marker.bindPopup(popup, { className: 'ops-user-popup', maxWidth: 260 });
 }
