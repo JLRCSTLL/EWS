@@ -9,7 +9,7 @@ export function fenceLayer(geometry: GeofenceGeometry, style: L.PathOptions = {}
   return L.polygon(points, style);
 }
 
-export function residentMarker(user: Resident, at: string, options: { muted?: boolean; interactive?: boolean } = {}) {
+export function residentMarker(user: Resident, at: string, options: { muted?: boolean; interactive?: boolean; live?: boolean } = {}) {
   if (!user.location) return null;
   const status = locationStatus(user, at);
   const marker = L.circleMarker([user.location.lat, user.location.lng], {
@@ -23,12 +23,12 @@ export function residentMarker(user: Resident, at: string, options: { muted?: bo
   const popup = document.createElement('div');
   popup.className = 'ops-resident-popup';
   const title = document.createElement('strong');
-  title.textContent = `${user.name} · demo`;
+  title.textContent = `${user.name}${options.live ? '' : ' · demo'}`;
   const groups = residentGroups.filter(group => matchesGroup(user, group.id)).map(group => group.label);
   const details = document.createElement('p');
-  details.textContent = `Age ${user.age}${groups.length ? ` · ${groups.join(', ')}` : ''}`;
+  details.textContent = options.live ? `Self-reported groups: ${groups.join(', ') || 'None specified'}` : `Age ${user.age}${groups.length ? ` · ${groups.join(', ')}` : ''}`;
   const location = document.createElement('p');
-  location.textContent = `${status} · ${Math.round(locationAgeMinutes(user, at))} min before snapshot · ±${user.location.accuracy} m`;
+  location.textContent = `${status} · ${Math.round(locationAgeMinutes(user, at))} min ${options.live ? 'ago' : 'before snapshot'} · ±${Math.round(user.location.accuracy)} m`;
   const coordinates = document.createElement('p');
   coordinates.textContent = `${user.location.lat.toFixed(5)}, ${user.location.lng.toFixed(5)}`;
   const delivery = document.createElement('small');

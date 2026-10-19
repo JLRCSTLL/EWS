@@ -9,6 +9,68 @@
 
   Run `npm run dev` to start the development server.
 
+## Connected public app (Render)
+
+The default `/#/public` route now uses registered accounts and the shared API.
+Start **both** `npm run server` and `npm run dev` for local development. Node.js
+24 is recommended. The server uses a persistent, git-ignored PGlite database
+locally; production requires `DATABASE_URL` pointing to Postgres and refuses to
+start with ephemeral storage. `npm run build && npm start` serves the complete app.
+The local server creates `.local-data/owner-setup.key` for local owner activation;
+this secret is ignored by Git and is never returned by the API.
+
+- Residents register with a username and a password of at least 12 characters.
+  Save the one-time recovery code; recovery rotates it and revokes old sessions.
+  Passwords use salted scrypt; only hashed session and recovery tokens are stored.
+- **Share my location** requests browser permission and sends GPS coordinates,
+  accuracy, and server timestamps. Updates run while the app is open. Stopping
+  sharing deletes the current coordinates. No background GPS guarantee is made.
+- **Live data** in the command center shows only registered users and consented
+  locations. All registrations start as residents. An approved operator can draw
+  an area, inspect eligible users, select a group, and send a connected alert.
+  The server recalculates the audience and stores the dispatch atomically.
+- **Targeted** counts stored inbox entries. **Received** means the authenticated
+  app fetched and acknowledged the message; **Read** requires the resident's
+  acknowledgment. Push-provider acceptance is not counted as receipt.
+- Inbox, location, assistance, and assignment changes refresh every five seconds
+  while the page is visible and when it regains focus/connectivity. Failed writes
+  show an error and are not silently reported as sent.
+- Residents can see only their own data. Operator access is enforced by the API,
+  including every dispatch and request transition. Owners approve access requests.
+  Self-reported priority groups do not confer operator privileges.
+- Install from the browser menu or **Add to Home Screen**. Enable device
+  notifications in Account. iPhone web push requires a Home Screen installation
+  and supported iOS/Safari. VAPID keys persist in the database. The service worker
+  caches only an offline notice, never personal data or API responses.
+
+### Deploy the shared service
+
+1. Create a Render Blueprint from this repository using `render.yaml`. It creates
+   the Node service and a Postgres database in Singapore, injects the internal
+   connection string, and generates `BOOTSTRAP_TOKEN`. The web service serves both
+   the app and `/api`, so the Render URL can be used directly from a phone.
+2. The included **free** plans are for evaluation: Render free services sleep
+   after inactivity and free Postgres expires after 30 days. Choose persistent
+   paid capacity before ongoing real-world use; no paid plan is selected here.
+3. To retain a Vercel frontend, add a `/api/:path*` rewrite **before** the SPA
+   fallback in `vercel.json`, targeting the deployed Render service's
+   `/api/:path*`. Add that frontend origin to `ALLOWED_ORIGINS`. Do not expose the
+   database URL, owner key, or VAPID private key to the browser.
+4. Register your own account. In the command center choose **Connected phones →
+   Account owner setup**, then enter the generated `BOOTSTRAP_TOKEN` from Render's
+   environment settings. This works once; afterward the owner approves requests
+   from other registered accounts. Remove the bootstrap environment variable once
+   the owner is activated.
+5. On a second device, open the same HTTPS public URL, register, enable location
+   sharing, and optionally select a priority group. Locate that user from the
+   command center, draw an area around their real point, and send a clearly labeled
+   test alert. Confirm both the inbox and the received/read counters. Test a help
+   request and assignment, then stop sharing and verify the point disappears.
+
+The integration is an independent E-Ligtas pilot, not an official eGovPH service.
+The original sample incident feeds, CCTV clips, and moving responder routes remain
+available under **Demo data**, separately from the connected resident workflow.
+
 ## Map-led operations interface
 
 The default screen is a responsive emergency operations view inspired by a dark,
@@ -95,9 +157,11 @@ created when the page loads; locations do not move or stream in real time.
 The original configurable Workspace retains its legacy sample targeting widgets.
 Use the main map's Broadcast center for the new app-user targeting flow.
 
-### Public mobile app and command-center connection
+### Original public presentation demo
 
-Open **Public app** in the command-center header, or visit `/#/public`.
+Visit `/?demo=1#/public` for the original same-browser presentation demo.
+Use **Demo data** in the command center for this workflow. The header's Public app
+link opens the connected version described above.
 The responsive mobile web demo uses an eGovPH-inspired white-and-blue interface
 with local alerts, acknowledgment, safe check-ins, assistance requests, nearby
 sample facilities, and three selectable fictional resident profiles. It is an
@@ -127,24 +191,13 @@ private windows, and different browser profiles do not synchronize. All profile
 locations, facilities and response assignments are fictional. The nearby map's
 dashed line is a straight-line illustration, not navigation or evacuation advice.
 
-### Connecting real mobile devices
-
-This project implements the command-center/public-app demo and targeting logic. Production
-mobile registration, location ingestion, authentication, and push delivery are
-not connected. Replace the demo dataset with authorized app profiles and their
-explicitly shared, timestamped positions and device notification registrations.
-The service should validate geofences and group filters, calculate recipients
-from current server data, authorize each operator, persist an immutable dispatch
-record, and send through the mobile push provider. Use provider receipts for real
-delivery status rather than the demo timer. Protect location/group access and
-define location expiry and retention before using actual resident records.
-
 ### Data and services
 
 Operational records come from `src/app/lib/dashboard-data.ts`. They are sample
 data, not a connected emergency feed. Broadcast delivery is simulated locally and
 stored in browser local storage, as in the original project. The interface labels
-this demo state. No production service or authentication backend was added.
+this demo state. Connected-mode accounts and alerts instead use the Render API
+and Postgres service documented above.
 
 Satellite imagery uses Esri; the street map uses OpenStreetMap Standard. Both require
 network access. Provider attribution remains visible, and a loading/failure message
@@ -155,8 +208,9 @@ appears when imagery cannot be loaded. See `ATTRIBUTIONS.md`.
 ```sh
 npm ci
 npm run dev
+npm run server
 npm run build
-node --test tests/*.test.mjs
+npm test
 ```
 
 The geometry tests use Node.js 22.18 or newer for native TypeScript loading.

@@ -4,7 +4,7 @@ import 'leaflet/dist/leaflet.css';
 import { infrastructureSites, responderTeams, type DisasterEvent } from '../../lib/dashboard-data';
 import { getSelection, severityColors, type MapLayers, type MapSelection, type Region } from '../../lib/operations';
 import { geofenceDistance, type AlertGeofence, type GeofenceGeometry, type GeofencePoint } from '../../lib/geofencing';
-import { demoResidents, demoSnapshotAt, getExposure } from '../../lib/residents';
+import { demoResidents, demoSnapshotAt, getExposure, type Resident } from '../../lib/residents';
 import { fenceLayer, residentMarker } from './resident-map';
 import { responderRoutes } from '../../lib/responder-routes';
 import { useResponderRoutes } from './useResponderRoutes';
@@ -42,6 +42,9 @@ interface OperationsMapProps {
   simulationReplay: number;
   onSimulationTick: (elapsed: number) => void;
   publicReports?: { id: string; point: GeofencePoint; label: string; kind: 'help' | 'safe' }[];
+  residents?: Resident[];
+  snapshotAt?: string;
+  live?: boolean;
 }
 
 const incidentCodes = { typhoon: 'TY', flood: 'FL', earthquake: 'EQ', landslide: 'LS', fire: 'FR' };
@@ -63,7 +66,7 @@ function focusRoute(map: L.Map, teamId: string) {
 }
 
 export const OperationsMap = forwardRef<OperationsMapHandle, OperationsMapProps>(function OperationsMap(
-  { incidents, layers, region, basemap, selection, onSelect, geofence, drawing, onGeofencePoint, onGeofenceMove, areas, selectedAreaId, onSelectGeofence, showResidents, simulationPaused, simulationReplay, onSimulationTick, publicReports }, ref,
+  { incidents, layers, region, basemap, selection, onSelect, geofence, drawing, onGeofencePoint, onGeofenceMove, areas, selectedAreaId, onSelectGeofence, showResidents, simulationPaused, simulationReplay, onSimulationTick, publicReports, residents = demoResidents, snapshotAt = demoSnapshotAt, live = false }, ref,
 ) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -238,11 +241,11 @@ export const OperationsMap = forwardRef<OperationsMapHandle, OperationsMapProps>
     const map = mapRef.current;
     if (!map || !showResidents) return;
     const group = L.layerGroup().addTo(map);
-    getExposure(demoResidents, geofence, demoSnapshotAt).located.forEach(user => {
-      residentMarker(user, demoSnapshotAt, { interactive: !drawing })?.addTo(group);
+    getExposure(residents, live ? null : geofence, snapshotAt).located.forEach(user => {
+      residentMarker(user, snapshotAt, { interactive: !drawing, live })?.addTo(group);
     });
     return () => { group.remove(); };
-  }, [geofence, showResidents, drawing]);
+  }, [geofence, showResidents, drawing, residents, snapshotAt, live]);
 
   useEffect(() => {
     const map = mapRef.current;
