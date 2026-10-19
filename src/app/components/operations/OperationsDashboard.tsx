@@ -40,7 +40,7 @@ import { isOpenRequest, publicProfiles } from '../../lib/public-demo';
 import '../../../styles/public-bridge.css';
 import { presentationArea, presentationSteps, tourStepIndex } from '../../lib/presentation-tour';
 import { RESPONDER_DEMO_DURATION, responderRoutes } from '../../lib/responder-routes';
-import { demoGeofences, getExposure, type AudienceGroup } from '../../lib/residents';
+import { demoGeofences, type AudienceGroup } from '../../lib/residents';
 import { getGeofenceError, isAlertGeofence, type AlertGeofence, type GeofenceGeometry, type GeofencePoint, type GeofenceShape } from '../../lib/geofencing';
 
 const GEOFENCE_STORAGE_KEY = 'ecc-map-geofences-v2';
@@ -145,7 +145,6 @@ export function OperationsDashboard({ auditLogs, messages, onSendMessage, onOpen
   const liveView = liveMode && tourIndex === null;
   const approved = live.state && ['operator','admin'].includes(live.state.user.role);
   const realUsers = useMemo(() => approved ? live.state!.users.map(asResident) : [], [approved,live.state?.users]);
-  const sharedLocations = getExposure(realUsers, null, live.state?.serverTime || new Date().toISOString()).total;
   const [tourRun, setTourRun] = useState(0);
   const [tourPlaying, setTourPlaying] = useState(true);
   const [presentationAreas, setPresentationAreas] = useState<AlertGeofence[]>(demoGeofences);
@@ -367,9 +366,6 @@ export function OperationsDashboard({ auditLogs, messages, onSendMessage, onOpen
           }}><PenLine size={13} />Geofence{alertGeofence && <span>✓</span>}</button>
           <button className="ops-map-tool" aria-pressed={showResidents} onClick={() => setShowResidents(current => !current)}><Users size={13} />App users<span>{showResidents ? 'On' : 'Off'}</span></button>
         </div>
-        {liveView && <div className="ops-live-location-status" role="status">
-          {!live.initialized ? <span>Connecting to shared locations…</span> : !live.state ? <><ShieldCheck size={16} /><span>Sign in to view phone locations</span><button onClick={() => setSection('connected')}>Sign in<ArrowUpRight size={13} /></button></> : !approved ? <><ShieldCheck size={16} /><span>Operator access required<small>Signed in as @{live.state.user.username} · resident</small></span><button onClick={() => setSection('connected')}>Set up access<ArrowUpRight size={13} /></button></> : <><Smartphone size={16} /><span>{sharedLocations ? `${sharedLocations} shared ${sharedLocations === 1 ? 'location' : 'locations'}${showResidents ? '' : ' · layer hidden'}` : 'No phone locations received yet'}<small>{live.connection !== 'connected' ? 'Connection interrupted · showing the last saved update' : sharedLocations ? 'All shared phones, including outside the selected geofence' : 'Open the public app on your phone and tap Share my location'}</small></span><button disabled={!sharedLocations} onClick={() => locatePhone()}>Show shared locations<Crosshair size={13} /></button></>}
-        </div>}
         {!liveView && <div className="ops-map-filters" role="group" aria-label="Filter map incidents">{(['all', 'priority', 'critical', 'flood', 'typhoon'] as const).map((value) => <button key={value} onClick={() => changeFilter(value)} className={filter === value ? 'is-active' : ''} aria-pressed={filter === value}>{value === 'all' ? 'All events' : value === 'priority' ? 'Priority' : value === 'critical' ? 'Critical' : value === 'flood' ? 'Flood' : 'Typhoon'}</button>)}</div>}
       </div>
 
@@ -448,7 +444,7 @@ export function OperationsDashboard({ auditLogs, messages, onSendMessage, onOpen
       onOpenAutoFocus={event => { if (tourIndex !== null) event.preventDefault(); }}
       onCloseAutoFocus={(event) => { event.preventDefault(); if (tourIndex === null) document.querySelector<HTMLButtonElement>('.ops-search-button')?.focus({ preventScroll: true }); }}>
       <DialogHeader><div className="ops-eyebrow">E-LIGTAS / {liveView ? 'CONNECTED OPERATIONS' : 'DEMO OPERATIONS'}</div><DialogTitle>{section ? sectionTitles[section] : ''}</DialogTitle><DialogDescription>{liveView && (section === 'public' || section === 'broadcast') ? 'Live updates from registered accounts. Actual receipts appear when residents open or read their messages.' : section ? sectionDescriptions[section] : ''}</DialogDescription></DialogHeader>
-      {(section === 'connected' || (liveView && section === 'search')) && <ConnectedOperations onLocate={locatePhone} />}
+      {(section === 'connected' || (liveView && section === 'search')) && <ConnectedOperations onLocate={locatePhone} onShowLocations={() => locatePhone()} locationsVisible={liveView && showResidents} />}
       {!liveView && section === 'search' && <><div className="ops-dialog-search"><Search size={18} /><input autoFocus aria-label="Search incidents, teams and facilities" placeholder="Search incidents, teams, or places…" value={search} onChange={(event) => setSearch(event.target.value)} /></div><div className="ops-search-results">{searchItems.map((item) => <button key={item.id} onClick={() => locate(item)}><span className={`ops-result-icon ops-result-icon--${item.kind}`}><MapPin size={16} /></span><span><strong>{item.name}</strong><small>{item.detail} · {item.kind}</small></span><ArrowUpRight size={15} /></button>)}{!searchItems.length && <p className="ops-empty">No results for “{search}”. Try a city or team name.</p>}</div></>}
       {section === 'incidents' && <><div className="ops-incident-toolbar"><div className="ops-dialog-search"><Search size={16} /><input aria-label="Filter incidents" placeholder="Search incidents…" value={incidentQuery} onChange={(event) => setIncidentQuery(event.target.value)} /></div><select aria-label="Incident category" value={filter} onChange={(event) => changeFilter(event.target.value as IncidentFilter)}><option value="all">All events</option><option value="priority">Critical &amp; high priority</option><option value="critical">Critical priority</option><option value="flood">Flood</option><option value="typhoon">Typhoon</option></select></div><div className="ops-incident-list">{getIncidents(region, filter, incidentQuery).map((event) => <button key={event.id} onClick={() => locate({ kind: 'incident', id: event.id })}><IncidentIcon event={event} /><span><strong>{event.title}</strong><small>{event.location} · {formatRelativeTime(event.createdAt)}</small><p>{event.description}</p></span><span className={`ops-severity-pill severity-${event.severity}`}>{event.severity}</span><ArrowUpRight size={15} /></button>)}{!getIncidents(region, filter, incidentQuery).length && <p className="ops-empty">No matching incidents. Adjust your search or event filter.</p>}</div></>}
       {section === 'responders' && <><div className="ops-dialog-summary"><span><strong>{totalPersonnel}</strong> total personnel</span><span><strong>{activeTeams.length}</strong> active teams</span><span><strong>{fieldPersonnel}</strong> in the field</span></div><div className="ops-dialog-team-grid">{responderTeams.map((team) => <TeamCard key={team.id} team={team} onSelect={() => locate({ kind: 'responder', id: team.id })} />)}</div></>}
