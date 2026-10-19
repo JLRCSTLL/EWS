@@ -1,0 +1,44 @@
+.ops-header-actions a.ops-public-app-link { display: flex; gap: 5px; align-items: center; justify-content: center; padding: 7px 9px; border-radius: 7px; border: 1px solid #ffffff30; background: #303030e8; color: #e3e3e3; text-decoration: none; font-size: 10px; white-space: nowrap; }
+.ops-public-inbox { min-height: 0; overflow-y: auto; padding: 3px; }
+.ops-public-intro { display: flex; align-items: center; gap: 14px; padding: 16px; border: 1px solid #ffffff25; border-radius: 10px; background: #ffffff05; }
+.ops-public-intro > div { flex: 1; }
+.ops-public-intro strong { font-size: 13px; font-weight: 500; }
+.ops-public-intro p { color: #bbb; font-size: 11px; line-height: 1.7; margin: 6px 0 0; }
+.ops-public-intro > a { display: flex; gap: 7px; align-items: center; color: #d5e9dc; font-size: 11px; text-decoration: none; flex-shrink: 0; }
+.ops-public-summary { display: flex; gap: 12px; margin: 18px 0 25px; }
+.ops-public-summary > span { flex: 1; border: 1px solid #ffffff20; border-radius: 9px; padding: 14px; color: #bbb; font-size: 10px; }
+.ops-public-summary strong { display: block; color: #f0f0f0; font-size: 28px; font-weight: 300; margin-bottom: 6px; }
+.ops-public-section-heading { display: flex; align-items: center; justify-content: space-between; margin: 18px 0 12px; }
+.ops-public-inbox h3 { font-size: 12px; font-weight: 500; margin: 18px 0 12px; }
+.ops-public-section-heading h3 { margin: 0; }
+.ops-public-section-heading button, .ops-public-request-actions button, .ops-public-checkins button, .ops-public-request-actions select { border: 1px solid #ffffff25; border-radius: 6px; padding: 8px 10px; background: #3d3d3d; color: #ddd; font-size: 10px; }
+.ops-public-request { padding: 15px; border: 1px solid #ffffff25; border-radius: 10px; margin-bottom: 11px; background: #ffffff03; }
+.ops-public-request .ops-card-heading strong { font-size: 13px; font-weight: 500; }
+.ops-public-request p { font-size: 11px; color: #c2c2c2; line-height: 1.7; margin: 8px 0; }
+.ops-public-request > small { display: block; color: #a1a1a1; font-size: 9px; }
+.ops-public-request .ops-public-note { padding: 10px; background: #ffffff07; border-radius: 7px; overflow-wrap: anywhere; }
+.ops-public-status { color: #dfc293; font-size: 9px; border: 1px solid #dfc29340; padding: 5px 7px; border-radius: 5px; }
+.ops-public-status.is-assigned, .ops-public-status.is-acknowledged { color: #aac8e8; border-color: #aac8e840; }
+.ops-public-status.is-resolved { color: #b0d3bf; border-color: #b0d3bf40; }
+.ops-public-status.is-cancelled { color: #aaa; border-color: #ffffff25; }
+.ops-public-request-actions { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 14px; }
+.ops-public-request-actions button, .ops-public-checkins button { display: inline-flex; align-items: center; gap: 6px; }
+.ops-public-request-actions button:disabled, .ops-public-checkins button:disabled { opacity: .4; cursor: default; }
+.ops-public-checkins > div { display: flex; align-items: center; gap: 12px; padding: 13px; border-bottom: 1px solid #ffffff16; color: #b5d1bf; }
+.ops-public-checkins > div > span { flex: 1; }
+.ops-public-checkins strong { font-size: 11px; font-weight: 500; }
+.ops-public-checkins small { display: block; color: #aaa; font-size: 9px; margin-top: 5px; }
+.ops-public-empty { display: grid; justify-items: center; gap: 10px; padding: 30px 20px; border: 1px dashed #ffffff20; border-radius: 10px; color: #aaa; }
+.ops-public-empty strong { font-size: 12px; font-weight: 400; color: #ccc; }
+.ops-public-empty p, .ops-public-empty-copy { font-size: 11px; line-height: 1.7; color: #999; }
+.ops-public-acknowledgments { margin: 20px 0; font-size: 11px; color: #bbb; }
+.ops-public-acknowledgments summary { cursor: pointer; }
+.ops-public-acknowledgments p { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 12px; border-bottom: 1px solid #ffffff12; font-size: 10px; }
+.ops-public-acknowledgments small { color: #999; font-size: 9px; }
+.ops-public-sidebar { display: flex; align-items: center; gap: 10px; padding: 13px; color: #d0ded5; border: 1px solid #ffffff25; border-radius: 9px; background: #303030f5; }
+.ops-public-sidebar > span { flex: 1; text-align: left; }
+.ops-public-sidebar strong { display: block; font-size: 11px; font-weight: 400; }
+.ops-public-sidebar small { display: block; color: #aaa; font-size: 9px; margin-top: 5px; }
+@media (max-width: 1100px) { .ops-public-app-link > span { display: none; } }
+@media (min-width: 901px) and (max-width: 1320px) { .ops-nav { overflow-x: auto; scrollbar-width: thin; } .ops-nav button, .ops-header-actions { flex-shrink: 0; } }
+@media (max-width: 600px) { .ops-public-intro { align-items: flex-start; flex-wrap: wrap; } .ops-public-intro > a { margin-left: 37px; } .ops-public-summary { gap: 7px; } .ops-public-summary > span { padding: 10px; font-size: 9px; } }

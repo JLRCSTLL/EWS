@@ -3,7 +3,7 @@ import {
   Activity, ArrowUpRight, Bell, ChevronDown, ChevronRight,
   CircleHelp, Crosshair, Expand, Flame, Layers, LayoutGrid, MapPin, Minus,
   Ambulance, Mountain, Pause, PenLine, Play, Plus, Radio, RotateCcw, Search, Send, ShieldCheck,
-  Users, Video, Waves, Wind, X,
+  Smartphone, Users, Video, Waves, Wind, X,
 } from 'lucide-react';
 import { Toaster } from 'sonner';
 import {
@@ -31,6 +31,10 @@ import { CommandSidebar } from './CommandSidebar';
 import { ResponderRouteCard } from './ResponderRouteCard';
 import { CctvMonitoring } from './CctvMonitoring';
 import { PresentationTour } from './PresentationTour';
+import { PublicActivityPanel } from './PublicActivityPanel';
+import { usePublicDemo } from '../../lib/public-demo-store';
+import { isOpenRequest, publicProfiles } from '../../lib/public-demo';
+import '../../../styles/public-bridge.css';
 import { presentationArea, presentationSteps, tourStepIndex } from '../../lib/presentation-tour';
 import { RESPONDER_DEMO_DURATION, responderRoutes } from '../../lib/responder-routes';
 import { demoGeofences, type AudienceGroup } from '../../lib/residents';
@@ -57,7 +61,7 @@ function readSelectedGeofence(): string | null {
   return areas[0]?.id || null;
 }
 
-type Section = 'incidents' | 'responders' | 'analytics' | 'activity' | 'broadcast' | 'search' | 'users' | 'help' | null;
+type Section = 'incidents' | 'responders' | 'analytics' | 'activity' | 'broadcast' | 'search' | 'users' | 'help' | 'public' | null;
 interface Props extends WidgetRuntimeProps {
   onOpenWorkspace: () => void;
   onFullscreen: () => void;
@@ -66,7 +70,7 @@ interface Props extends WidgetRuntimeProps {
 
 const incidentIcons = { typhoon: Wind, flood: Waves, earthquake: Activity, landslide: Mountain, fire: Flame };
 const navigation = [
-  ['incidents', 'Incidents'], ['responders', 'Responders'], ['analytics', 'Analytics'], ['activity', 'Activity'],
+  ['incidents', 'Incidents'], ['responders', 'Responders'], ['public', 'Public inbox'], ['analytics', 'Analytics'], ['activity', 'Activity'],
 ] as const;
 const layerLabels: Record<keyof MapLayers, string> = {
   incidents: 'Incident markers', responders: 'Response teams', infrastructure: 'Critical facilities', risk: 'Risk zones',
@@ -74,16 +78,18 @@ const layerLabels: Record<keyof MapLayers, string> = {
 const sectionTitles: Record<Exclude<Section, null>, string> = {
   incidents: 'Incident center', responders: 'Response teams', analytics: 'Operational analytics',
   activity: 'Activity log', broadcast: 'Broadcast center', search: 'Search your operations', users: 'Team & access', help: 'Your command center',
+  public: 'Public assistance & check-ins',
 };
 const sectionDescriptions: Record<Exclude<Section, null>, string> = {
   incidents: 'Review reported events and locate them on the map.',
   responders: 'Personnel, deployment status, and the latest field locations.',
   analytics: 'Risk exposure and system performance from the sample dataset.',
   activity: 'Recent configuration, access, and broadcast activity on this workstation.',
-  broadcast: 'Demo workspace. Broadcasts are simulated locally; no messages are sent to the public.',
+  broadcast: 'Demo broadcasts reach matching public profiles in this browser. No real notifications are sent.',
   search: 'Find an incident, response team, or critical facility. Ctrl / ⌘ K',
   users: 'Review the existing operator directory and access roles.',
   help: 'A clearer view of your emergency operations.',
+  public: 'Two-way presentation updates from the E-Ligtas public app.',
 };
 
 function IncidentIcon({ event }: { event: DisasterEvent }) {
@@ -120,6 +126,12 @@ function OperationsClock() {
 }
 
 export function OperationsDashboard({ auditLogs, messages, onSendMessage, onOpenWorkspace, onFullscreen, isFullscreen }: Props) {
+  const publicState = usePublicDemo();
+  const publicPending = publicState.requests.filter(isOpenRequest).length;
+  const publicReports = useMemo(() => [
+    ...publicState.requests.filter(request => isOpenRequest(request) && request.location).map(request => ({ id: request.id, point: request.location!, label: `${publicProfiles.find(profile => profile.resident.id === request.residentId)?.name || 'Resident'} · ${request.type} · demo`, kind: 'help' as const })),
+    ...publicState.checkIns.filter(item => item.location).map(item => ({ id: `safe-${item.residentId}`, point: item.location!, label: `${publicProfiles.find(profile => profile.resident.id === item.residentId)?.name || 'Resident'} · reported safe · demo`, kind: 'safe' as const })),
+  ], [publicState]);
   const [section, setSection] = useState<Section>(null);
   const [activeView, setActiveView] = useState<'map' | 'cctv'>(() => window.location.hash === '#/cctv' ? 'cctv' : 'map');
   const [tourIndex, setTourIndex] = useState<number | null>(null);
@@ -286,7 +298,7 @@ export function OperationsDashboard({ auditLogs, messages, onSendMessage, onOpen
 
   return <div className={`ops-app${activeView === 'cctv' ? ' ops-app--cctv' : ''}`}>
     <a className="ops-skip-link" href={activeView === 'cctv' ? '#cctv-main' : '#operations-main'} onClick={event => { event.preventDefault(); document.getElementById(activeView === 'cctv' ? 'cctv-main' : 'operations-main')?.focus(); }}>Skip to operations</a>
-    <OperationsMap ref={mapRef} incidents={incidents} layers={layers} region={region} basemap={basemap} selection={selection} onSelect={setSelection}
+    <OperationsMap ref={mapRef} incidents={incidents} layers={layers} region={region} basemap={basemap} selection={selection} onSelect={setSelection} publicReports={tourIndex === null ? publicReports : []}
       geofence={fenceDraft || alertGeofence} drawing={!!fenceDraft} onGeofencePoint={addFencePoint}
       areas={visibleGeofences} selectedAreaId={selectedFenceId} onSelectGeofence={selectFence} showResidents={showResidents}
       simulationPaused={simulationPaused || activeView === 'cctv' || (tourIndex !== null && !tourPlaying)} simulationReplay={simulationReplay} onSimulationTick={setSimulationElapsed}
@@ -299,10 +311,11 @@ export function OperationsDashboard({ auditLogs, messages, onSendMessage, onOpen
       <nav className="ops-nav" aria-label="Main navigation">
         <button data-demo="nav-map" className={activeView === 'map' && !section ? 'is-active' : ''} aria-current={activeView === 'map' && !section ? 'page' : undefined} onClick={() => openView('map')}>Live overview<span className="ops-live-dot" /></button>
         <button data-demo="nav-cctv" className={activeView === 'cctv' && !section ? 'is-active' : ''} aria-current={activeView === 'cctv' && !section ? 'page' : undefined} onClick={() => openView('cctv')}><Video size={12} />CCTV</button>
-        {navigation.map(([id, label]) => <button key={id} className={section === id ? 'is-active' : ''} onClick={() => setSection(id)}>{label}{id === 'incidents' && <span className="ops-nav-count">{regionalIncidents.length}</span>}</button>)}
+        {navigation.map(([id, label]) => <button key={id} className={section === id ? 'is-active' : ''} onClick={() => setSection(id)}>{label}{id === 'incidents' && <span className="ops-nav-count">{regionalIncidents.length}</span>}{id === 'public' && publicPending > 0 && <span className="ops-nav-count">{publicPending}</span>}</button>)}
         <button onClick={onOpenWorkspace}>Workspace<ArrowUpRight size={12} /></button>
       </nav>
       <div className="ops-header-actions">
+        <a href="#/public" target="_blank" rel="noreferrer" className="ops-public-app-link" aria-label="Open public mobile app" title="Open public mobile app"><Smartphone size={14} /><span>Public app</span></a>
         <button className="ops-demo-button" onClick={startTour} aria-label="Start guided demo"><Play size={12} />Demo</button>
         <button className="ops-search-button" onClick={() => setSection('search')} aria-label="Search operations"><Search size={15} /><span>Search anything</span><kbd>⌘ K</kbd></button>
         <span className="ops-header-divider" />
@@ -314,6 +327,7 @@ export function OperationsDashboard({ auditLogs, messages, onSendMessage, onOpen
     <main id="operations-main" className="ops-main" tabIndex={-1} style={activeView === 'cctv' ? { display: 'none' } : undefined}>
       <div className="ops-mobile-heading"><span>Emergency operations</span><span className="ops-demo-badge">Demo data</span></div>
       <CommandSidebar saved={alertGeofence} draft={fenceDraft} messages={messages} onReview={reviewRecipients}
+        publicPending={publicPending} publicSafe={publicState.checkIns.length} onPublicInbox={() => setSection('public')}
         onChooseArea={() => setFenceEditor(true)} onHistory={() => { setBroadcastTab('history'); setSection('broadcast'); }} />
 
       <div className="ops-map-heading">
@@ -414,6 +428,7 @@ export function OperationsDashboard({ auditLogs, messages, onSendMessage, onOpen
       {section === 'analytics' && <div className="ops-legacy-panels ops-analytics-grid"><RiskMonitoring /><SystemHealth /></div>}
       {section === 'activity' && <div className="ops-legacy-panels"><AuditLogs logs={auditLogs} /></div>}
       {section === 'users' && <div className="ops-legacy-panels"><UserManagement /></div>}
+      {section === 'public' && <PublicActivityPanel state={publicState} onLocate={point => { openView('map'); setSelection(null); setFenceEditor(false); setAlertsVisible(false); requestAnimationFrame(() => mapRef.current?.focusPoint(point)); }} />}
       {section === 'broadcast' && <><div className="ops-dialog-tabs" role="group" aria-label="Broadcast view"><button className={broadcastTab === 'compose' ? 'is-active' : ''} aria-pressed={broadcastTab === 'compose'} onClick={() => setBroadcastTab('compose')}><Send size={14} />Compose broadcast</button><button className={broadcastTab === 'history' ? 'is-active' : ''} aria-pressed={broadcastTab === 'history'} onClick={() => setBroadcastTab('history')}>Delivery history<span>{messages.length}</span></button></div>{broadcastTab === 'compose' ? <AudienceBroadcastPanel key={tourIndex === null ? 'operator' : 'presentation'} presentationMode={tourIndex !== null} areas={visibleGeofences} selectedId={selectedFenceId} initialGroup={broadcastGroup} initialActiveOnly={broadcastActiveOnly} onSelectArea={setSelectedFenceId} onSendMessage={onSendMessage} onHistory={() => setBroadcastTab('history')} /> : <div className="ops-legacy-panels"><MessageHistory messages={messages} /></div>}</>}
       {section === 'help' && <div className="ops-help"><p>Select any incident or team to see its location and details. Use <strong>Layers</strong> to adjust the map, or switch between satellite and street views. Select <strong>Geofence</strong> to draw a polygon, rectangle, or circle, save the area, and send an alert to it. Undo removes the last point; drag handles to edit. Keyboard users can pan the focused map with arrow keys and use <strong>Add center point</strong>.</p><p><kbd>Ctrl / ⌘ K</kbd> opens global search. Map controls support keyboard navigation. Press <kbd>Esc</kbd> to dismiss details.</p><p><strong>Workspace</strong> opens your customizable dashboard, including the original geofence tools, widget library, layout presets, and light mode.</p><p className="ops-help-note">This project currently uses sample operational data. Broadcasts and audit changes stay in this browser. Connect production data and delivery services before operational use.</p><button className="ops-secondary-button" onClick={onOpenWorkspace}><LayoutGrid size={15} />Open workspace<ArrowUpRight size={14} /></button></div>}
     </DialogContent></Dialog>

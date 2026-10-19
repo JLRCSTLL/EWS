@@ -59,7 +59,7 @@ map view, selected area, and unfinished boundary.
    list, then write a message or choose a template and priority.
 5. **Send demo alert** records the exact recipient IDs, targeting rules, location
    snapshot time, boundary coordinates, and an audit entry. History labels the
-   result **SIMULATED**. No public messages are sent.
+   result **SIMULATED**. No external notifications are sent.
 
 Saved areas persist in this browser and can be selected, edited, renamed, or removed.
 An area saved by the previous version is migrated alongside the demo areas. Polygon
@@ -95,9 +95,41 @@ created when the page loads; locations do not move or stream in real time.
 The original configurable Workspace retains its legacy sample targeting widgets.
 Use the main map's Broadcast center for the new app-user targeting flow.
 
-### Connecting the mobile app later
+### Public mobile app and command-center connection
 
-This change implements the command-center demo and targeting logic. Production
+Open **Public app** in the command-center header, or visit `/#/public`.
+The responsive mobile web demo uses an eGovPH-inspired white-and-blue interface
+with local alerts, acknowledgment, safe check-ins, assistance requests, nearby
+sample facilities, and three selectable fictional resident profiles. It is an
+independent integration concept, not an official eGovPH service or native app.
+
+For a two-way presentation, keep both views open on the **same origin in the same
+browser profile**:
+
+1. In the command center, select **Marikina flood watch**, choose **PWD** or
+   **All app users**, and send a clearly labeled demo alert. The public app defaults
+   to Juan Dela Cruz (`demo-user-148`), an eligible Marikina resident.
+2. Open the public **Alerts** inbox. Only delivered broadcasts whose saved
+   recipient IDs include this resident appear. A separate sample advisory is
+   always available and is labeled as a sample.
+3. Acknowledge the alert, select **I'm safe**, or submit **Get help** with sample
+   information. Including the fictional location is optional.
+4. Open **Public inbox** in the command center to see the new records, locate the
+   resident, acknowledge a request, assign a demo ambulance/rescue unit, or resolve
+   it. Status updates appear immediately under **My status** in the public app.
+5. Switch the presentation resident in **Account** to demonstrate geographic
+   targeting. Requests allow one open request per resident; closed requests remain
+   in their history.
+
+This connection uses browser storage and storage events, with no server or real
+notifications. Localhost and production do not share records; separate phones,
+private windows, and different browser profiles do not synchronize. All profile
+locations, facilities and response assignments are fictional. The nearby map's
+dashed line is a straight-line illustration, not navigation or evacuation advice.
+
+### Connecting real mobile devices
+
+This project implements the command-center/public-app demo and targeting logic. Production
 mobile registration, location ingestion, authentication, and push delivery are
 not connected. Replace the demo dataset with authorized app profiles and their
 explicitly shared, timestamped positions and device notification registrations.

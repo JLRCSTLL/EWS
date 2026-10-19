@@ -13,12 +13,15 @@ interface Props {
   messages: DashboardMessage[];
   onChooseArea: () => void;
   onReview: (group: AudienceGroup, activeOnly?: boolean) => void;
+  publicPending?: number;
+  publicSafe?: number;
+  onPublicInbox?: () => void;
   onHistory: () => void;
 }
 
 const groupIcons = { pwd: Accessibility, children: Baby, seniors: Users, pregnant: Heart, responders: ShieldCheck };
 
-export function CommandSidebar({ saved, draft, messages, onChooseArea, onReview, onHistory }: Props) {
+export function CommandSidebar({ saved, draft, messages, onChooseArea, onReview, onHistory, publicPending = 0, publicSafe = 0, onPublicInbox }: Props) {
   const geometry = draft || saved;
   const reach = useMemo(() => getAlertReach(demoResidents, geometry, demoSnapshotAt), [geometry]);
   const broadcasts = useMemo(() => getAreaBroadcasts(messages, saved?.id || null), [messages, saved?.id]);
@@ -71,6 +74,7 @@ export function CommandSidebar({ saved, draft, messages, onChooseArea, onReview,
       </button> : <p className="ops-command-history-empty">{draft ? 'Save this boundary to start its alert history.' : saved ? 'No app alert sent to this geofence yet.' : 'No app broadcasts yet. Preview an audience to get started.'}</p>}
     </section>
 
+    {onPublicInbox && <button className="ops-public-sidebar" onClick={onPublicInbox}><ShieldCheck size={20} /><span><strong>Resident updates</strong><small>{publicPending} open requests · {publicSafe} reported safe</small></span><ChevronRight size={15} /></button>}
     <button className="ops-broadcast-button" disabled={!canReview || !eligible} onClick={() => onReview('all')}>
       <span className="ops-broadcast-icon"><Radio size={17} /></span><span><strong>Preview alert audience</strong><small>{draft ? 'Save or cancel the boundary first' : eligible ? `${eligible} eligible users · review their locations` : 'No active users eligible in this area'}</small></span><ArrowUpRight size={17} />
     </button>

@@ -18,6 +18,7 @@ import { DashboardWidget } from './components/DashboardWidget';
 import type { OutboundMessageDraft } from './components/MessagingPanel';
 import { WidgetLibrary } from './components/WidgetLibrary';
 import { OperationsDashboard } from './components/operations/OperationsDashboard';
+import { notifyDemoUpdate } from './lib/public-demo-store';
 import { Button } from './components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './components/ui/select';
 import 'react-grid-layout/css/styles.css';
@@ -237,7 +238,20 @@ export default function App() {
 
   useEffect(() => {
     window.localStorage.setItem(STORAGE_KEYS.messages, JSON.stringify(messages));
+    notifyDemoUpdate();
   }, [messages]);
+
+  useEffect(() => {
+    const sync = (event: StorageEvent) => {
+      if (event.key !== STORAGE_KEYS.messages) return;
+      try {
+        const next = JSON.parse(event.newValue || '[]');
+        if (Array.isArray(next)) setMessages(current => JSON.stringify(current) === JSON.stringify(next) ? current : next);
+      } catch { /* Ignore malformed data from another tab. */ }
+    };
+    window.addEventListener('storage', sync);
+    return () => window.removeEventListener('storage', sync);
+  }, []);
 
   useEffect(() => {
     window.localStorage.setItem(STORAGE_KEYS.auditLogs, JSON.stringify(auditLogs));

@@ -20,6 +20,7 @@ export interface OperationsMapHandle {
   restoreView: (view: { lat: number; lng: number; zoom: number }) => void;
   projectPoint: (point: GeofencePoint) => { x: number; y: number } | null;
   frameDemoArea: (geometry: GeofenceGeometry) => void;
+  focusPoint: (point: GeofencePoint) => void;
 }
 
 interface OperationsMapProps {
@@ -40,6 +41,7 @@ interface OperationsMapProps {
   simulationPaused: boolean;
   simulationReplay: number;
   onSimulationTick: (elapsed: number) => void;
+  publicReports?: { id: string; point: GeofencePoint; label: string; kind: 'help' | 'safe' }[];
 }
 
 const incidentCodes = { typhoon: 'TY', flood: 'FL', earthquake: 'EQ', landslide: 'LS', fire: 'FR' };
@@ -61,7 +63,7 @@ function focusRoute(map: L.Map, teamId: string) {
 }
 
 export const OperationsMap = forwardRef<OperationsMapHandle, OperationsMapProps>(function OperationsMap(
-  { incidents, layers, region, basemap, selection, onSelect, geofence, drawing, onGeofencePoint, onGeofenceMove, areas, selectedAreaId, onSelectGeofence, showResidents, simulationPaused, simulationReplay, onSimulationTick }, ref,
+  { incidents, layers, region, basemap, selection, onSelect, geofence, drawing, onGeofencePoint, onGeofenceMove, areas, selectedAreaId, onSelectGeofence, showResidents, simulationPaused, simulationReplay, onSimulationTick, publicReports }, ref,
 ) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -83,6 +85,7 @@ export const OperationsMap = forwardRef<OperationsMapHandle, OperationsMapProps>
     focusRoute: (teamId) => { if (mapRef.current) focusRoute(mapRef.current, teamId); },
     captureView: () => { const map = mapRef.current; if (!map) return null; const center = map.getCenter(); return { lat: center.lat, lng: center.lng, zoom: map.getZoom() }; },
     restoreView: view => { mapRef.current?.stop().setView([view.lat, view.lng], view.zoom, { animate: false }); },
+    focusPoint: point => { mapRef.current?.stop().setView([point.lat, point.lng], 14, { animate: false }); },
     projectPoint: point => {
       const map = mapRef.current;
       if (!map || !containerRef.current) return null;
@@ -131,6 +134,17 @@ export const OperationsMap = forwardRef<OperationsMapHandle, OperationsMapProps>
   useResponderRoutes({ mapRef, visible: layers.responders, drawing, paused: simulationPaused, replay: simulationReplay,
     selectedId: selection?.kind === 'responder' ? selection.id : null,
     onSelect: (id) => onSelectRef.current({ kind: 'responder', id }), onTick: onSimulationTick });
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !publicReports?.length) return;
+    const group = L.layerGroup().addTo(map);
+    for (const report of publicReports) {
+      const label = document.createElement('span'); label.textContent = report.label;
+      L.circleMarker([report.point.lat, report.point.lng], { radius: report.kind === 'help' ? 12 : 8, color: '#fff', weight: 2, fillColor: report.kind === 'help' ? '#f49b62' : '#73cfab', fillOpacity: .95, interactive: !drawing }).addTo(group).bindTooltip(label, { direction: 'top', className: 'ops-map-tooltip' });
+    }
+    return () => { group.remove(); };
+  }, [publicReports, drawing]);
 
   useEffect(() => {
     if (mapRef.current) mapHome(mapRef.current, region);
