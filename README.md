@@ -52,10 +52,11 @@ this secret is ignored by Git and is never returned by the API.
 2. The included **free** plans are for evaluation: Render free services sleep
    after inactivity and free Postgres expires after 30 days. Choose persistent
    paid capacity before ongoing real-world use; no paid plan is selected here.
-3. To retain a Vercel frontend, add a `/api/:path*` rewrite **before** the SPA
-   fallback in `vercel.json`, targeting the deployed Render service's
-   `/api/:path*`. Add that frontend origin to `ALLOWED_ORIGINS`. Do not expose the
-   database URL, owner key, or VAPID private key to the browser.
+3. The Vercel frontend at `https://ews-kappa.vercel.app` forwards `/api/:path*`
+   to `https://e-ligtas.onrender.com/api/:path*` using the rewrite **before** the
+   SPA fallback in `vercel.json`. The Render blueprint allows that frontend
+   origin in `ALLOWED_ORIGINS`. If either hostname changes, update both settings.
+   Do not expose the database URL, owner key, or VAPID private key to the browser.
 4. Register your own account. In the command center choose **Connected phones →
    Account owner setup**, then enter the generated `BOOTSTRAP_TOKEN` from Render's
    environment settings. This works once; afterward the owner approves requests
@@ -66,6 +67,11 @@ this secret is ignored by Git and is never returned by the API.
    command center, draw an area around their real point, and send a clearly labeled
    test alert. Confirm both the inbox and the received/read counters. Test a help
    request and assignment, then stop sharing and verify the point disappears.
+
+Production checks: `/api/health` on either host must return JSON with `ok: true`;
+`/api/state` must return a JSON 401 when signed out. An HTML response means the
+frontend is not connected to the backend. Vercel production deploys from `main`;
+a successful preview on `ui/map-command-center` does not update the public site.
 
 The integration is an independent E-Ligtas pilot, not an official eGovPH service.
 The original sample incident feeds, CCTV clips, and moving responder routes remain
