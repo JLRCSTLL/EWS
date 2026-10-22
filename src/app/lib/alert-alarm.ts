@@ -1,5 +1,6 @@
 type Arrival = { id: string; created_at: string; read_at?: string | null; priority: string };
 const rank: Record<string, number> = { critical: 3, high: 2, normal: 1 };
+export function presentAlert<T extends Arrival>(active: T | null, incoming: T): T { return active && rank[active.priority] > rank[incoming.priority] ? active : incoming; }
 export const ALARM_MAX_AGE_MS = 5 * 60 * 1000;
 
 // The first inbox snapshot is a baseline, never a reason to replay old alarms.

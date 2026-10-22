@@ -20,4 +20,5 @@ public class AlertPolicyTest {
         assertFalse(AlertPolicy.eligible(id,"a","a","invalid",now,Set.of()));
     }
     @Test public void announcementsDoNotRequestUrgentBackgroundAlarm() { assertFalse(AlertPolicy.urgent("normal")); assertTrue(AlertPolicy.urgent("high")); assertTrue(AlertPolicy.urgent("critical")); }
+    @Test public void aRoutineUpdateCannotInterruptAnEmergencyAlarm() { assertFalse(AlertPolicy.mayInterrupt("normal","critical")); assertFalse(AlertPolicy.mayInterrupt("high","critical")); assertTrue(AlertPolicy.mayInterrupt("critical","high")); assertTrue(AlertPolicy.mayInterrupt("normal","")); }
 }

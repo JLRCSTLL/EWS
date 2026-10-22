@@ -21,6 +21,7 @@ import androidx.core.app.NotificationCompat;
 
 public final class EmergencyAlarmService extends Service {
     static volatile String activeId = "";
+    static volatile String activePriority = "";
     private final Handler handler = new Handler(Looper.getMainLooper());
     private MediaPlayer player;
     private AudioFocusRequest focus;
@@ -30,7 +31,8 @@ public final class EmergencyAlarmService extends Service {
         try {
             JSONObject alert = new JSONObject(intent.getStringExtra("alert"));
             if (!AlarmSettings.prefs(this).getBoolean("enabled", false) || !alert.optString("userId").equals(AlarmSettings.prefs(this).getString("user", ""))) { stopSelf(); return START_NOT_STICKY; }
-            releaseAudio(); AlarmSettings.channels(this); activeId = alert.optString("id");
+            if (!AlertPolicy.mayInterrupt(alert.optString("priority"),activePriority)) return START_NOT_STICKY;
+            releaseAudio(); AlarmSettings.channels(this); activeId = alert.optString("id"); activePriority = alert.optString("priority");
             Intent stop = new Intent(this, EmergencyAlarmService.class).setAction("STOP");
             PendingIntent silence = PendingIntent.getService(this, 2, stop, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
             Notification notification = AlertDelivery.notification(this, alert, AlarmSettings.PLAYBACK).setOngoing(true).setSilent(true)
@@ -67,7 +69,7 @@ public final class EmergencyAlarmService extends Service {
         if (player != null) { try { player.stop(); } catch (IllegalStateException ignored) {} player.release(); player = null; }
         if (focus != null) { getSystemService(AudioManager.class).abandonAudioFocusRequest(focus); focus = null; }
         Vibrator vibrator = getSystemService(Vibrator.class); if (vibrator != null) vibrator.cancel();
-        AlarmSettings.restoreVolume(this); activeId = "";
+        AlarmSettings.restoreVolume(this); activeId = ""; activePriority = "";
     }
     @Override public void onDestroy() { releaseAudio(); stopForeground(STOP_FOREGROUND_REMOVE); super.onDestroy(); }
 }

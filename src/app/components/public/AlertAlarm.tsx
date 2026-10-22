@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { BellRing, ShieldCheck, Volume2, VolumeX, X } from 'lucide-react';
-import { BrowserAlarm, createAlertTracker } from '../../lib/alert-alarm';
+import { BrowserAlarm, createAlertTracker, presentAlert } from '../../lib/alert-alarm';
 import { android, isAndroidApp, type AndroidStatus } from '../../lib/android';
 import { api } from '../../lib/live-service';
 import type { LiveAlert } from '../../lib/live-model';
@@ -40,7 +40,7 @@ export function AlertAlarm({ userId, alerts, onOpen, settings }: { userId: strin
   }, [native,userId]);
   useEffect(() => {
     const arrivals = tracker.current(alerts);
-    if (arrivals.length) { setActive(arrivals[0]); setTesting(false); }
+    if (arrivals.length) { setActive(current => presentAlert(current,arrivals[0])); setTesting(false); }
   }, [alerts]);
   useEffect(() => {
     if (!active) return;

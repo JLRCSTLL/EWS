@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
-import { createAlertTracker } from '../src/app/lib/alert-alarm.ts';
+import { createAlertTracker, presentAlert } from '../src/app/lib/alert-alarm.ts';
 
 const now = Date.parse('2026-10-22T08:00:00Z');
 const alert = (id, extra = {}) => ({ id, priority:'high', created_at: new Date(now).toISOString(), read_at:null, ...extra });
@@ -23,6 +23,8 @@ test('a burst presents the most urgent incoming alert first without replaying lo
   const arrivals = [alert('normal',{priority:'normal'}),alert('critical',{priority:'critical'}),alert('high')];
   assert.deepEqual(track(arrivals,now).map(a => a.id),['critical','high','normal']);
   assert.deepEqual(track(arrivals,now),[]);
+  assert.equal(presentAlert(alert('current',{priority:'critical'}),alert('normal',{priority:'normal'})).id,'current');
+  assert.equal(presentAlert(alert('current',{priority:'normal'}),alert('urgent',{priority:'critical'})).id,'urgent');
 });
 test('web push requests audible urgent notifications and refreshes only public-app clients', async () => {
   const handlers = {}, notifications = [], messages = [];

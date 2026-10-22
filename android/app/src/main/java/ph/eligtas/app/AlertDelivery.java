@@ -24,14 +24,15 @@ final class AlertDelivery {
         String channel = AlertPolicy.urgent(priority) ? AlarmSettings.EMERGENCY : AlarmSettings.COMMUNITY;
         if (!AlarmSettings.notificationsAllowed(c, channel)) return false;
         boolean playing = false;
-        if (canStartAlarm && prefs.getBoolean("enabled", false)) {
+        if (canStartAlarm && prefs.getBoolean("enabled", false) && AlertPolicy.mayInterrupt(priority,EmergencyAlarmService.activePriority)) {
             try {
                 ContextCompat.startForegroundService(c, new Intent(c, EmergencyAlarmService.class).putExtra("alert", alert.toString()));
                 playing = true;
             } catch (RuntimeException restricted) { /* Fall back to a standard audible notification. */ }
         }
         NotificationCompat.Builder notification = notification(c, alert, channel).setAutoCancel(true);
-        if (playing || !prefs.getBoolean("enabled", false)) notification.setSilent(true);
+        // Keep Android's channel sound as a fallback if the OS refuses alarm playback.
+        if (!prefs.getBoolean("enabled", false)) notification.setSilent(true);
         c.getSystemService(NotificationManager.class).notify(id.hashCode(), notification.build());
         MainActivity.refreshInbox();
         return playing;
