@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { LiveState } from './live-model';
+import { android, isAndroidApp } from './android';
 
 export class ApiError extends Error { constructor(message: string, public status: number) { super(message); } }
 export async function api(path: string, body?: unknown, method = body === undefined ? 'GET' : 'POST') {
@@ -52,18 +53,21 @@ export function LiveProvider({ children }: { children: ReactNode }) {
     let publicScope = location.hash.startsWith('#/public');
     const route = () => {
       const next = location.hash.startsWith('#/public');
-      if (next !== publicScope) { publicScope = next; epoch.current++; refreshing.current = false; setState(null); void refresh(); }
+      if (next !== publicScope) { publicScope = next; epoch.current++; refreshing.current = false; setState(null); setConnection('connecting'); void refresh(); }
     };
     const offline = () => setConnection('offline');
+    const pushed = (event: MessageEvent) => { if (event.data?.type === 'ELIGTAS_ALERT') tick(); };
     const timer = window.setInterval(tick, 5000);
     window.addEventListener('online', tick); window.addEventListener('offline', offline);
     document.addEventListener('visibilitychange', tick); window.addEventListener('hashchange', route);
-    return () => { clearInterval(timer); window.removeEventListener('online', tick); window.removeEventListener('offline', offline); document.removeEventListener('visibilitychange', tick); window.removeEventListener('hashchange', route); };
+    navigator.serviceWorker?.addEventListener('message', pushed); window.addEventListener('eligtas-native-alert', tick);
+    return () => { clearInterval(timer); window.removeEventListener('online', tick); window.removeEventListener('offline', offline); document.removeEventListener('visibilitychange', tick); window.removeEventListener('hashchange', route); navigator.serviceWorker?.removeEventListener('message', pushed); window.removeEventListener('eligtas-native-alert', tick); };
   }, [refresh]);
   const mutate = useCallback(async (path: string, body?: unknown, method?: string) => {
     const result = await api(path, body, method); await refresh(); return result;
   }, [refresh]);
   const userId = state?.user.id;
+  useEffect(() => { if (initialized && connection === 'connected' && !userId && isAndroidApp()) void android('logout').catch(() => {}); }, [initialized,connection,userId]);
   useEffect(() => {
     setSharing(!!userId && localStorage.getItem(locationKey(userId)) === 'yes');
   }, [userId]);
@@ -106,7 +110,8 @@ export function LiveProvider({ children }: { children: ReactNode }) {
   };
   const logout = async () => {
     if (state?.user.locationSharing || sharingOnDevice) await stopLocation();
-    if ('serviceWorker' in navigator) {
+    if (isAndroidApp()) await android('logout');
+    if ('serviceWorker' in navigator && !isAndroidApp()) {
       const worker = await navigator.serviceWorker.getRegistration();
       const sub = await worker?.pushManager.getSubscription();
       if (sub) { await api('/push', { endpoint: sub.endpoint }, 'DELETE'); await sub.unsubscribe(); }

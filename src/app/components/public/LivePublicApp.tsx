@@ -4,6 +4,8 @@ import { api, useLive } from '../../lib/live-service';
 import { openRequest, type LiveAlert } from '../../lib/live-model';
 import { AuthPanel } from './AuthPanel';
 import { LocationMap } from './LocationMap';
+import { AlertAlarm } from './AlertAlarm';
+import { isAndroidApp } from '../../lib/android';
 import '../../../styles/live-app.css';
 
 const pages = ['home','alerts','help','map','account'] as const;
@@ -20,7 +22,7 @@ function InstallApp() {
     window.addEventListener('beforeinstallprompt', ready); window.addEventListener('appinstalled', done);
     return () => { window.removeEventListener('beforeinstallprompt', ready); window.removeEventListener('appinstalled', done); };
   }, []);
-  if (installed) return null;
+  if (installed || isAndroidApp()) return null;
   return <><button className="el-install" onClick={async () => { if (prompt) { await prompt.prompt(); setPrompt(null); } else setHelp(value => !value); }}><ArrowDownToLine size={17} /><span>Keep E-Ligtas close<small>Add to your home screen</small></span><ChevronRight size={17} /></button>{help && <p className="el-notice">On iPhone, open this page in Safari, tap Share, then Add to Home Screen. On Android, open your browser menu and choose Install app or Add to Home screen.</p>}</>;
 }
 
@@ -45,7 +47,8 @@ function PushSettings() {
     } catch (error) { setNote(error instanceof Error ? error.message : 'Unable to enable notifications.'); }
     finally { setBusy(false); }
   }
-  return <div className="el-setting"><div><Bell size={19} /><span><strong>Device notifications</strong><small>Show alerts when the app is closed, where supported.</small></span></div><button className="el-secondary" disabled={busy} onClick={toggle}>{busy ? 'Please wait…' : enabled ? 'Turn off' : 'Enable'}</button>{note && <p className="el-notice" role="status">{note}</p>}</div>;
+  if (isAndroidApp()) return null;
+  return <div className="el-setting"><div><Bell size={19} /><span><strong>Device notifications</strong><small>Show alerts when the app is closed, where supported. Sound follows your device settings.</small></span></div><button className="el-secondary" disabled={busy} onClick={toggle}>{busy ? 'Please wait…' : enabled ? 'Turn off' : 'Enable'}</button>{note && <p className="el-notice" role="status">{note}</p>}</div>;
 }
 
 function ProfileForm() {
@@ -98,12 +101,14 @@ export default function LivePublicApp() {
   const currentRequest = requests.find(openRequest);
   const chosen = alerts.find(a => a.id === selected);
   const connected = connection === 'connected';
+  const openAlert = (alert: LiveAlert) => { if (page !== 'alerts') { location.hash = '#/public/alerts'; setTimeout(() => setSelected(alert.id),0); } else setSelected(alert.id); };
   const locationCard = user && <section className="el-card el-location-card"><div className="el-section-heading"><span className="el-icon-soft"><LocateFixed size={21} /></span><div><h2>Your location</h2><p>{user.locationSharing ? 'Visible to approved operators' : 'Only shared with your permission'}</p></div></div><p className="el-location-status">{live.locationStatus}</p>{user.location && <p className="el-caption">Last received {at(user.location.updatedAt)} · ±{Math.round(user.location.accuracy)} m</p>}<button className={live.sharingOnDevice ? 'el-secondary' : 'el-primary'} disabled={busy} onClick={() => live.sharingOnDevice ? void action(live.stopLocation,'Location sharing stopped.') : live.startLocation()}>{live.sharingOnDevice ? 'Stop sharing location' : 'Share my location'}<LocateFixed size={17} /></button>{!live.sharingOnDevice && user.locationSharing && <button className="el-text-button" disabled={busy} onClick={() => void action(live.stopLocation,'Saved location removed.')}>Remove shared location</button>}<p className="el-caption">GPS updates while the app is open. Closing it may pause updates; operators see the last update time. Stopping sharing removes your saved point.</p></section>;
   const alertCard = (alert: LiveAlert) => <button key={alert.id} className={`el-alert-card priority-${alert.priority}`} onClick={() => { if (page !== 'alerts') { location.hash = '#/public/alerts'; setTimeout(() => setSelected(alert.id),0); } else setSelected(alert.id); }}><span className="el-alert-icon"><Bell size={20} /></span><span><span className="el-alert-meta">{alert.priority} priority · {at(alert.created_at)}{!alert.read_at && <i aria-label="Unread" />}</span><strong>{alert.area.name}</strong><p>{alert.content}</p></span><ChevronRight size={17} /></button>;
   return <div className="el-app"><a className="el-skip" href="#public-main" onClick={e => { e.preventDefault(); document.getElementById('public-main')?.focus(); }}>Skip to content</a><header className="el-header"><a href="#/public" className="el-brand"><span className="el-logo"><ShieldCheck size={26} /></span><span>E-Ligtas<small>COMMUNITY SAFETY</small></span></a><div className={`el-connection ${connected ? 'is-connected' : ''}`} role="status">{connected ? <Wifi size={14} /> : <WifiOff size={14} />}<span>{connected ? 'Connected' : connection === 'connecting' ? 'Connecting' : 'Reconnecting'}</span></div>{user && <a href="#/public/account" className="el-avatar" aria-label="Your account">{user.name.charAt(0).toUpperCase()}</a>}</header>
     <main id="public-main" className="el-main" tabIndex={-1}>
       {!connected && initialized && <div className="el-notice el-connection-error" role="status"><WifiOff size={19} /><span>{live.error || 'You are offline. Updates will resume when connected.'} {state ? 'Showing the last saved update.' : ''}</span><button onClick={() => void live.refresh()} aria-label="Retry connection"><RefreshCw size={18} /></button></div>}
       {!initialized ? <p className="el-loading">Connecting to your community…</p> : !user || recoveryCode ? <><AuthPanel /><InstallApp /><p className="el-pilot-note">E-Ligtas pilot · independently developed; not an official eGovPH service.</p></> : <>
+        <AlertAlarm key={user.id} userId={user.id} alerts={alerts} onOpen={openAlert} settings={page === 'account'} />
         {notice && <div className="el-notice" role="status">{notice}<button onClick={() => setNotice('')} aria-label="Dismiss message">×</button></div>}
         {page === 'home' && <><div className="el-greeting"><span className="el-eyebrow">MABUHAY, {user.name.split(' ')[0].toUpperCase()}</span><h1>A little more<br />peace of mind.</h1><p><MapPin size={15} />{user.municipality || 'Set your community in your profile'}</p></div><div className="el-home-grid"><section className="el-hero"><div><span className="el-eyebrow">YOUR ALERT INBOX</span><h2>{unread ? `${unread} new ${unread === 1 ? 'alert' : 'alerts'} for you` : 'Stay informed. Stay ready.'}</h2><p>{unread ? 'Your command center has an update. Take a moment to read it.' : 'Messages for your area appear here when your command center sends them.'}</p><a href="#/public/alerts">Open my alerts <ArrowRight size={18} /></a></div><ShieldCheck size={92} strokeWidth={1} aria-hidden="true" /></section>{locationCard}</div>
           <div className="el-quick-actions"><button disabled={busy || !connected} onClick={() => void action(() => live.mutate('/safe',{}),'Your safe check-in was sent to the command center.')}><span className="el-quick-icon safe"><CheckCheck size={23} /></span><strong>I’m safe</strong><small>Send a check-in</small></button><a href="#/public/help"><span className="el-quick-icon help"><HeartHandshake size={23} /></span><strong>Request help</strong><small>Contact your center</small></a><a href="#/public/map"><span className="el-quick-icon map"><MapPin size={23} /></span><strong>My area</strong><small>Location & alert zones</small></a></div>

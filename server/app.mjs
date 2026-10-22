@@ -3,6 +3,7 @@ import { randomUUID, timingSafeEqual } from 'node:crypto';
 import { isDeepStrictEqual } from 'node:util';
 import { digest, hashPassword, isOperator, publicUser, randomToken, verifyPassword } from './auth.mjs';
 import { validSubscription } from './push.mjs';
+import { validAndroidToken } from './android-push.mjs';
 import { getGeofenceError } from '../src/app/lib/geofencing.ts';
 import { getAudience } from '../src/app/lib/residents.ts';
 import { asResident } from '../src/app/lib/live-model.ts';
@@ -45,7 +46,7 @@ export function createApp(db, { push, production = process.env.NODE_ENV === 'pro
     res.cookie('eligtas_session', token, { httpOnly: true, secure: production, sameSite: 'lax', path: '/api', maxAge: 30 * 86400000 });
   }
   app.get('/api/health', async (_req, res) => { await db.query('select 1'); res.json({ ok: true, service: 'E-Ligtas', version: 1 }); });
-  app.get('/api/config', (_req, res) => res.json({ pushPublicKey: push?.publicKey || null, registration: true }));
+  app.get('/api/config', (_req, res) => res.json({ pushPublicKey: push?.publicKey || null, androidPushReady: !!push?.androidReady, registration: true }));
   app.post('/api/auth/register', async (req, res) => {
     rateLimit(req, 'register', 5, 3600000);
     const username = text(req.body.username, 3, 30, 'username').toLowerCase();
@@ -150,7 +151,7 @@ export function createApp(db, { push, production = process.env.NODE_ENV === 'pro
       await tx.query('insert into eligtas.alerts(id,author_id,content,priority,area,groups,active_only,recipient_count) values ($1,$2,$3,$4,$5,$6,$7,$8)', [id,req.user.id,content,priority,JSON.stringify(area),groups,activeOnly,audience.recipients.length]);
       for (const user of audience.recipients) await tx.query('insert into eligtas.receipts(alert_id,user_id) values ($1,$2)', [id,user.id]);
       await tx.query('insert into eligtas.audit(id,actor_id,action,target_id) values ($1,$2,$3,$4)', [randomUUID(),req.user.id,'dispatch_alert',id]);
-      return { id, content, priority, recipient_count: audience.recipients.length };
+      return { id, content, priority, created_at: new Date().toISOString(), recipient_count: audience.recipients.length };
     });
     res.status(result.existing ? 200 : 201).json(result);
     if (!result.existing && push) void push.send(result).catch(() => console.error('Push delivery task failed; the alert remains in the inbox.'));
@@ -203,6 +204,19 @@ export function createApp(db, { push, production = process.env.NODE_ENV === 'pro
   app.post('/api/push', async (req, res) => {
     if (!push || !validSubscription(req.body)) fail(400, 'This browser returned an unsupported push subscription.');
     await db.query('insert into eligtas.push_subscriptions(endpoint,user_id,subscription) values ($1,$2,$3) on conflict(endpoint) do update set user_id=excluded.user_id,subscription=excluded.subscription', [req.body.endpoint,req.user.id,JSON.stringify(req.body)]);
+    res.json({ ok: true });
+  });
+  app.post('/api/push/android', async (req, res) => {
+    if (!push?.androidReady) fail(503, 'Android background notifications are not configured yet.');
+    if (!validAndroidToken(req.body.token)) fail(400, 'Invalid Android device registration.');
+    rateLimit(req, 'android-device', 60);
+    await db.query(`insert into eligtas.android_devices(token,user_id,session_hash) values ($1,$2,$3)
+      on conflict(token) do update set user_id=excluded.user_id,session_hash=excluded.session_hash,updated_at=now()`, [req.body.token,req.user.id,digest(tokenFrom(req))]);
+    res.json({ ok: true });
+  });
+  app.delete('/api/push/android', async (req, res) => {
+    if (!validAndroidToken(req.body.token)) fail(400, 'Invalid Android device registration.');
+    await db.query('delete from eligtas.android_devices where token=$1 and user_id=$2', [req.body.token,req.user.id]);
     res.json({ ok: true });
   });
   app.delete('/api/push', async (req, res) => {

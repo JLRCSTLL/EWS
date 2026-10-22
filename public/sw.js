@@ -8,7 +8,13 @@ self.addEventListener('fetch', event => {
 self.addEventListener('push', event => {
   let message = { title: 'E-Ligtas alert', body: 'Open your inbox for a new command-center message.' };
   try { message = { ...message, ...event.data.json() }; } catch { /* Keep a useful generic notification. */ }
-  event.waitUntil(self.registration.showNotification(message.title, { body: message.body, icon: '/app-icon-192.png', badge: '/app-icon-192.png', tag: message.id || 'eligtas-alert', data: { url: '/#/public/alerts' } }));
+  const urgent = ['high','critical'].includes(message.priority);
+  event.waitUntil(Promise.all([
+    self.registration.showNotification(message.title, { body: message.body, icon: '/app-icon-192.png', badge: '/app-icon-192.png', tag: message.id || 'eligtas-alert', silent: false, vibrate: urgent ? [300,150,300,150,600] : [200], requireInteraction: urgent, data: { url: '/#/public/alerts' } }),
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clients => clients.forEach(client => {
+      if (new URL(client.url).origin === self.location.origin && client.url.includes('#/public')) client.postMessage({ type: 'ELIGTAS_ALERT' });
+    })),
+  ]));
 });
 self.addEventListener('notificationclick', event => {
   event.notification.close();

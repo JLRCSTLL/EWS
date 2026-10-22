@@ -1,0 +1,42 @@
+plugins { id 'com.android.application' }
+def hasFirebase = file('google-services.json').exists()
+if (hasFirebase) { apply plugin: 'com.google.gms.google-services' }
+
+android {
+    namespace 'ph.eligtas.app'
+    compileSdk 36
+    defaultConfig {
+        applicationId 'ph.eligtas.app'
+        minSdk 26
+        targetSdk 36
+        versionCode 1
+        versionName '0.1.0'
+        buildConfigField 'boolean', 'PUSH_CONFIGURED', hasFirebase.toString()
+        buildConfigField 'String', 'APP_ORIGIN', '"https://ews-kappa.vercel.app"'
+    }
+    buildFeatures { buildConfig true }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+    signingConfigs {
+        release {
+            if (System.getenv('ELIGTAS_KEYSTORE')) {
+                storeFile file(System.getenv('ELIGTAS_KEYSTORE'))
+                storePassword System.getenv('ELIGTAS_STORE_PASSWORD')
+                keyAlias System.getenv('ELIGTAS_KEY_ALIAS')
+                keyPassword System.getenv('ELIGTAS_KEY_PASSWORD')
+            }
+        }
+    }
+    buildTypes {
+        debug { applicationIdSuffix '.pilot'; versionNameSuffix '-pilot' }
+        release { signingConfig signingConfigs.release; minifyEnabled false }
+    }
+    testOptions { unitTests.returnDefaultValues = true }
+}
+dependencies {
+    implementation 'androidx.activity:activity:1.11.0'
+    implementation 'androidx.webkit:webkit:1.14.0'
+    implementation 'androidx.core:core:1.17.0'
+    implementation platform('com.google.firebase:firebase-bom:34.5.0')
+    implementation 'com.google.firebase:firebase-messaging'
+    testImplementation 'junit:junit:4.13.2'
+}

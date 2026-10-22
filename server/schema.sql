@@ -70,6 +70,13 @@ create table if not exists eligtas.push_subscriptions (
   created_at timestamptz not null default now()
 );
 create index if not exists push_user on eligtas.push_subscriptions(user_id);
+create table if not exists eligtas.android_devices (
+  token text primary key,
+  user_id uuid not null references eligtas.users(id) on delete cascade,
+  session_hash text not null references eligtas.sessions(token_hash) on delete cascade,
+  updated_at timestamptz not null default now()
+);
+create index if not exists android_devices_user on eligtas.android_devices(user_id);
 create table if not exists eligtas.settings (key text primary key, value jsonb not null);
 create table if not exists eligtas.audit (
   id uuid primary key,

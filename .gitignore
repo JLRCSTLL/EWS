@@ -17,3 +17,12 @@ pnpm-debug.log*
 
 .DS_Store
 Thumbs.db
+
+# Android output, private signing material and per-project Firebase config.
+android/.gradle/
+android/**/build/
+android/local.properties
+android/app/google-services.json
+*.jks
+*.keystore
+*-firebase-adminsdk-*.json

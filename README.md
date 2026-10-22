@@ -11,6 +11,12 @@
 
 ## Connected public app (Render)
 
+The Android pilot and build instructions are in [android/README.md](android/README.md).
+The public app's **Account → Alert sound** enables audible incoming alerts while
+open. Browser silent-mode and hardware-volume restrictions still apply. The
+Android app adds native emergency alarms and an explicit full-volume preference;
+background delivery requires Firebase configuration and device permissions.
+
 The default `/#/public` route now uses registered accounts and the shared API.
 Start **both** `npm run server` and `npm run dev` for local development. Node.js
 24 is recommended. The server uses a persistent, git-ignored PGlite database
