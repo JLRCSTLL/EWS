@@ -56,6 +56,7 @@ test('registered devices and approved command center share real persisted state 
   await t.test('separate authenticated device sessions see the same account and consented GPS location', async () => {
     assert.equal((await secondPhone('/auth/login',{username:'qa_resident',password})).status,200);
     assert.equal((await phone('/profile',{name:'QA Resident',municipality:'Marikina',groups:['pwd'],alertsEnabled:true,role:'admin'},'PUT')).status,200);
+    await phone('/duty',{onDuty:true},'PUT'); await outsider('/duty',{onDuty:true},'PUT');
     assert.equal((await phone('/location',{lat:14.65,lng:121.11,accuracy:17},'PUT')).status,200);
     assert.equal((await outsider('/location',{lat:14.60,lng:120.99,accuracy:22},'PUT')).status,200);
     assert.equal((await phone('/location',{lat:999,lng:121,accuracy:1},'PUT')).status,400);
@@ -87,7 +88,7 @@ test('registered devices and approved command center share real persisted state 
     await phone(`/alerts/${alertId}/receipt`,{read:true}); await phone(`/alerts/${alertId}/receipt`,{read:true});
     delivery = (await owner('/state')).data.alerts[0]; assert.equal(delivery.received_count,1); assert.equal(delivery.read_count,1);
   });
-  await t.test('stale locations and alert opt-out are excluded from dispatch', async () => {
+  await t.test('stale locations are excluded and the personnel alert policy stays enabled', async () => {
     await db.query("update eligtas.users set location_at=now()-interval '10 minutes' where id=$1",[residentId]);
     assert.equal((await owner('/alerts',dispatch())).status,409);
     assert.equal((await owner('/alerts',{...dispatch(),activeOnly:false})).status,201);
@@ -95,7 +96,8 @@ test('registered devices and approved command center share real persisted state 
     assert.equal((await owner('/alerts',{...dispatch(),activeOnly:false})).status,409);
     await phone('/location',{lat:14.65,lng:121.11,accuracy:15},'PUT');
     await phone('/profile',{name:'QA Resident',municipality:'Marikina',groups:['pwd'],alertsEnabled:false},'PUT');
-    assert.equal((await owner('/alerts',dispatch())).status,409);
+    assert.equal((await phone('/state')).data.user.alertsEnabled,true);
+    assert.equal((await owner('/alerts',dispatch())).status,201);
     await phone('/profile',{name:'QA Resident',municipality:'Marikina',groups:['pwd'],alertsEnabled:true},'PUT');
   });
   await t.test('help requests persist, enforce ownership and transition rules, and sync assigned teams', async () => {

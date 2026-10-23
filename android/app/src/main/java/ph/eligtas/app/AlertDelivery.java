@@ -59,7 +59,7 @@ final class AlertDelivery {
         Intent open = new Intent(c, MainActivity.class).setAction("OPEN_ALERT").putExtra("alertId", alert.optString("id"));
         PendingIntent content = PendingIntent.getActivity(c, 1, open, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         return new NotificationCompat.Builder(c, channel).setSmallIcon(ph.eligtas.app.R.drawable.ic_notification)
-            .setColor(0xff164de5).setContentTitle("E-Ligtas · " + alert.optString("priority", "normal") + " alert")
+            .setColor(0xff164de5).setContentTitle("GSAM · " + alert.optString("priority", "normal") + " alert")
             .setContentText(alert.optString("body")).setStyle(new NotificationCompat.BigTextStyle().bigText(alert.optString("body")))
             .setVisibility(NotificationCompat.VISIBILITY_PRIVATE).setCategory(AlertPolicy.urgent(alert.optString("priority")) ? NotificationCompat.CATEGORY_ALARM : NotificationCompat.CATEGORY_MESSAGE)
             .setContentIntent(content).setOnlyAlertOnce(true);

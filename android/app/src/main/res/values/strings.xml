@@ -1,5 +1,5 @@
 <resources>
-    <string name="offline_title">E-Ligtas needs a connection</string>
+    <string name="offline_title">GSAM needs a connection</string>
     <string name="offline_description">Check your internet connection, then retry. Previously delivered notifications remain in Android’s notification tray.</string>
     <string name="retry">Try again</string>
 </resources>

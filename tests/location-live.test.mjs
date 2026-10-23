@@ -40,6 +40,7 @@ test('Android locations reach an authenticated command center, stop safely, and 
     assert.equal((await client.request('/auth/register',{username,name:username,password:'test-password-12345'})).status,201);
   await operator.request('/operator/bootstrap',{token:'test-owner-key'});
   const phoneId = (await phone.request('/state')).data.user.id;
+  await phone.request('/duty',{onDuty:true},'PUT');
   let token = (await phone.request('/location/share',{})).data.token;
   const native = async (body,method='PUT',share=token) => {
     const res = await fetch(base+'/location/native',{method,headers:{...headers,Authorization:`Bearer ${share}`},body:JSON.stringify(body)});
@@ -80,16 +81,18 @@ test('Android locations reach an authenticated command center, stop safely, and 
     assert.equal((await native({},'DELETE',old)).status,401);
     assert.equal((await native(fix())).status,200);
   });
-  await t.test('Stop in the Android notification removes the pin and rejects delayed updates',async () => {
+  await t.test('End duty in the Android notification removes the pin and rejects delayed updates',async () => {
     assert.equal((await native({},'DELETE')).status,200);
     assert.equal((await native(fix())).status,401);
     assert.equal((await operator.request('/state')).data.users.find(u=>u.id===phoneId).location,null);
   });
-  await t.test('web Stop and logout revoke native sharing as well',async () => {
+  await t.test('ending duty and logout revoke native sharing as well',async () => {
+    await phone.request('/duty',{onDuty:true},'PUT');
     token = (await phone.request('/location/share',{})).data.token;
     await native(fix());
     assert.equal((await phone.request('/location',{},'DELETE')).status,200);
     assert.equal((await native(fix())).status,401);
+    await phone.request('/duty',{onDuty:true},'PUT');
     token = (await phone.request('/location/share',{})).data.token;
     await phone.request('/auth/logout',{});
     assert.equal((await native(fix())).status,401);

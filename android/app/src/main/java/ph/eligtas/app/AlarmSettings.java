@@ -41,6 +41,7 @@ final class AlarmSettings {
             .put("dndAccess", manager.isNotificationPolicyAccessGranted()).put("dndBypass", manager.getNotificationChannel(EMERGENCY).canBypassDnd())
             .put("alarmVolume", audio.getStreamVolume(AudioManager.STREAM_ALARM)).put("alarmMax", audio.getStreamMaxVolume(AudioManager.STREAM_ALARM))
             .put("appVersion", BuildConfig.VERSION_NAME).put("enhancedAlarms", true).put("volumeFixed", audio.isVolumeFixed())
+            .put("managedAlarms",true).put("backgroundLocation",Build.VERSION.SDK_INT < 29 || c.checkSelfPermission(android.Manifest.permission.ACCESS_BACKGROUND_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED)
             .put("dndMode", dndMode(manager)).put("dndAlarmsAllowed", allowed == null ? JSONObject.NULL : allowed)
             .put("alarmState", prefs(c).getString("alarm_state","idle")).put("alarmMessage", prefs(c).getString("alarm_message",""))
             .put("alarmId", prefs(c).getString("alarm_id",""));

@@ -1,5 +1,5 @@
 
-  # Emergency Command Center Dashboard
+  # GSAM — Geospatial Situational Awareness Map
 
   This is a code bundle for Emergency Command Center Dashboard. The original project is available at https://www.figma.com/design/l6MkDSarJMxwwnrkzjzHvj/Emergency-Command-Center-Dashboard.
 
@@ -14,7 +14,7 @@
 The Android pilot and build instructions are in [android/README.md](android/README.md).
 The public app's **Account → Alert sound** enables audible incoming alerts while
 open. Browser silent-mode and hardware-volume restrictions still apply. The
-Android app adds native emergency alarms and an explicit full-volume preference;
+Android app adds always-enabled, full-volume high/critical emergency alarms;
 background delivery requires Firebase configuration and device permissions.
 
 The default `/#/public` route now uses registered accounts and the shared API.
@@ -28,9 +28,9 @@ this secret is ignored by Git and is never returned by the API.
 - Residents register with a username and a password of at least 12 characters.
   Save the one-time recovery code; recovery rotates it and revokes old sessions.
   Passwords use salted scrypt; only hashed session and recovery tokens are stored.
-- **Share my location** requests browser permission and sends GPS coordinates,
-  accuracy, and server timestamps. Updates run while the app is open. Stopping
-  sharing deletes the current coordinates. No background GPS guarantee is made.
+- **Start duty** begins GPS sharing. **End duty** clears the map point and revokes
+  native uploads. Android uses an ongoing foreground service while on duty; the
+  browser must remain open. OS location permission alone never starts tracking.
 - **Live data** in the command center shows only registered users and consented
   locations. All registrations start as residents. An approved operator can draw
   an area, inspect eligible users, select a group, and send a connected alert.
@@ -63,7 +63,7 @@ this secret is ignored by Git and is never returned by the API.
    SPA fallback in `vercel.json`. The Render blueprint allows that frontend
    origin in `ALLOWED_ORIGINS`. If either hostname changes, update both settings.
    Do not expose the database URL, owner key, or VAPID private key to the browser.
-4. Register your own account. In the command center choose **Connected phones →
+4. Register your own account. In the command center choose **Personnel →
    Account owner setup**, then enter the generated `BOOTSTRAP_TOKEN` from Render's
    environment settings. This works once; afterward the owner approves requests
    from other registered accounts. Remove the bootstrap environment variable once
@@ -72,14 +72,14 @@ this secret is ignored by Git and is never returned by the API.
    sharing, and optionally select a priority group. Locate that user from the
    command center, draw an area around their real point, and send a clearly labeled
    test alert. Confirm both the inbox and the received/read counters. Test a help
-   request and assignment, then stop sharing and verify the point disappears.
+   request and assignment, then end duty and verify the point disappears.
 
 Production checks: `/api/health` on either host must return JSON with `ok: true`;
 `/api/state` must return a JSON 401 when signed out. An HTML response means the
 frontend is not connected to the backend. Vercel production deploys from `main`;
 a successful preview on `ui/map-command-center` does not update the public site.
 
-The integration is an independent E-Ligtas pilot, not an official eGovPH service.
+The deployment is a pilot for operational evaluation.
 The original sample incident feeds, CCTV clips, and moving responder routes remain
 available under **Demo data**, separately from the connected resident workflow.
 
@@ -228,3 +228,34 @@ npm test
 The geometry tests use Node.js 22.18 or newer for native TypeScript loading.
 
 The production build is written to `dist/`. Existing Vercel configuration is retained.
+
+## Custom operations and privacy
+
+- **Structure** starts empty. Admins enter their own groups, reporting lines, heads,
+  position titles, and classifications. These labels do not grant system access.
+- **Projects** hold objectives, operational periods, leads, and task assignments.
+  Assigned personnel can update their own task status. Completing a project ends
+  its active duty sessions. The time range is a planning reference, not an automatic timer.
+- **Named groups** and message `#tags` select members anywhere, regardless of duty
+  or GPS, including active subgroups. Tags override geofence targeting. A server
+  recipient preview is required and checked again at send time; changes require
+  review. The final recipient set is frozen and overlapping memberships deduplicate.
+- **Personnel** shows preferred names. Email/phone are optional and masked by the API.
+  Admins request specific fields with a reason; the person approves, declines, or
+  revokes access in Account. Approval lasts 24 hours, applies only to the requesting
+  admin, and is revoked if contacts change. Legacy health groups are not displayed
+  to other accounts.
+- Admin/operator access is separate from group titles. Admins manage structure
+  and grant operator access. Operators manage projects, inspect duty locations,
+  and send reviewed alerts. Personnel only access their own records.
+
+The additive schema migration preserves accounts, sessions and alert history.
+It clears legacy off-duty locations and applies the personnel alert policy once.
+Existing phones must start a new duty session. Deploy the Render backend first;
+confirm `/api/config` reports `gsamReady` and `dutyTracking`, then deploy the web
+frontend and install Android pilot 0.4.0 using the existing pilot signing key.
+The Android package and backend schema identifiers remain unchanged for updates.
+
+Run `npm test` for group delivery, audience changes/replays, contact privacy, access
+control, native location revocation, and legacy migration regression checks.
+Tests use isolated data and mocked push; they do not send emergency messages.

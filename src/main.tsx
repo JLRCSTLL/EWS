@@ -14,7 +14,7 @@ function Root() {
     return () => { window.removeEventListener('hashchange', sync); window.removeEventListener('popstate', sync); };
   }, []);
   const demo = new URLSearchParams(location.search).get('demo') === '1';
-  return <Suspense fallback={<div style={{ padding: 32, fontFamily: 'Inter, sans-serif', color: '#6380a5' }}>Loading E-Ligtas…</div>}>{publicView ? demo ? <DemoPublicApp /> : <PublicApp /> : <CommandApp />}</Suspense>;
+  return <Suspense fallback={<div style={{ padding: 32, fontFamily: 'Inter, sans-serif', color: '#6380a5' }}>Loading GSAM…</div>}>{publicView ? demo ? <DemoPublicApp /> : <PublicApp /> : <CommandApp />}</Suspense>;
 }
 createRoot(document.getElementById('root')!).render(<LiveProvider><Root /></LiveProvider>);
 

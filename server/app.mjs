@@ -1,14 +1,12 @@
 import express from 'express';
 import { randomUUID, timingSafeEqual } from 'node:crypto';
-import { isDeepStrictEqual } from 'node:util';
 import { digest, hashPassword, isOperator, publicUser, randomToken, verifyPassword } from './auth.mjs';
 import { validSubscription } from './push.mjs';
 import { validAndroidToken } from './android-push.mjs';
-import { getGeofenceError } from '../src/app/lib/geofencing.ts';
-import { getAudience } from '../src/app/lib/residents.ts';
-import { asResident } from '../src/app/lib/live-model.ts';
 import { locations } from './location.mjs';
 import { locationEvents } from './location-events.mjs';
+import { organizationRoutes, organizationState, contactVisibility } from './organization.mjs';
+import { dispatchRoutes } from './dispatch.mjs';
 
 const groupsAllowed = ['pwd', 'children', 'seniors', 'pregnant', 'responders'];
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -28,7 +26,7 @@ export function createApp(db, { push, production = process.env.NODE_ENV === 'pro
     if (!['GET','HEAD'].includes(req.method)) {
       const origin = req.get('origin');
       const ownOrigin = `${req.protocol}://${req.get('host')}`;
-      if (!origin || (!allowedOrigins.includes(origin) && origin !== ownOrigin)) return res.status(403).json({ error: 'Open E-Ligtas from its official app address and try again.' });
+      if (!origin || (!allowedOrigins.includes(origin) && origin !== ownOrigin)) return res.status(403).json({ error: 'Open GSAM from its official app address and try again.' });
       if (!req.is('application/json')) return res.status(415).json({ error: 'JSON is required.' });
     }
     next();
@@ -49,8 +47,8 @@ export function createApp(db, { push, production = process.env.NODE_ENV === 'pro
     await db.query("insert into eligtas.sessions(token_hash,user_id,expires_at) values ($1,$2,now()+interval '30 days')", [digest(token), userId]);
     res.cookie('eligtas_session', token, { httpOnly: true, secure: production, sameSite: 'lax', path: '/api', maxAge: 30 * 86400000 });
   }
-  app.get('/api/health', async (_req, res) => { await db.query('select 1'); res.json({ ok: true, service: 'E-Ligtas', version: 1 }); });
-  app.get('/api/config', (_req, res) => res.json({ pushPublicKey: push?.publicKey || null, androidPushReady: !!push?.androidReady, nativeLocationReady: true, registration: true }));
+  app.get('/api/health', async (_req, res) => { await db.query('select 1'); res.json({ ok: true, service: 'GSAM', version: 2 }); });
+  app.get('/api/config', (_req, res) => res.json({ pushPublicKey: push?.publicKey || null, androidPushReady: !!push?.androidReady, nativeLocationReady: true, registration: true, gsamReady: true, dutyTracking: true }));
   for (const method of ['put','delete']) app[method]('/api/location/native', async (req,res) => {
     const token = /^Bearer ([A-Za-z0-9_-]{43})$/.exec(req.get('authorization') || '')?.[1];
     res.json(await location.native(token,req.method,req.body));
@@ -59,7 +57,7 @@ export function createApp(db, { push, production = process.env.NODE_ENV === 'pro
     rateLimit(req, 'register', 5, 3600000);
     const username = text(req.body.username, 3, 30, 'username').toLowerCase();
     if (!/^[a-z0-9_]+$/.test(username)) fail(400, 'Username can contain letters, numbers, and underscores.');
-    const name = text(req.body.name, 2, 80, 'full name');
+    const name = text(req.body.name, 2, 80, 'preferred name');
     const password = passwordInput(req.body.password);
     const id = randomUUID(), recoveryCode = randomToken();
     const passwordHash = await hashPassword(password);
@@ -84,12 +82,17 @@ export function createApp(db, { push, production = process.env.NODE_ENV === 'pro
     const nextCode = randomToken(), nextHash = await hashPassword(password);
     const { rows } = await db.query('update eligtas.users set password_hash=$1,recovery_hash=$2 where username=$3 and recovery_hash=$4 returning id', [nextHash, digest(nextCode), username, digest(code)]);
     if (!rows.length) fail(401, 'Username or recovery code is incorrect.');
+    await location.stop(rows[0].id);
     await db.query('delete from eligtas.sessions where user_id=$1', [rows[0].id]);
     await session(res, rows[0].id); res.json({ recoveryCode: nextCode });
   });
   app.post('/api/auth/logout', async (req, res) => {
     const token = tokenFrom(req);
-    if (token) await db.query('delete from eligtas.sessions where token_hash=$1', [digest(token)]);
+    if (token) {
+      const sessionRow=(await db.query('select user_id from eligtas.sessions where token_hash=$1 and expires_at>now()',[digest(token)])).rows[0];
+      if(sessionRow) await location.stop(sessionRow.user_id);
+      await db.query('delete from eligtas.sessions where token_hash=$1', [digest(token)]);
+    }
     res.clearCookie('eligtas_session', { httpOnly: true, secure: production, sameSite: 'lax', path: '/api' }); res.json({ ok: true });
   });
   app.use('/api', async (req, _res, next) => {
@@ -106,20 +109,42 @@ export function createApp(db, { push, production = process.env.NODE_ENV === 'pro
       ? await db.query('select a.*,count(r.received_at)::int as received_count,count(r.read_at)::int as read_count from eligtas.alerts a left join eligtas.receipts r on r.alert_id=a.id group by a.id order by a.created_at desc limit 100')
       : await db.query('select a.*,r.received_at,r.read_at from eligtas.alerts a join eligtas.receipts r on r.alert_id=a.id where r.user_id=$1 order by a.created_at desc limit 100', [req.user.id]);
     const requests = await db.query(`select r.*,u.name from eligtas.requests r join eligtas.users u on u.id=r.user_id ${operator ? '' : 'where r.user_id=$1'} order by r.created_at desc limit 200`, operator ? [] : [req.user.id]);
-    res.json({ user: publicUser(req.user), users: users.map(publicUser), alerts: alerts.rows, requests: requests.rows, serverTime: new Date().toISOString() });
+    const organization = await organizationState(db,req.user,operator);
+    res.json({ user: publicUser(req.user,{self:true}), users: users.map(row => publicUser(row,{self:row.id===req.user.id,visible:req.user.role==='admin'?contactVisibility(organization.contactRequests,req.user.id,row.id):[]})), alerts: alerts.rows, requests: requests.rows, ...organization, serverTime: new Date().toISOString() });
   });
+  organizationRoutes(app,db,events.changed);
   app.get('/api/location/events', (req,res) => events.connect(req,res,digest(tokenFrom(req))));
   app.post('/api/location/share', async (req,res) => {
     rateLimit(req,'location-share',120);
     res.json(await location.start(req.user.id,digest(tokenFrom(req))));
   });
   app.put('/api/profile', async (req, res) => {
-    const name = text(req.body.name, 2, 80, 'full name'), municipality = text(req.body.municipality, 0, 80, 'municipality');
+    const name = text(req.body.name, 2, 80, 'preferred name'), municipality = text(req.body.municipality, 0, 80, 'municipality');
     const groups = req.body.groups;
     if (!Array.isArray(groups) || groups.length > 5 || groups.some(g => !groupsAllowed.includes(g)) || (groups.includes('children') && groups.includes('seniors'))) fail(400, 'Select valid profile groups.');
-    if (typeof req.body.alertsEnabled !== 'boolean') fail(400, 'Check alert preference.');
-    await db.query('update eligtas.users set name=$1,municipality=$2,groups=$3,alerts_enabled=$4,updated_at=now() where id=$5', [name, municipality, [...new Set(groups)], req.body.alertsEnabled, req.user.id]);
+    const email = req.body.email === undefined ? req.user.email : text(req.body.email,0,254,'email');
+    const phone = req.body.phone === undefined ? req.user.phone : text(req.body.phone,0,30,'phone');
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) fail(400,'Enter a valid email or leave it empty.');
+    if (phone && !/^\+?[0-9 ()-]{7,30}$/.test(phone)) fail(400,'Enter a valid phone number or leave it empty.');
+    await db.transaction(async tx => {
+      await tx.query('update eligtas.users set name=$1,municipality=$2,groups=$3,alerts_enabled=true,email=$4,phone=$5,updated_at=now() where id=$6',[name,municipality,[...new Set(groups)],email,phone,req.user.id]);
+      if (email !== req.user.email || phone !== req.user.phone) await tx.query("update eligtas.contact_requests set status='revoked',expires_at=null where user_id=$1 and status='approved'",[req.user.id]);
+    }); events.changed();
     res.json({ ok: true });
+  });
+  app.put('/api/duty',async(req,res)=>{
+    if(typeof req.body.onDuty!=='boolean')fail(400,'Choose an on-duty or off-duty status.');
+    if(!req.body.onDuty){res.json(await location.stop(req.user.id));return;}
+    const project=req.body.projectId||null;
+    if(project && !uuid.test(project))fail(400,'Choose a project.');
+    await db.transaction(async tx=>{
+      if(project){
+        const row=(await tx.query('select * from eligtas.projects where id=$1 for share',[project])).rows[0];
+        if(!row || row.status==='completed')fail(409,'Choose an open project.');
+        if(!isOperator(req.user) && row.lead_id!==req.user.id && !(await tx.query('select m.user_id from eligtas.group_members m join eligtas.team_groups g on g.id=m.group_id where m.user_id=$1 and g.project_id=$2 and not g.archived union select assignee_id from eligtas.tasks where assignee_id=$1 and project_id=$2',[req.user.id,project])).rows.length)fail(403,'You are not assigned to this project.');
+      }
+      await tx.query('update eligtas.users set on_duty=true,duty_at=coalesce(duty_at,now()),duty_project_id=$1,updated_at=now() where id=$2',[project,req.user.id]);
+    });events.changed(req.user.id);res.json({ok:true});
   });
   app.put('/api/location', async (req, res) => {
     res.json(await location.save(req.user.id,req.body));
@@ -135,36 +160,7 @@ export function createApp(db, { push, production = process.env.NODE_ENV === 'pro
     const { rows } = await db.query('update eligtas.receipts set received_at=coalesce(received_at,now()),read_at=case when $3 then coalesce(read_at,now()) else read_at end where alert_id=$1 and user_id=$2 returning alert_id', [req.params.id, req.user.id, req.body.read === true]);
     if (!rows.length) fail(404, 'Alert not found.'); res.json({ ok: true });
   });
-  app.post('/api/alerts', async (req, res) => {
-    requireOperator(req.user); rateLimit(req, 'dispatch', 30);
-    const { area, groups, activeOnly, priority, id } = req.body;
-    const content = text(req.body.content, 1, 1000, 'message');
-    if (!uuid.test(id)) fail(400, 'Invalid message identifier.');
-    if (!area || !['polygon','rectangle','circle'].includes(area.shape) || !Array.isArray(area.points) || area.points.some(p => !p || !Number.isFinite(p.lat) || !Number.isFinite(p.lng))) fail(400, 'Draw a valid geofence.');
-    const geometryError = getGeofenceError(area);
-    if (geometryError) fail(400, geometryError);
-    text(area.name, 1, 80, 'area name');
-    text(area.id, 1, 100, 'area identifier');
-    if (!Array.isArray(groups) || !groups.length || groups.length > 6 || groups.some(g => g !== 'all' && !groupsAllowed.includes(g)) || typeof activeOnly !== 'boolean') fail(400, 'Choose valid recipient groups.');
-    if (!['normal','high','critical'].includes(priority)) fail(400, 'Choose a priority.');
-    const result = await db.transaction(async tx => {
-      const previous = (await tx.query('select * from eligtas.alerts where id=$1', [id])).rows[0];
-      if (previous) {
-        if (previous.author_id !== req.user.id) fail(409, 'Message identifier is already in use.');
-        if (previous.content !== content || previous.priority !== priority || previous.active_only !== activeOnly || !isDeepStrictEqual(previous.area,area) || !isDeepStrictEqual(previous.groups,groups)) fail(409, 'This message was already sent. Check delivery history before creating another alert.');
-        return { ...previous, existing: true };
-      }
-      const users = (await tx.query('select * from eligtas.users where location_sharing and alerts_enabled')).rows.map(row => asResident(publicUser(row)));
-      const audience = getAudience(users, area, { groups, activeOnly }, new Date().toISOString());
-      if (!audience.recipients.length) fail(409, 'No eligible residents currently share a recent location inside this area. Refresh the preview.');
-      await tx.query('insert into eligtas.alerts(id,author_id,content,priority,area,groups,active_only,recipient_count) values ($1,$2,$3,$4,$5,$6,$7,$8)', [id,req.user.id,content,priority,JSON.stringify(area),groups,activeOnly,audience.recipients.length]);
-      for (const user of audience.recipients) await tx.query('insert into eligtas.receipts(alert_id,user_id) values ($1,$2)', [id,user.id]);
-      await tx.query('insert into eligtas.audit(id,actor_id,action,target_id) values ($1,$2,$3,$4)', [randomUUID(),req.user.id,'dispatch_alert',id]);
-      return { id, content, priority, created_at: new Date().toISOString(), recipient_count: audience.recipients.length };
-    });
-    res.status(result.existing ? 200 : 201).json(result);
-    if (!result.existing && push) void push.send(result).catch(() => console.error('Push delivery task failed; the alert remains in the inbox.'));
-  });
+  dispatchRoutes(app,db,push,rateLimit,events.changed);
   app.post('/api/requests', async (req, res) => {
     const { id, type, people, includeLocation } = req.body;
     if (!uuid.test(id) || !['Evacuation','Medical assistance','Rescue','Other assistance'].includes(type) || !Number.isInteger(people) || people < 1 || people > 20 || typeof includeLocation !== 'boolean') fail(400, 'Check the assistance request.');

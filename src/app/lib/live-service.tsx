@@ -19,6 +19,7 @@ interface Service {
   logout: () => Promise<void>; locationStatus: string; sharingOnDevice: boolean;
   locationNow: string;
   startLocation: () => Promise<void>; stopLocation: () => Promise<void>;
+  startDuty: (projectId?: string) => Promise<void>; endDuty: () => Promise<void>;
   recoveryCode: string; setRecoveryCode: (code: string) => void;
 }
 const Context = createContext<Service>(null!);
@@ -33,21 +34,25 @@ export function LiveProvider({ children }: { children: ReactNode }) {
   const [sharingOnDevice, setSharing] = useState(false);
   const [locationStatus, setLocationStatus] = useState('Location sharing is off');
   const [locationNow, setLocationNow] = useState(() => new Date().toISOString());
-  const epoch = useRef(0), refreshing = useRef(false), locationEpoch = useRef(0);
+  const epoch = useRef(0), refreshWork = useRef<Promise<void> | null>(null), locationEpoch = useRef(0);
   const pendingLocation = useRef<Promise<unknown> | null>(null);
-  const refresh = useCallback(async () => {
-    if (refreshing.current) return;
-    refreshing.current = true;
+  const refresh = useCallback((): Promise<void> => {
+    if (refreshWork.current) return refreshWork.current;
     const requestEpoch = epoch.current;
-    try {
-      const data = await api('/state' + (location.hash.startsWith('#/public') ? '?view=public' : ''));
-      if (requestEpoch !== epoch.current) return;
-      setState(data); setError(''); setConnection('connected');
-    } catch (error) {
-      if (requestEpoch !== epoch.current) return;
-      if (error instanceof ApiError && error.status === 401) { setState(null); setConnection('connected'); setError(''); }
-      else { setConnection(navigator.onLine ? 'unavailable' : 'offline'); setError(error instanceof Error ? error.message : 'Connection interrupted.'); }
-    } finally { refreshing.current = false; setInitialized(true); }
+    const job = (async () => {
+      try {
+        const data = await api('/state' + (location.hash.startsWith('#/public') ? '?view=public' : ''));
+        if (requestEpoch !== epoch.current) return;
+        setState(data); setError(''); setConnection('connected');
+      } catch (error) {
+        if (requestEpoch !== epoch.current) return;
+        if (error instanceof ApiError && error.status === 401) { setState(null); setConnection('connected'); setError(''); }
+        else { setConnection(navigator.onLine ? 'unavailable' : 'offline'); setError(error instanceof Error ? error.message : 'Connection interrupted.'); }
+      } finally { if (requestEpoch === epoch.current) setInitialized(true); }
+    })();
+    refreshWork.current = job;
+    void job.finally(() => { if (refreshWork.current === job) refreshWork.current = null; });
+    return job;
   }, []);
   useEffect(() => {
     void refresh();
@@ -55,7 +60,7 @@ export function LiveProvider({ children }: { children: ReactNode }) {
     let publicScope = location.hash.startsWith('#/public');
     const route = () => {
       const next = location.hash.startsWith('#/public');
-      if (next !== publicScope) { publicScope = next; epoch.current++; refreshing.current = false; setState(null); setConnection('connecting'); void refresh(); }
+      if (next !== publicScope) { publicScope = next; epoch.current++; refreshWork.current = null; setState(null); setConnection('connecting'); void refresh(); }
     };
     const offline = () => setConnection('offline');
     const pushed = (event: MessageEvent) => { if (event.data?.type === 'ELIGTAS_ALERT') tick(); };
@@ -66,7 +71,9 @@ export function LiveProvider({ children }: { children: ReactNode }) {
     return () => { clearInterval(timer); window.removeEventListener('online', tick); window.removeEventListener('offline', offline); document.removeEventListener('visibilitychange', tick); window.removeEventListener('hashchange', route); navigator.serviceWorker?.removeEventListener('message', pushed); window.removeEventListener('eligtas-native-alert', tick); };
   }, [refresh]);
   const mutate = useCallback(async (path: string, body?: unknown, method?: string) => {
-    const result = await api(path, body, method); await refresh(); return result;
+    const result = await api(path, body, method);
+    // A read already in progress may predate this write. Finish it, then fetch the saved state.
+    await refreshWork.current; await refresh(); return result;
   }, [refresh]);
   const userId = state?.user.id;
   useEffect(() => {
@@ -145,10 +152,10 @@ export function LiveProvider({ children }: { children: ReactNode }) {
       await pendingLocation.current?.catch(() => {});
       await mutate('/location', {}, 'DELETE'); setLocationStatus('Location removed from the command-center map');
     }
-    catch (error) { setLocationStatus('Sharing stopped on this device. Reconnect and tap Remove shared location to clear the last saved point.'); throw error; }
+    catch (error) { setLocationStatus('Sharing stopped on this device. Reconnect and end duty to clear the last saved point.'); throw error; }
   };
   const logout = async () => {
-    if (state?.user.locationSharing || sharingOnDevice) await stopLocation();
+    if (state?.user.onDuty || state?.user.locationSharing || sharingOnDevice) await stopLocation();
     if (isAndroidApp()) await android('logout');
     if ('serviceWorker' in navigator && !isAndroidApp()) {
       const worker = await navigator.serviceWorker.getRegistration();
@@ -157,5 +164,18 @@ export function LiveProvider({ children }: { children: ReactNode }) {
     }
     await api('/auth/logout', {}); epoch.current++; setState(null); setSharing(false);
   };
-  return <Context.Provider value={{ state, connection, error, initialized, refresh, mutate, logout, locationStatus, locationNow, sharingOnDevice, startLocation, stopLocation, recoveryCode, setRecoveryCode }}>{children}</Context.Provider>;
+  const startDuty = async (projectId?: string) => {
+    if (!userId) return;
+    if (isAndroidApp()) await prepareAndroidLocation(userId);
+    await mutate('/duty',{onDuty:true,projectId:projectId||null},'PUT');
+    try { await startLocation(); }
+    catch(error) { await mutate('/duty',{onDuty:false},'PUT').catch(()=>{}); throw error; }
+  };
+  useEffect(() => {
+    if (state?.user.onDuty === false && sharingOnDevice) {
+      setSharing(false); if(userId)localStorage.removeItem(locationKey(userId));
+      if(isAndroidApp())void android('locationStop').catch(()=>{});
+    }
+  },[state?.user.onDuty,sharingOnDevice,userId]);
+  return <Context.Provider value={{ state, connection, error, initialized, refresh, mutate, logout, locationStatus, locationNow, sharingOnDevice, startLocation, stopLocation, startDuty, endDuty:stopLocation, recoveryCode, setRecoveryCode }}>{children}</Context.Provider>;
 }

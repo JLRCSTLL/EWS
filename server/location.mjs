@@ -11,6 +11,7 @@ export function locationFix(body, now = Date.now()) {
   return { lat, lng, accuracy, capturedAt: new Date(Math.min(at, now)).toISOString() };
 }
 async function save(tx, userId, body) {
+  if (!(await tx.query('select id from eligtas.users where id=$1 and on_duty',[userId])).rows.length) fail(409,'Start your duty session before sharing location.');
   const fix = locationFix(body);
   const { rows } = await tx.query(`update eligtas.users set location_sharing=true,lat=$1,lng=$2,accuracy=$3,location_at=$4,updated_at=now()
     where id=$5 and (location_at is null or location_at <= $4) returning id`, [fix.lat,fix.lng,fix.accuracy,fix.capturedAt,userId]);
@@ -18,13 +19,14 @@ async function save(tx, userId, body) {
 }
 async function clear(tx, userId) {
   await tx.query('delete from eligtas.location_shares where user_id=$1', [userId]);
-  await tx.query('update eligtas.users set location_sharing=false,lat=null,lng=null,accuracy=null,location_at=null,updated_at=now() where id=$1', [userId]);
+  await tx.query('update eligtas.users set on_duty=false,duty_at=null,duty_project_id=null,location_sharing=false,lat=null,lng=null,accuracy=null,location_at=null,updated_at=now() where id=$1', [userId]);
 }
 export function locations(db, changed) {
   const lock = (tx, id) => tx.query('select id from eligtas.users where id=$1 for update', [id]);
   return {
     start: async (userId, sessionHash) => db.transaction(async tx => {
       await lock(tx,userId);
+      if (!(await tx.query('select id from eligtas.users where id=$1 and on_duty',[userId])).rows.length) fail(409,'Start your duty session before sharing location.');
       // One active sharing device per account. Replaced or stopped tokens cannot revive a location.
       await tx.query('delete from eligtas.location_shares where user_id=$1', [userId]);
       const token = randomToken();

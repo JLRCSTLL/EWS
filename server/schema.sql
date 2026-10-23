@@ -92,3 +92,75 @@ create table if not exists eligtas.audit (
   created_at timestamptz not null default now()
 );
 revoke all on all tables in schema eligtas from public;
+
+-- Additive GSAM migration. Organizational labels never grant application access.
+create table if not exists eligtas.projects (
+  id uuid primary key,
+  name text not null check (length(name) between 1 and 100),
+  objective text not null default '' check (length(objective) <= 1000),
+  status text not null default 'planned' check (status in ('planned','active','completed')),
+  lead_id uuid references eligtas.users(id),
+  starts_at timestamptz,
+  ends_at timestamptz,
+  created_at timestamptz not null default now(),
+  check (ends_at is null or starts_at is null or ends_at >= starts_at)
+);
+alter table eligtas.users add column if not exists email text not null default '' check (length(email) <= 254);
+alter table eligtas.users add column if not exists phone text not null default '' check (length(phone) <= 30);
+alter table eligtas.users add column if not exists on_duty boolean not null default false;
+alter table eligtas.users add column if not exists duty_at timestamptz;
+alter table eligtas.users add column if not exists duty_project_id uuid references eligtas.projects(id);
+create table if not exists eligtas.team_groups (
+  id uuid primary key,
+  name text not null check (length(name) between 1 and 80),
+  tag text not null unique check (tag ~ '^[a-z][a-z0-9_-]{0,39}$'),
+  description text not null default '' check (length(description) <= 500),
+  project_id uuid references eligtas.projects(id),
+  parent_id uuid references eligtas.team_groups(id),
+  head_id uuid references eligtas.users(id),
+  archived boolean not null default false,
+  created_at timestamptz not null default now(),
+  check (parent_id is null or parent_id <> id)
+);
+create table if not exists eligtas.group_members (
+  group_id uuid not null references eligtas.team_groups(id),
+  user_id uuid not null references eligtas.users(id),
+  title text not null default '' check (length(title) <= 80),
+  category text not null default '' check (length(category) <= 80),
+  primary key (group_id,user_id)
+);
+create index if not exists group_members_user on eligtas.group_members(user_id);
+create table if not exists eligtas.tasks (
+  id uuid primary key,
+  project_id uuid not null references eligtas.projects(id),
+  title text not null check (length(title) between 1 and 160),
+  group_id uuid references eligtas.team_groups(id),
+  assignee_id uuid references eligtas.users(id),
+  status text not null default 'todo' check (status in ('todo','in_progress','blocked','done')),
+  due_at timestamptz,
+  created_at timestamptz not null default now()
+);
+create table if not exists eligtas.contact_requests (
+  id uuid primary key,
+  user_id uuid not null references eligtas.users(id),
+  requester_id uuid not null references eligtas.users(id),
+  reason text not null check (length(reason) between 1 and 300),
+  fields text[] not null check (cardinality(fields)>0 and fields <@ array['email','phone']::text[]),
+  status text not null default 'pending' check (status in ('pending','approved','denied','revoked')),
+  expires_at timestamptz,
+  created_at timestamptz not null default now(),
+  check (user_id <> requester_id)
+);
+create unique index if not exists contact_request_pending on eligtas.contact_requests(user_id,requester_id) where status='pending';
+alter table eligtas.alerts alter column area drop not null;
+alter table eligtas.alerts add column if not exists target_mode text not null default 'geofence';
+alter table eligtas.alerts add column if not exists target_label text not null default '';
+alter table eligtas.alerts add column if not exists target_group_ids uuid[] not null default '{}';
+alter table eligtas.alerts add column if not exists target_spec jsonb;
+-- Old, off-duty pins must not survive the transition to duty-scoped tracking.
+delete from eligtas.location_shares where user_id in (select id from eligtas.users where not on_duty);
+update eligtas.users set location_sharing=false,lat=null,lng=null,accuracy=null,location_at=null where not on_duty and location_sharing;
+-- Apply the new personnel alert policy once without changing Android/OS permissions.
+update eligtas.users set alerts_enabled=true where not exists (select 1 from eligtas.settings where key='gsam_personnel_alert_policy_v1');
+insert into eligtas.settings(key,value) values ('gsam_personnel_alert_policy_v1','true'::jsonb) on conflict(key) do nothing;
+revoke all on all tables in schema eligtas from public;

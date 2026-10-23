@@ -49,6 +49,8 @@ public final class MainActivity extends ComponentActivity {
     private JavaScriptReplyProxy sharingReply;
     private int sharingRequest;
     private boolean resumed;
+    private boolean permissionSetupRunning;
+    private boolean pendingAlarmSetup;
     static void refreshLocation() {
         MainActivity activity = current.get();
         if (activity != null) activity.runOnUiThread(() -> {
@@ -155,6 +157,9 @@ public final class MainActivity extends ComponentActivity {
                 catch (Exception denied) { reply(pending,sharingRequest,null,denied.getMessage()); }
             }
         }
+        if (request == 106) setupNotificationPermission();
+        if (request == 107) setupBackgroundPermission();
+        if (request == 108) setupAlarmPermission();
         refreshInbox();
     }
     private void reply(JavaScriptReplyProxy proxy, int id, Object data, String error) {
@@ -170,8 +175,10 @@ public final class MainActivity extends ComponentActivity {
                     if (!user.equals(AlarmSettings.prefs(this).getString("user",""))) {
                         LocationShareService.stopOtherAccount(this,user);
                         stopService(new Intent(this,EmergencyAlarmService.class));
-                        AlarmSettings.prefs(this).edit().putString("user",user).remove("seen").remove("alarm_id").remove("alarm_state").remove("alarm_message").putBoolean("enabled",false).putBoolean("max_volume",false).apply();
+                        AlarmSettings.prefs(this).edit().putString("user",user).remove("seen").remove("alarm_id").remove("alarm_state").remove("alarm_message").putBoolean("enabled",true).putBoolean("max_volume",true).apply();
                     }
+                    AlarmSettings.prefs(this).edit().putBoolean("enabled",true).putBoolean("max_volume",true).apply();
+                    if (!AlarmSettings.prefs(this).getBoolean("duty_setup_shown",false)) web.post(this::personnelPermissionSetup);
                     reply(proxy,id,AlarmSettings.status(this),null); break;
                 }
                 case "status": reply(proxy,id,AlarmSettings.status(this),null); break;
@@ -195,10 +202,11 @@ public final class MainActivity extends ComponentActivity {
                 }
                 case "locationStop": LocationShareService.stop(this); reply(proxy,id,new JSONObject().put("sharing",false),null); break;
                 case "configure": {
-                    if (request.has("enabled")) { boolean enabled = request.getBoolean("enabled"); AlarmSettings.prefs(this).edit().putBoolean("enabled",enabled).apply(); if (!enabled) stopService(new Intent(this,EmergencyAlarmService.class)); else notificationPermission(); }
-                    if (request.has("maxVolume")) AlarmSettings.prefs(this).edit().putBoolean("max_volume",request.getBoolean("maxVolume")).apply();
+                    boolean signedIn = !AlarmSettings.prefs(this).getString("user","").isEmpty();
+                    AlarmSettings.prefs(this).edit().putBoolean("enabled",signedIn).putBoolean("max_volume",signedIn).apply();
                     reply(proxy,id,AlarmSettings.status(this),null); break;
                 }
+                case "permissionSetup": personnelPermissionSetup(); reply(proxy,id,AlarmSettings.status(this),null); break;
                 case "notifications": notificationPermission(); if (Build.VERSION.SDK_INT < 33 || checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)==PackageManager.PERMISSION_GRANTED) startActivity(new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE,getPackageName())); reply(proxy,id,AlarmSettings.status(this),null); break;
                 case "channel": startActivity(new Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE,getPackageName()).putExtra(Settings.EXTRA_CHANNEL_ID,AlarmSettings.EMERGENCY)); reply(proxy,id,AlarmSettings.status(this),null); break;
                 case "dnd": {
@@ -219,7 +227,7 @@ public final class MainActivity extends ComponentActivity {
                 case "test": {
                     if (!AlarmSettings.prefs(this).getBoolean("enabled",false)) throw new IllegalStateException();
                     JSONObject alert = new JSONObject().put("id",UUID.randomUUID().toString()).put("userId",AlarmSettings.prefs(this).getString("user",""))
-                        .put("body","TEST ONLY — E-Ligtas alarm sound check. No message was sent.").put("priority","critical").put("createdAt",Instant.now().toString()).put("test",true);
+                        .put("body","TEST ONLY — GSAM alarm sound check. No message was sent.").put("priority","critical").put("createdAt",Instant.now().toString()).put("test",true);
                     reply(proxy,id,new JSONObject().put("playing",AlertDelivery.deliver(this,alert,true)).put("alarmId",alert.getString("id")),null); break;
                 }
                 case "stop": stopService(new Intent(this,EmergencyAlarmService.class)); reply(proxy,id,new JSONObject().put("ok",true),null); break;
@@ -236,12 +244,52 @@ public final class MainActivity extends ComponentActivity {
         } catch (Exception unavailable) { reply(proxy,id,null,unavailable instanceof IllegalStateException && unavailable.getMessage() != null ? unavailable.getMessage() : "Android could not complete this action. Check app permissions and try again."); }
     }
     private void notificationPermission() { if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED) requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS},101); }
+    private void personnelPermissionSetup() {
+        if (!resumed || permissionSetupRunning) return;
+        permissionSetupRunning = true;
+        AlarmSettings.prefs(this).edit().putBoolean("duty_setup_shown",true).apply();
+        new AlertDialog.Builder(this).setTitle("Duty location & emergency alerts")
+            .setMessage("GSAM shares your location with approved operators only after you start duty, including while the screen is locked. End duty stops tracking. High and critical alerts use full alarm volume even with a silent ringer. Android notification permission and DND alarm exceptions are still required.")
+            .setPositiveButton("Set up permissions",(dialog,which) -> {
+                if (!LocationShareService.permitted(this)) requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.ACCESS_COARSE_LOCATION},106);
+                else setupNotificationPermission();
+            }).setNegativeButton("Not now",(dialog,which)->permissionSetupRunning=false)
+            .setOnCancelListener(dialog->permissionSetupRunning=false).show();
+    }
+    private void setupNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED)
+            requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS},107);
+        else setupBackgroundPermission();
+    }
+    private void setupBackgroundPermission() {
+        permissionSetupRunning=false;
+        if (!LocationShareService.permitted(this) || Build.VERSION.SDK_INT < 29 || checkSelfPermission(Manifest.permission.ACCESS_BACKGROUND_LOCATION)==PackageManager.PERMISSION_GRANTED) { setupAlarmPermission(); return; }
+        String option = Build.VERSION.SDK_INT >= 30 ? getPackageManager().getBackgroundPermissionOptionLabel().toString() : "Allow all the time";
+        new AlertDialog.Builder(this).setTitle("Location while on duty")
+            .setMessage("For background duty location, choose Permissions → Location → " + option + ". Location is still sent only during an active duty session. You can keep using the inbox if you decline.")
+            .setPositiveButton("Open location permission",(dialog,which)->{
+                if (Build.VERSION.SDK_INT==29) requestPermissions(new String[]{Manifest.permission.ACCESS_BACKGROUND_LOCATION},108);
+                else { pendingAlarmSetup=true; startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).setData(Uri.parse("package:"+getPackageName()))); }
+            }).setNegativeButton("Not now",(dialog,which)->setupAlarmPermission()).show();
+    }
+    private void setupAlarmPermission() {
+        if (!resumed) { pendingAlarmSetup=true; return; }
+        android.app.NotificationManager manager=getSystemService(android.app.NotificationManager.class);
+        AlarmSettings.channels(this);
+        if (!manager.isNotificationPolicyAccessGranted()) {
+            new AlertDialog.Builder(this).setTitle("Emergency alarm permissions")
+                .setMessage("Allow GSAM Do Not Disturb access, then allow alarms and Emergency alerts in the DND modes you use. Emergency alarm volume is enabled automatically. Android still controls these permissions; total-silence modes can block sound.")
+                .setPositiveButton("Open alarm permissions",(dialog,which)->startActivity(new Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS)))
+                .setNegativeButton("Not now",null).show();
+        }
+        refreshAlarmStatus();
+    }
     private void checkLocationPermissions() {
         if (!LocationShareService.permitted(this)) throw new IllegalStateException("Allow location access in Android app settings to share your location.");
-        if (!LocationShareService.gpsEnabled(this)) throw new IllegalStateException("Turn on Android Location, then tap Share my location again.");
-        if (!getSystemService(android.app.NotificationManager.class).areNotificationsEnabled()) throw new IllegalStateException("Allow notifications so the location-sharing indicator and Stop sharing button stay visible.");
+        if (!LocationShareService.gpsEnabled(this)) throw new IllegalStateException("Turn on Android Location, then start duty again.");
+        if (!getSystemService(android.app.NotificationManager.class).areNotificationsEnabled()) throw new IllegalStateException("Allow notifications so the on-duty indicator and End duty button stay visible.");
     }
-    @Override protected void onResume() { super.onResume(); resumed = true; LocationShareService.retryRemoval(this); if (web != null) { web.onResume(); refreshInbox(); refreshLocation(); } }
+    @Override protected void onResume() { super.onResume(); resumed = true; LocationShareService.retryRemoval(this); if (web != null) { web.onResume(); refreshInbox(); refreshLocation(); if(pendingAlarmSetup){pendingAlarmSetup=false;web.post(this::setupAlarmPermission);} } }
     @Override protected void onPause() { resumed = false; if (web != null) web.onPause(); super.onPause(); }
     @Override protected void onDestroy() { if (current.get()==this) current.clear(); if (locationCallback!=null) locationCallback.invoke(locationOrigin,false,false); web.destroy(); super.onDestroy(); }
 }

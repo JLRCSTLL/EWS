@@ -13,7 +13,7 @@ export interface TourCue {
 }
 
 export const presentationSteps: { id: string; label: string; title: string; description: string; cues: TourCue[] }[] = [
-  { id: 'welcome', label: 'Welcome', title: 'Watch E-Ligtas in action',
+  { id: 'welcome', label: 'Welcome', title: 'Watch GSAM in action',
     description: 'Follow the cursor through a complete command-center workflow. Everything runs automatically with sample data.',
     cues: [{ target: '.ops-brand', label: 'Your emergency command center', duration: 4000 }] },
   { id: 'map', label: 'Live map', title: 'Inspect the incident area',

@@ -27,7 +27,7 @@ export function AlertAlarm({ userId, alerts, onOpen, settings }: { userId: strin
       updating = true;
       try {
         await android('bind', { userId });
-        const state = await android('status');
+        const state = await android('configure',{enabled:true,maxVolume:true});
         if (cancelled) return;
         setStatus(state); setEnabled(state.enabled);
         if (!state.pushConfigured) { setPush('Background push needs Firebase configuration. Alerts still update while the app is open.'); return; }
@@ -87,9 +87,7 @@ export function AlertAlarm({ userId, alerts, onOpen, settings }: { userId: strin
     finally { setBusy(false); }
   }
   async function toggle() {
-    if (native) { const next = await android('configure', { enabled: !enabled, ...(!enabled ? { maxVolume: true } : {}) }); setStatus(next); setEnabled(next.enabled); }
-    else if (!enabled) { audio.current ??= new BrowserAlarm(); await audio.current.enable(); setEnabled(true); setNote('Sound enabled for this visit. Keep the app open and your device volume audible.'); }
-    else { stop(); setEnabled(false); }
+    if (!native) { audio.current ??= new BrowserAlarm(); await audio.current.enable(); setEnabled(true); setNote('Sound enabled for this visit. Keep the app open and your device volume audible.'); }
   }
   async function test() {
     setTestId(''); setTesting(true);
@@ -101,28 +99,28 @@ export function AlertAlarm({ userId, alerts, onOpen, settings }: { userId: strin
   useEffect(() => { if (!testing) return; const timer = setTimeout(() => { setSounding(false); }, 4000); return () => clearTimeout(timer); }, [testing]);
   const matchingStatus = status?.alarmId === (testing ? testId : activeId);
   const playbackMessage = native && status?.enhancedAlarms
-    ? matchingStatus && status.alarmMessage ? status.alarmMessage : enabled ? 'Waiting for Android alarm status…' : 'Sound is off. Enable full-volume alerts in Account.'
-    : sounding ? 'Alarm requested · check that you can hear it' : enabled ? 'Alarm stopped or limited by device settings' : 'Sound is off. You can enable it in Account.';
+    ? matchingStatus && status.alarmMessage ? status.alarmMessage : enabled ? 'Waiting for Android alarm status…' : 'Android permissions are required for alarm playback.'
+    : sounding ? 'Alarm requested · check that you can hear it' : enabled ? 'Alarm stopped or limited by device settings' : 'Enable browser audio or check Android permissions.';
   return <>
     <section className={`el-alarm-settings ${settings ? 'el-card' : 'el-alarm-compact'}`} aria-label="Alert alarm settings">
-      <div className="el-alarm-heading"><span className="el-icon-soft"><BellRing size={21} /></span><div><h2>{native ? 'Emergency alarm' : 'Alert sound'}</h2><p>{enabled ? native ? 'Alarm enabled on this phone' : 'Sound enabled for this visit' : 'Turn on sound for new alerts'}</p></div><button className="el-secondary" disabled={busy} onClick={() => void run(toggle)}>{enabled ? 'Turn off sound' : native ? 'Enable full-volume alerts' : 'Enable sound'}</button></div>
-      {(settings || !enabled) && <p className="el-caption">{native ? 'High and critical alerts sound the alarm, including in silent ringer mode. Enabling alerts also enables full alarm volume. Normal announcements follow notification settings. DND requires alarm exceptions.' : 'Plays while this app is open after you enable sound. Browsers cannot override silent mode or force full volume.'}</p>}
+      <div className="el-alarm-heading"><span className="el-icon-soft"><BellRing size={21} /></span><div><h2>{native ? 'Emergency alarm' : 'Alert sound'}</h2><p>{enabled ? native ? 'Alarm enabled on this phone' : 'Sound enabled for this visit' : 'Turn on sound for new alerts'}</p></div>{native?<span className="el-caption">Always enabled</span>:!enabled&&<button className="el-secondary" disabled={busy} onClick={() => void run(toggle)}>Enable browser audio</button>}</div>
+      {(settings || !enabled) && <p className="el-caption">{native ? 'High and critical alerts automatically use full alarm volume, including silent ringer mode. Normal announcements follow notification settings. DND must allow alarm audio.' : 'Plays while this app is open after you enable sound. Browsers cannot override silent mode or force full volume.'}</p>}
       {settings && <><div className="el-alarm-actions"><button className="el-secondary" disabled={busy || (native && !enabled)} onClick={() => void run(test)}><Volume2 size={16} />Test alarm · 4 sec</button>{native && <button className="el-secondary" onClick={() => void run(async () => { await android('notifications'); })}>Android notifications</button>}</div>
         {native && status && <div className="el-native-settings">
-          {!status.enhancedAlarms && <p className="el-notice">Install Android pilot 0.3.0 for improved incoming alarms and delivery diagnostics.</p>}
+          {!status.managedAlarms && <p className="el-notice">Install GSAM Android pilot 0.4.0 for duty permissions and always-enabled emergency alarms.</p>}
           {status.appVersion && <p className="el-caption">Android app {status.appVersion}</p>}
-          <label className="el-check"><input type="checkbox" checked={status.maxVolume} disabled={busy} onChange={e => { const maxVolume = e.target.checked; void run(async () => setStatus(await android('configure', { maxVolume }))); }} />Use full alarm volume for high and critical alerts</label>
+          <p className="el-caption"><strong>Emergency alarm policy: always enabled, full alarm volume.</strong></p>
           <p className="el-caption">Rises to full alarm volume, then restores your previous volume when stopped. This also affects Test alarm.</p>
           <ul className="el-alarm-checks" aria-label="Alarm readiness">
             <li><strong>Notifications</strong><span>{status.notifications ? 'Allowed' : 'Blocked in Android'}</span></li>
             <li><strong>Alarm volume</strong><span>{status.maxVolume && !status.volumeFixed ? 'Full volume during emergencies' : `${status.alarmVolume} / ${status.alarmMax}`}</span></li>
             <li><strong>Do Not Disturb</strong><span>{status.dndMode === 'off' ? 'Off now · check exceptions before enabling' : status.dndAlarmsAllowed === true ? 'Current mode allows alarm audio' : status.dndAlarmsAllowed === false ? 'Current mode blocks alarm audio' : 'Check alarm exceptions in Android'}</span></li>
-            <li><strong>Emergency channel</strong><span>{status.dndBypass ? 'Allowed to interrupt priority DND' : 'Review DND exception'}</span></li>
+            <li><strong>Background location</strong><span>{status.backgroundLocation ? 'Allowed while on duty' : 'Review “Allow all the time”'}</span></li><li><strong>Emergency channel</strong><span>{status.dndBypass ? 'Allowed to interrupt priority DND' : 'Review DND exception'}</span></li>
           </ul>
           <div className="el-alarm-actions">
             {!status.dndAccess && <button className="el-secondary" disabled={busy} onClick={() => void run(async () => { await android('dnd'); })}>Allow Do Not Disturb access</button>}
             <button className="el-secondary" disabled={busy} onClick={() => void run(async () => { await android('channel'); })}>Emergency notification settings</button>
-            {status.enhancedAlarms && <><button className="el-secondary" disabled={busy} onClick={() => void run(async () => { await android('soundSettings'); })}>Sound & DND settings</button><button className="el-secondary" disabled={busy} onClick={() => void run(async () => { await android('appSettings'); })}>Background app settings</button></>}
+            {status.managedAlarms&&<button className="el-secondary" disabled={busy} onClick={()=>void run(async()=>{await android('permissionSetup');})}>Location & alert permissions</button>}{status.enhancedAlarms && <><button className="el-secondary" disabled={busy} onClick={() => void run(async () => { await android('soundSettings'); })}>Sound & DND settings</button><button className="el-secondary" disabled={busy} onClick={() => void run(async () => { await android('appSettings'); })}>Background app settings</button></>}
           </div>
           <p className="el-caption">Allow alarms in every DND or bedtime mode you use. If alerts arrive only after reopening the app, allow background activity in Android app settings. Device restrictions can still delay or silence alerts.</p>
           <p className="el-notice" role="status"><ShieldCheck size={16} />{push}</p>
@@ -135,7 +133,7 @@ export function AlertAlarm({ userId, alerts, onOpen, settings }: { userId: strin
       <Dialog.Portal><Dialog.Overlay className="el-alarm-overlay" /><Dialog.Content className="el-alarm-dialog" aria-describedby="alarm-description">
         <Dialog.Close className="el-alarm-close" aria-label="Close and silence alarm"><X size={22} /></Dialog.Close><span className="el-alarm-symbol"><BellRing size={30} /></span>
         <span className="el-eyebrow">{testing ? 'SOUND CHECK · NO MESSAGE SENT' : `${active?.priority} PRIORITY · COMMAND CENTER`}</span>
-        <Dialog.Title>{testing ? 'Test your alert alarm' : 'New alert for your area'}</Dialog.Title>
+        <Dialog.Title>{testing ? 'Test your alert alarm' : 'New command-center alert'}</Dialog.Title>
         <Dialog.Description id="alarm-description">{testing ? 'This is a local sound check. No emergency alert was sent.' : active?.content}</Dialog.Description>
         <p className="el-caption" role="status">{playbackMessage}</p>
         <div className="el-alarm-actions"><button className="el-secondary" onClick={stop}><VolumeX size={18} />Silence alarm</button><button className="el-primary" onClick={() => { if (active) onOpen(active); dismiss(); }}>{testing ? 'Done' : 'Read alert'}</button></div>

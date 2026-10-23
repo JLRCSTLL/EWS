@@ -95,9 +95,9 @@ public final class LocationShareService extends Service implements LocationListe
     private Notification notification() {
         PendingIntent open = PendingIntent.getActivity(this,9103,new Intent(this,MainActivity.class).setAction("OPEN_LOCATION"),PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         PendingIntent stop = PendingIntent.getService(this,9104,new Intent(this,LocationShareService.class).setAction("STOP_LOCATION"),PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-        return new NotificationCompat.Builder(this,CHANNEL).setSmallIcon(R.drawable.ic_notification).setContentTitle("E-Ligtas · sharing your location")
+        return new NotificationCompat.Builder(this,CHANNEL).setSmallIcon(R.drawable.ic_notification).setContentTitle("GSAM · on duty")
             .setContentText(message).setContentIntent(open).setOngoing(true).setOnlyAlertOnce(true).setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
-            .addAction(0,"Stop sharing",stop).build();
+            .addAction(0,"End duty",stop).build();
     }
     @Override public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent == null || "STOP_LOCATION".equals(intent.getAction())) { message = "Location sharing is off"; finishSharing(); return START_NOT_STICKY; }
@@ -147,7 +147,7 @@ public final class LocationShareService extends Service implements LocationListe
                     uploading = false;
                     if (!active || !token.equals(share)) return;
                     if (result == 200) { previousFix = fixTime; lastSent = System.currentTimeMillis(); updateMessage("Live location shared · accuracy ±" + Math.round(fix.getAccuracy()) + " m"); }
-                    else if (result == 401) { message = "Sharing ended or sign-in expired. Open the app to share again."; finishSharing(); }
+                    else if (result == 401 || result == 409) { message = "Duty ended or sign-in expired. Open the app to start duty again."; finishSharing(); }
                     else updateMessage("Location not sent. Retrying when connected…");
                 });
             });

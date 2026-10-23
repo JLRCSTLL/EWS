@@ -26,7 +26,7 @@ export function residentMarker(user: Resident, at: string, options: { muted?: bo
   title.textContent = `${user.name}${options.live ? '' : ' · demo'}`;
   const groups = residentGroups.filter(group => matchesGroup(user, group.id)).map(group => group.label);
   const details = document.createElement('p');
-  details.textContent = options.live ? `Self-reported groups: ${groups.join(', ') || 'None specified'}` : `Age ${user.age}${groups.length ? ` · ${groups.join(', ')}` : ''}`;
+  details.textContent = options.live ? 'On-duty personnel · preferred name' : `Age ${user.age}${groups.length ? ` · ${groups.join(', ')}` : ''}`;
   const location = document.createElement('p');
   location.textContent = `${options.live ? liveLocationLabel(user.location.updatedAt,at) : `${status} · ${Math.round(locationAgeMinutes(user,at))} min before snapshot`} · ±${Math.round(user.location.accuracy)} m`;
   const coordinates = document.createElement('p');

@@ -1,6 +1,6 @@
-# E-Ligtas Android pilot
+# GSAM Android pilot 0.4.0
 
-An installable Android app (Android 8+) for the existing E-Ligtas public service.
+An installable Android app (Android 8+) for the existing personnel service.
 The public interface loads from `https://ews-kappa.vercel.app/#/public` in an
 origin-restricted WebView. Native code handles alarms, notification permissions,
 Firebase Cloud Messaging, safe external links, Android back navigation, and
@@ -52,17 +52,15 @@ background push is unavailable. It does not claim to have registered a device.
 
 ## Alarm behavior
 
-- **Enable full-volume alerts** is an explicit choice, off initially and reset on
-  account change. It enables sound and maximum alarm volume together. Existing
-  choices are preserved on update; the full-volume checkbox can be changed later.
+- High/critical emergency alarms are always enabled at full alarm volume after
+  sign-in. There is no alarm-off or volume toggle in the personnel app.
 - Browser/PWA audio requires a gesture for each visit and plays while the page is
   open. Websites cannot force hardware volume or override silent mode.
 - Android high/critical alerts use the alarm audio stream, up to 30 seconds, with
   vibration and a notification-tray **Silence alarm** button. Normal announcements
   use ordinary notifications in the background, respecting device settings.
-- **Use full alarm volume** controls high/critical alerts. Playback
-  rises gradually and restores the previous alarm volume afterward, unless the
-  user changes it while the alarm plays. Test alarm uses the same preference.
+- Playback rises gradually to full alarm volume and restores the previous volume
+  afterward unless it was changed during playback. Test alarm uses the same policy.
 - Open **Allow Do Not Disturb access**, grant the OS permission, then review the
   emergency notification channel. Allow alarms and that channel in Android's DND
   settings. The app never disables DND globally. Total-silence modes, blocked
@@ -94,9 +92,11 @@ settings. Do not send a real emergency broadcast for a sound test.
 
 ## Live location in the command center
 
-Tap **Share my location** while the Android app is open. Grant location and
-notification permissions. The app starts a location foreground service with a
-persistent **Stop sharing** notification. It requests fresh GPS fixes every
+On first sign-in, follow the location, background location, notification and
+DND permission walkthrough. Android 11+ requires choosing **Allow all the time**
+in system settings. Declining leaves the inbox available. Tap **Start duty**
+while the app is open to start tracking; permission alone does not start it.
+The foreground service shows a persistent **End duty** notification. It requests fresh GPS fixes every
 second and uploads the newest fix without waiting for the WebView, including
 when the screen is locked or another app is open. Precise location gives the
 best accuracy. GPS, connectivity, battery restrictions, force-stop and device
@@ -110,20 +110,20 @@ seen** and keep their original timestamp. Cached fixes are not relabeled as live
 
 The service uses a location-only credential tied to the signed-in session; it
 cannot read residents, send alerts, or grant operator access. Only one native
-sharing device is active per account. Stop sharing removes the point and revokes
+sharing device is active per account. End duty removes the point and revokes
 queued uploads. Offline stops keep a pending removal for the next connection;
 the command center shows the previous fix as stale until removal reaches it.
 Logout/recovery invalidates the sharing credential. Force-stopped apps must be
-opened and sharing started again. No boot receiver or “Allow all the time”
-location permission is used.
+opened and duty location resumed again. No boot receiver is used.
 
 Deploy the Render API and confirm `/api/config` reports
-`nativeLocationReady: true` before installing the updated pilot. Location sharing
+`nativeLocationReady: true`, `gsamReady: true`, and `dutyTracking: true` before
+installing the updated pilot. Location sharing
 does not require Firebase; background alert delivery does.
 
 ## Verify on a physical Android phone
 
-Use a dedicated test resident. Share its location, draw a geofence around it in
+Use a dedicated test account. Start duty and share its location, draw a geofence around it in
 the connected command center, and send **TEST ONLY — no emergency** to that
 resident only. Check foreground, background, locked screen, silent ringer, and
 DND with and without alarm exceptions. Confirm volume restoration, stop button,

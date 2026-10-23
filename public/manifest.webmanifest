@@ -1,7 +1,7 @@
 {
   "id": "/?app=eligtas",
-  "name": "E-Ligtas · Community Safety",
-  "short_name": "E-Ligtas",
+  "name": "GSAM · Personnel",
+  "short_name": "GSAM",
   "description": "Your command-center alerts, shared location, and assistance requests.",
   "start_url": "/#/public",
   "scope": "/",
