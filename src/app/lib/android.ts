@@ -32,3 +32,15 @@ export function android<T = AndroidStatus>(action: string, values: Record<string
     bridge.postMessage(JSON.stringify({ requestId, action, ...values }));
   });
 }
+
+export async function prepareAndroidLocation(userId: string) {
+  const upgrade = 'This Android app needs an update to share live locations. Install E-Ligtas Android pilot 0.2.0 or newer, then reopen the app.';
+  let status: AndroidLocationStatus;
+  try { status = await android<AndroidLocationStatus>('locationStatus', { userId }); }
+  catch (error) {
+    if (error instanceof Error && error.message === 'Unsupported Android action.') throw new Error(upgrade);
+    throw error;
+  }
+  if (!status?.supported) throw new Error(upgrade);
+  await android('locationPermission');
+}

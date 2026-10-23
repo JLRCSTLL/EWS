@@ -69,6 +69,29 @@ function ProfileForm() {
   </form>;
 }
 
+function LocationCard() {
+  const live = useLive(), user = live.state!.user;
+  const [pending, setPending] = useState<'start' | 'stop' | null>(null);
+  const [error, setError] = useState('');
+  const inFlight = useRef(false);
+  async function changeSharing(stop: boolean) {
+    if (inFlight.current) return;
+    inFlight.current = true; setPending(stop ? 'stop' : 'start'); setError('');
+    try { await (stop ? live.stopLocation() : live.startLocation()); }
+    catch (failure) { setError(failure instanceof Error ? failure.message : 'Location sharing could not start. Please try again.'); }
+    finally { inFlight.current = false; setPending(null); }
+  }
+  return <section className="el-card el-location-card" aria-label="Your location">
+    <div className="el-section-heading"><span className="el-icon-soft"><LocateFixed size={21} /></span><div><h2>Your location</h2><p>{user.locationSharing ? 'Visible to approved operators' : 'Only shared with your permission'}</p></div></div>
+    <p className="el-location-status" role="status">{pending === 'start' ? 'Starting location sharing. Allow location and notification access if Android asks.' : pending === 'stop' ? 'Stopping sharing and removing your saved location…' : live.locationStatus}</p>
+    {user.location && <p className="el-caption">Last received {at(user.location.updatedAt)} · ±{Math.round(user.location.accuracy)} m</p>}
+    <button type="button" className={live.sharingOnDevice ? 'el-secondary' : 'el-primary'} disabled={!!pending} aria-busy={!!pending} onClick={() => void changeSharing(live.sharingOnDevice)}>{pending === 'start' ? 'Starting…' : pending === 'stop' ? 'Stopping…' : live.sharingOnDevice ? 'Stop sharing location' : 'Share my location'}<LocateFixed size={17} /></button>
+    {error && <p className="el-notice" role="alert">{error}</p>}
+    {!live.sharingOnDevice && user.locationSharing && <button type="button" className="el-text-button" disabled={!!pending} onClick={() => void changeSharing(true)}>Remove shared location</button>}
+    <p className="el-caption">{isAndroidApp() ? 'Your location is shared with approved operators as fresh GPS fixes arrive (target: every second), including while the screen is locked. Android shows a sharing notification with a Stop sharing button. GPS, internet, and device battery settings can affect updates.' : 'GPS updates while this page is open. Switching apps or locking your phone may pause sharing. Use the Android app for continuous sharing.'} Stopping sharing removes your saved point.</p>
+  </section>;
+}
+
 export default function LivePublicApp() {
   const live = useLive();
   const { state, connection, initialized, recoveryCode } = live;
@@ -102,7 +125,7 @@ export default function LivePublicApp() {
   const chosen = alerts.find(a => a.id === selected);
   const connected = connection === 'connected';
   const openAlert = (alert: LiveAlert) => { if (page !== 'alerts') { location.hash = '#/public/alerts'; setTimeout(() => setSelected(alert.id),0); } else setSelected(alert.id); };
-  const locationCard = user && <section className="el-card el-location-card"><div className="el-section-heading"><span className="el-icon-soft"><LocateFixed size={21} /></span><div><h2>Your location</h2><p>{user.locationSharing ? 'Visible to approved operators' : 'Only shared with your permission'}</p></div></div><p className="el-location-status">{live.locationStatus}</p>{user.location && <p className="el-caption">Last received {at(user.location.updatedAt)} · ±{Math.round(user.location.accuracy)} m</p>}<button className={live.sharingOnDevice ? 'el-secondary' : 'el-primary'} disabled={busy} onClick={() => live.sharingOnDevice ? void action(live.stopLocation,'Location sharing stopped.') : void action(live.startLocation,'Location sharing started.')}>{live.sharingOnDevice ? 'Stop sharing location' : 'Share my location'}<LocateFixed size={17} /></button>{!live.sharingOnDevice && user.locationSharing && <button className="el-text-button" disabled={busy} onClick={() => void action(live.stopLocation,'Saved location removed.')}>Remove shared location</button>}<p className="el-caption">{isAndroidApp() ? "Your location is shared with approved operators as fresh GPS fixes arrive (target: every second), including while the screen is locked. Android shows a sharing notification with a Stop sharing button. GPS, internet, and device battery settings can affect updates." : "GPS updates while this page is open. Switching apps or locking your phone may pause sharing. Use the Android app for continuous sharing."} Stopping sharing removes your saved point.</p></section>;
+  const locationCard = user && <LocationCard key={user.id} />;
   const alertCard = (alert: LiveAlert) => <button key={alert.id} className={`el-alert-card priority-${alert.priority}`} onClick={() => { if (page !== 'alerts') { location.hash = '#/public/alerts'; setTimeout(() => setSelected(alert.id),0); } else setSelected(alert.id); }}><span className="el-alert-icon"><Bell size={20} /></span><span><span className="el-alert-meta">{alert.priority} priority · {at(alert.created_at)}{!alert.read_at && <i aria-label="Unread" />}</span><strong>{alert.area.name}</strong><p>{alert.content}</p></span><ChevronRight size={17} /></button>;
   return <div className="el-app"><a className="el-skip" href="#public-main" onClick={e => { e.preventDefault(); document.getElementById('public-main')?.focus(); }}>Skip to content</a><header className="el-header"><a href="#/public" className="el-brand"><span className="el-logo"><ShieldCheck size={26} /></span><span>E-Ligtas<small>COMMUNITY SAFETY</small></span></a><div className={`el-connection ${connected ? 'is-connected' : ''}`} role="status">{connected ? <Wifi size={14} /> : <WifiOff size={14} />}<span>{connected ? 'Connected' : connection === 'connecting' ? 'Connecting' : 'Reconnecting'}</span></div>{user && <a href="#/public/account" className="el-avatar" aria-label="Your account">{user.name.charAt(0).toUpperCase()}</a>}</header>
     <main id="public-main" className="el-main" tabIndex={-1}>

@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { LiveState } from './live-model';
-import { android, isAndroidApp, type AndroidLocationStatus } from './android';
+import { android, isAndroidApp, prepareAndroidLocation, type AndroidLocationStatus } from './android';
 
 export class ApiError extends Error { constructor(message: string, public status: number) { super(message); } }
 export async function api(path: string, body?: unknown, method = body === undefined ? 'GET' : 'POST') {
@@ -129,7 +129,7 @@ export function LiveProvider({ children }: { children: ReactNode }) {
   const startLocation = async () => {
     if (!userId) return;
     if (!isAndroidApp()) { localStorage.setItem(locationKey(userId),'yes'); setSharing(true); return; }
-    await android('locationPermission');
+    await prepareAndroidLocation(userId);
     const share = await api('/location/share',{});
     try {
       await android('locationStart',{userId,token:share.token});
