@@ -87,6 +87,8 @@ export const OperationsMap = forwardRef<OperationsMapHandle, OperationsMapProps>
   const onGeofenceMoveRef = useRef(onGeofenceMove);
   const onSelectGeofenceRef = useRef(onSelectGeofence);
   const framedLiveLocations = useRef(false);
+  const residentLayer = useRef<L.LayerGroup | null>(null);
+  const residentMarkers = useRef(new Map<string,L.CircleMarker>());
   const [tileState, setTileState] = useState<'loading' | 'ready' | 'error'>('loading');
   onSelectRef.current = onSelect;
   onGeofencePointRef.current = onGeofencePoint;
@@ -267,12 +269,33 @@ export const OperationsMap = forwardRef<OperationsMapHandle, OperationsMapProps>
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !showResidents) return;
+    if (!map) return;
     const group = L.layerGroup().addTo(map);
+    residentLayer.current = group;
+    return () => { group.remove(); residentLayer.current = null; residentMarkers.current.clear(); };
+  }, []);
+
+  useEffect(() => {
+    const group = residentLayer.current;
+    if (!group) return;
+    if (!showResidents) { group.clearLayers(); residentMarkers.current.clear(); return; }
+    const present = new Set<string>();
     getExposure(residents, live ? null : geofence, snapshotAt).located.forEach(user => {
-      residentMarker(user, snapshotAt, { interactive: !drawing, live })?.addTo(group);
+      present.add(user.id);
+      const next = residentMarker(user,snapshotAt,{interactive:!drawing,live});
+      if (!next) return;
+      const previous = residentMarkers.current.get(user.id);
+      if (previous && previous.options.interactive === !drawing) {
+        // Keep the same marker and open popup across updates; position is the latest reported GPS fix.
+        previous.setLatLng(next.getLatLng()).setStyle(next.options).setRadius(next.getRadius());
+        previous.setPopupContent(next.getPopup()!.getContent()!);
+        if (next.getTooltip()) previous.setTooltipContent(next.getTooltip()!.getContent()!);
+      } else {
+        if (previous) group.removeLayer(previous);
+        next.addTo(group); residentMarkers.current.set(user.id,next);
+      }
     });
-    return () => { group.remove(); };
+    for (const [id,marker] of residentMarkers.current) if (!present.has(id)) { group.removeLayer(marker); residentMarkers.current.delete(id); }
   }, [geofence, showResidents, drawing, residents, snapshotAt, live]);
 
   useEffect(() => {

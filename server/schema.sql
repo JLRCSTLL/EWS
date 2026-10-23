@@ -30,6 +30,12 @@ create table if not exists eligtas.sessions (
   created_at timestamptz not null default now()
 );
 create index if not exists sessions_user on eligtas.sessions(user_id);
+create table if not exists eligtas.location_shares (
+  token_hash text primary key,
+  user_id uuid not null unique references eligtas.users(id) on delete cascade,
+  session_hash text not null references eligtas.sessions(token_hash) on delete cascade
+);
+create index if not exists location_shares_session on eligtas.location_shares(session_hash);
 create table if not exists eligtas.alerts (
   id uuid primary key,
   author_id uuid not null references eligtas.users(id),

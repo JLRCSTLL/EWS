@@ -1,6 +1,6 @@
 import L from 'leaflet';
 import { geofenceDistance, type GeofenceGeometry } from '../../lib/geofencing';
-import { locationAgeMinutes, locationStatus, matchesGroup, residentGroups, type Resident } from '../../lib/residents';
+import { liveLocationLabel, locationAgeMinutes, locationStatus, matchesGroup, residentGroups, type Resident } from '../../lib/residents';
 
 export function fenceLayer(geometry: GeofenceGeometry, style: L.PathOptions = {}) {
   const points = geometry.points.map(point => L.latLng(point.lat, point.lng));
@@ -11,7 +11,7 @@ export function fenceLayer(geometry: GeofenceGeometry, style: L.PathOptions = {}
 
 export function residentMarker(user: Resident, at: string, options: { muted?: boolean; interactive?: boolean; live?: boolean } = {}) {
   if (!user.location) return null;
-  const status = locationStatus(user, at);
+  const status = options.live ? (locationAgeMinutes(user,at) <= .5 ? 'active' : locationAgeMinutes(user,at) <= 5 ? 'recent' : 'stale') : locationStatus(user, at);
   const marker = L.circleMarker([user.location.lat, user.location.lng], {
     radius: options.muted ? 3 : options.live ? 8 : 5,
     color: options.muted ? '#b0b0b0' : options.live ? '#fff' : status === 'active' ? '#aff0ce' : status === 'recent' ? '#f0d29b' : '#9b9b9b',
@@ -28,7 +28,7 @@ export function residentMarker(user: Resident, at: string, options: { muted?: bo
   const details = document.createElement('p');
   details.textContent = options.live ? `Self-reported groups: ${groups.join(', ') || 'None specified'}` : `Age ${user.age}${groups.length ? ` · ${groups.join(', ')}` : ''}`;
   const location = document.createElement('p');
-  location.textContent = `${status} · ${Math.round(locationAgeMinutes(user, at))} min ${options.live ? 'ago' : 'before snapshot'} · ±${Math.round(user.location.accuracy)} m`;
+  location.textContent = `${options.live ? liveLocationLabel(user.location.updatedAt,at) : `${status} · ${Math.round(locationAgeMinutes(user,at))} min before snapshot`} · ±${Math.round(user.location.accuracy)} m`;
   const coordinates = document.createElement('p');
   coordinates.textContent = `${user.location.lat.toFixed(5)}, ${user.location.lng.toFixed(5)}`;
   const delivery = document.createElement('small');

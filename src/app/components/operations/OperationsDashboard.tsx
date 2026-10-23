@@ -318,7 +318,7 @@ export function OperationsDashboard({ auditLogs, messages, onSendMessage, onOpen
   return <div className={`ops-app${activeView === 'cctv' ? ' ops-app--cctv' : ''}`}>
     <a className="ops-skip-link" href={activeView === 'cctv' ? '#cctv-main' : '#operations-main'} onClick={event => { event.preventDefault(); document.getElementById(activeView === 'cctv' ? 'cctv-main' : 'operations-main')?.focus(); }}>Skip to operations</a>
     <OperationsMap ref={mapRef} incidents={liveView ? [] : incidents} layers={liveView ? { incidents: false, responders: false, infrastructure: false, risk: false } : layers} region={region} basemap={basemap} selection={selection} onSelect={setSelection} publicReports={tourIndex === null && !liveView ? publicReports : []}
-      residents={liveView ? realUsers : undefined} snapshotAt={liveView ? live.state?.serverTime : undefined} live={liveView}
+      residents={liveView ? realUsers : undefined} snapshotAt={liveView ? live.locationNow : undefined} live={liveView}
       geofence={fenceDraft || alertGeofence} drawing={!!fenceDraft} onGeofencePoint={addFencePoint}
       areas={visibleGeofences} selectedAreaId={selectedFenceId} onSelectGeofence={selectFence} showResidents={showResidents}
       simulationPaused={simulationPaused || activeView === 'cctv' || (tourIndex !== null && !tourPlaying)} simulationReplay={simulationReplay} onSimulationTick={setSimulationElapsed}
@@ -404,7 +404,7 @@ export function OperationsDashboard({ auditLogs, messages, onSendMessage, onOpen
       </div>
 
       <div className="ops-bottom-panels">
-        <PopulationPanel saved={alertGeofence} draft={fenceDraft} onReview={reviewRecipients} onChooseArea={() => setFenceEditor(true)} residents={liveView ? realUsers : undefined} snapshotAt={liveView ? live.state?.serverTime : undefined} live={liveView} />
+        <PopulationPanel saved={alertGeofence} draft={fenceDraft} onReview={reviewRecipients} onChooseArea={() => setFenceEditor(true)} residents={liveView ? realUsers : undefined} snapshotAt={liveView ? live.locationNow : undefined} live={liveView} />
         {liveView ? <section className="ops-glass ops-priorities"><div className="ops-card-heading"><h2>Connected response</h2><span className="ops-demo-badge">{live.connection}</span></div><div className="ops-live-summary"><span><strong>{approved ? live.state!.requests.filter(openRequest).length : '—'}</strong>Open requests</span><span><strong>{approved ? live.state!.users.filter(user => user.safeAt).length : '—'}</strong>Safe check-ins</span><span><strong>{approved ? live.state!.alerts.length : '—'}</strong>Broadcasts</span></div><p className="ops-command-note">{approved ? 'Updates arrive from registered resident accounts. Location sharing is optional.' : 'Open Connected phones to sign in or register. Live locations require approved operator access.'}</p><button className="ops-command-link" onClick={() => setSection(approved ? 'public' : 'connected')}>{approved ? 'Review resident updates' : 'Sign in to live operations'}<ArrowUpRight size={13} /></button></section> : <section className="ops-glass ops-priorities" aria-labelledby="incident-priorities-title">
           <div className="ops-card-heading">
             <h2 id="incident-priorities-title">Incident priorities</h2>

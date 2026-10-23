@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { LiveState } from './live-model';
-import { android, isAndroidApp } from './android';
+import { android, isAndroidApp, type AndroidLocationStatus } from './android';
 
 export class ApiError extends Error { constructor(message: string, public status: number) { super(message); } }
 export async function api(path: string, body?: unknown, method = body === undefined ? 'GET' : 'POST') {
@@ -17,7 +17,8 @@ interface Service {
   state: LiveState | null; connection: Connection; error: string; initialized: boolean;
   refresh: () => Promise<void>; mutate: (path: string, body?: unknown, method?: string) => Promise<any>;
   logout: () => Promise<void>; locationStatus: string; sharingOnDevice: boolean;
-  startLocation: () => void; stopLocation: () => Promise<void>;
+  locationNow: string;
+  startLocation: () => Promise<void>; stopLocation: () => Promise<void>;
   recoveryCode: string; setRecoveryCode: (code: string) => void;
 }
 const Context = createContext<Service>(null!);
@@ -31,6 +32,7 @@ export function LiveProvider({ children }: { children: ReactNode }) {
   const [recoveryCode, setRecoveryCode] = useState('');
   const [sharingOnDevice, setSharing] = useState(false);
   const [locationStatus, setLocationStatus] = useState('Location sharing is off');
+  const [locationNow, setLocationNow] = useState(() => new Date().toISOString());
   const epoch = useRef(0), refreshing = useRef(false), locationEpoch = useRef(0);
   const pendingLocation = useRef<Promise<unknown> | null>(null);
   const refresh = useCallback(async () => {
@@ -49,7 +51,7 @@ export function LiveProvider({ children }: { children: ReactNode }) {
   }, []);
   useEffect(() => {
     void refresh();
-    const tick = () => { if (!document.hidden) void refresh(); };
+    const tick = () => { setLocationNow(new Date().toISOString()); if (!document.hidden) void refresh(); };
     let publicScope = location.hash.startsWith('#/public');
     const route = () => {
       const next = location.hash.startsWith('#/public');
@@ -67,41 +69,78 @@ export function LiveProvider({ children }: { children: ReactNode }) {
     const result = await api(path, body, method); await refresh(); return result;
   }, [refresh]);
   const userId = state?.user.id;
+  useEffect(() => {
+    if (!userId || !('EventSource' in window)) return;
+    let stream: EventSource | undefined;
+    const open = () => {
+      stream?.close();
+      if (document.hidden) return;
+      stream = new EventSource('/api/location/events' + (location.hash.startsWith('#/public') ? '?view=public' : ''));
+      stream.addEventListener('location', () => void refresh());
+      stream.addEventListener('ready', () => void refresh());
+    };
+    open(); window.addEventListener('hashchange',open); document.addEventListener('visibilitychange',open);
+    return () => { stream?.close(); window.removeEventListener('hashchange',open); document.removeEventListener('visibilitychange',open); };
+  }, [userId,refresh]);
   useEffect(() => { if (initialized && connection === 'connected' && !userId && isAndroidApp()) void android('logout').catch(() => {}); }, [initialized,connection,userId]);
   useEffect(() => {
-    setSharing(!!userId && localStorage.getItem(locationKey(userId)) === 'yes');
-  }, [userId]);
+    if (!isAndroidApp()) { setSharing(!!userId && localStorage.getItem(locationKey(userId)) === 'yes'); return; }
+    if (!userId) { setSharing(false); return; }
+    let stopped = false;
+    const check = async () => {
+      try {
+        const status = await android<AndroidLocationStatus>('locationStatus',{userId});
+        if (!stopped) { setSharing(status.sharing); setLocationStatus(status.message); }
+      } catch { if (!stopped) { setSharing(false); setLocationStatus('Install the latest Android pilot to enable continuous location sharing.'); } }
+    };
+    const changed = () => { void check(); void refresh(); };
+    void check(); const timer = setInterval(() => { if (!document.hidden) void check(); },5000);
+    window.addEventListener('eligtas-native-location',changed); window.addEventListener('focus',changed);
+    return () => { stopped = true; clearInterval(timer); window.removeEventListener('eligtas-native-location',changed); window.removeEventListener('focus',changed); };
+  }, [userId,refresh]);
   useEffect(() => {
-    if (!sharingOnDevice || !userId) return;
+    if (!sharingOnDevice || !userId || isAndroidApp()) return;
     if (!navigator.geolocation || !window.isSecureContext) { setLocationStatus('Location requires a secure HTTPS connection and a supported browser.'); setSharing(false); return; }
-    let lastUpload = 0, stopped = false;
+    let lastUpload = 0, stopped = false, sending = false;
     const generation = ++locationEpoch.current;
     setLocationStatus('Waiting for your device location…');
     const upload = async (position: GeolocationPosition) => {
-      if (stopped || document.hidden || Date.now() - lastUpload < 15000 || generation !== locationEpoch.current) return;
+      if (stopped || sending || document.hidden || Date.now() - lastUpload < 1000 || generation !== locationEpoch.current || Date.now() - position.timestamp > 10000) return;
       lastUpload = Date.now();
+      sending = true;
       try {
-        const request = api('/location', { lat: position.coords.latitude, lng: position.coords.longitude, accuracy: position.coords.accuracy }, 'PUT');
+        const request = api('/location', { lat: position.coords.latitude, lng: position.coords.longitude, accuracy: position.coords.accuracy, capturedAt: new Date(position.timestamp).toISOString() }, 'PUT');
         pendingLocation.current = request;
         await request;
         if (!stopped) { setLocationStatus(`Shared · accuracy ±${Math.round(position.coords.accuracy)} m`); await refresh(); }
       } catch { if (!stopped) setLocationStatus('Location not sent. Reconnecting…'); }
+      finally { sending = false; pendingLocation.current = null; }
     };
     const failed = (event: GeolocationPositionError) => {
       if (stopped) return;
       setLocationStatus(event.code === 1 ? 'Location permission denied. Allow it in your browser settings, then try again.' : 'Unable to get a GPS fix. Try near a window or outdoors.');
       if (event.code === 1) { localStorage.removeItem(locationKey(userId)); setSharing(false); }
     };
-    const options = { enableHighAccuracy: true, maximumAge: 15000, timeout: 20000 };
+    const options = { enableHighAccuracy: true, maximumAge: 1000, timeout: 20000 };
     const watch = navigator.geolocation.watchPosition(upload, failed, options);
-    const timer = window.setInterval(() => { if (!document.hidden) navigator.geolocation.getCurrentPosition(upload, failed, options); }, 30000);
+    const timer = window.setInterval(() => { if (!document.hidden) navigator.geolocation.getCurrentPosition(upload, failed, options); }, 10000);
     return () => { stopped = true; navigator.geolocation.clearWatch(watch); clearInterval(timer); };
   }, [sharingOnDevice, userId, refresh]);
-  const startLocation = () => { if (userId) { localStorage.setItem(locationKey(userId), 'yes'); setSharing(true); } };
+  const startLocation = async () => {
+    if (!userId) return;
+    if (!isAndroidApp()) { localStorage.setItem(locationKey(userId),'yes'); setSharing(true); return; }
+    await android('locationPermission');
+    const share = await api('/location/share',{});
+    try {
+      await android('locationStart',{userId,token:share.token});
+      setSharing(true); setLocationStatus('Starting live location sharing…');
+    } catch (error) { await api('/location',{},'DELETE').catch(() => {}); throw error; }
+  };
   const stopLocation = async () => {
     locationEpoch.current++; setSharing(false);
     if (userId) localStorage.removeItem(locationKey(userId));
     try {
+      if (isAndroidApp()) await android('locationStop');
       // Finish an upload already in flight before deleting its saved coordinates.
       await pendingLocation.current?.catch(() => {});
       await mutate('/location', {}, 'DELETE'); setLocationStatus('Location removed from the command-center map');
@@ -118,5 +157,5 @@ export function LiveProvider({ children }: { children: ReactNode }) {
     }
     await api('/auth/logout', {}); epoch.current++; setState(null); setSharing(false);
   };
-  return <Context.Provider value={{ state, connection, error, initialized, refresh, mutate, logout, locationStatus, sharingOnDevice, startLocation, stopLocation, recoveryCode, setRecoveryCode }}>{children}</Context.Provider>;
+  return <Context.Provider value={{ state, connection, error, initialized, refresh, mutate, logout, locationStatus, locationNow, sharingOnDevice, startLocation, stopLocation, recoveryCode, setRecoveryCode }}>{children}</Context.Provider>;
 }

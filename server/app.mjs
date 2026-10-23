@@ -7,6 +7,8 @@ import { validAndroidToken } from './android-push.mjs';
 import { getGeofenceError } from '../src/app/lib/geofencing.ts';
 import { getAudience } from '../src/app/lib/residents.ts';
 import { asResident } from '../src/app/lib/live-model.ts';
+import { locations } from './location.mjs';
+import { locationEvents } from './location-events.mjs';
 
 const groupsAllowed = ['pwd', 'children', 'seniors', 'pregnant', 'responders'];
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -17,6 +19,8 @@ const passwordInput = value => typeof value === 'string' && value.length >= 12 &
 
 export function createApp(db, { push, production = process.env.NODE_ENV === 'production', allowedOrigins = [], bootstrapToken = process.env.BOOTSTRAP_TOKEN } = {}) {
   const app = express();
+  const events = locationEvents(db);
+  const location = locations(db, events.changed);
   app.disable('x-powered-by');
   app.set('trust proxy', 1);
   app.use('/api', (req, res, next) => {
@@ -46,7 +50,11 @@ export function createApp(db, { push, production = process.env.NODE_ENV === 'pro
     res.cookie('eligtas_session', token, { httpOnly: true, secure: production, sameSite: 'lax', path: '/api', maxAge: 30 * 86400000 });
   }
   app.get('/api/health', async (_req, res) => { await db.query('select 1'); res.json({ ok: true, service: 'E-Ligtas', version: 1 }); });
-  app.get('/api/config', (_req, res) => res.json({ pushPublicKey: push?.publicKey || null, androidPushReady: !!push?.androidReady, registration: true }));
+  app.get('/api/config', (_req, res) => res.json({ pushPublicKey: push?.publicKey || null, androidPushReady: !!push?.androidReady, nativeLocationReady: true, registration: true }));
+  for (const method of ['put','delete']) app[method]('/api/location/native', async (req,res) => {
+    const token = /^Bearer ([A-Za-z0-9_-]{43})$/.exec(req.get('authorization') || '')?.[1];
+    res.json(await location.native(token,req.method,req.body));
+  });
   app.post('/api/auth/register', async (req, res) => {
     rateLimit(req, 'register', 5, 3600000);
     const username = text(req.body.username, 3, 30, 'username').toLowerCase();
@@ -100,6 +108,11 @@ export function createApp(db, { push, production = process.env.NODE_ENV === 'pro
     const requests = await db.query(`select r.*,u.name from eligtas.requests r join eligtas.users u on u.id=r.user_id ${operator ? '' : 'where r.user_id=$1'} order by r.created_at desc limit 200`, operator ? [] : [req.user.id]);
     res.json({ user: publicUser(req.user), users: users.map(publicUser), alerts: alerts.rows, requests: requests.rows, serverTime: new Date().toISOString() });
   });
+  app.get('/api/location/events', (req,res) => events.connect(req,res,digest(tokenFrom(req))));
+  app.post('/api/location/share', async (req,res) => {
+    rateLimit(req,'location-share',120);
+    res.json(await location.start(req.user.id,digest(tokenFrom(req))));
+  });
   app.put('/api/profile', async (req, res) => {
     const name = text(req.body.name, 2, 80, 'full name'), municipality = text(req.body.municipality, 0, 80, 'municipality');
     const groups = req.body.groups;
@@ -109,14 +122,10 @@ export function createApp(db, { push, production = process.env.NODE_ENV === 'pro
     res.json({ ok: true });
   });
   app.put('/api/location', async (req, res) => {
-    const { lat, lng, accuracy } = req.body;
-    if (![lat,lng,accuracy].every(Number.isFinite) || Math.abs(lat) > 85 || Math.abs(lng) > 180 || accuracy < 0 || accuracy > 100000) fail(400, 'The device returned an invalid location.');
-    await db.query('update eligtas.users set location_sharing=true,lat=$1,lng=$2,accuracy=$3,location_at=now(),updated_at=now() where id=$4', [lat,lng,accuracy,req.user.id]);
-    res.json({ ok: true });
+    res.json(await location.save(req.user.id,req.body));
   });
   app.delete('/api/location', async (req, res) => {
-    await db.query('update eligtas.users set location_sharing=false,lat=null,lng=null,accuracy=null,location_at=null,updated_at=now() where id=$1', [req.user.id]);
-    res.json({ ok: true });
+    res.json(await location.stop(req.user.id));
   });
   app.post('/api/safe', async (req, res) => {
     await db.query('update eligtas.users set safe_at=now(),updated_at=now() where id=$1', [req.user.id]); res.json({ ok: true });

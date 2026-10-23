@@ -46,6 +46,15 @@ public final class MainActivity extends ComponentActivity {
     private ProgressBar progress;
     private GeolocationPermissions.Callback locationCallback;
     private String locationOrigin;
+    private JavaScriptReplyProxy sharingReply;
+    private int sharingRequest;
+    private boolean resumed;
+    static void refreshLocation() {
+        MainActivity activity = current.get();
+        if (activity != null) activity.runOnUiThread(() -> {
+            if (activity.web != null && activity.trusted(activity.web.getUrl())) activity.web.evaluateJavascript("window.dispatchEvent(new Event('eligtas-native-location'))", null);
+        });
+    }
     static void refreshInbox() {
         MainActivity activity = current.get();
         if (activity != null) activity.runOnUiThread(() -> {
@@ -121,10 +130,20 @@ public final class MainActivity extends ComponentActivity {
     @Override protected void onNewIntent(Intent intent) { super.onNewIntent(intent); setIntent(intent); openNotification(intent); }
     private void openNotification(Intent intent) {
         if ("OPEN_ALERT".equals(intent.getAction())) { stopService(new Intent(this,EmergencyAlarmService.class)); web.loadUrl(BuildConfig.APP_ORIGIN + "/#/public/alerts"); }
+        if ("OPEN_LOCATION".equals(intent.getAction())) web.loadUrl(BuildConfig.APP_ORIGIN + "/#/public/map");
     }
     @Override public void onRequestPermissionsResult(int request, String[] permissions, int[] results) {
         super.onRequestPermissionsResult(request,permissions,results);
         if (request == 100 && locationCallback != null) { locationCallback.invoke(locationOrigin,checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION)==PackageManager.PERMISSION_GRANTED,false); locationCallback = null; }
+        if ((request == 102 || request == 103) && sharingReply != null) {
+            if (request == 102 && LocationShareService.permitted(this) && Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS},103);
+            } else {
+                JavaScriptReplyProxy pending = sharingReply; sharingReply = null;
+                try { checkLocationPermissions(); reply(pending,sharingRequest,new JSONObject().put("ready",true),null); }
+                catch (Exception denied) { reply(pending,sharingRequest,null,denied.getMessage()); }
+            }
+        }
         refreshInbox();
     }
     private void reply(JavaScriptReplyProxy proxy, int id, Object data, String error) {
@@ -138,12 +157,32 @@ public final class MainActivity extends ComponentActivity {
                 case "bind": {
                     String user = request.optString("userId"); if (!user.matches("[0-9a-fA-F-]{36}")) throw new IllegalArgumentException();
                     if (!user.equals(AlarmSettings.prefs(this).getString("user",""))) {
+                        LocationShareService.stopOtherAccount(this,user);
                         stopService(new Intent(this,EmergencyAlarmService.class));
                         AlarmSettings.prefs(this).edit().putString("user",user).remove("seen").putBoolean("enabled",false).putBoolean("max_volume",false).apply();
                     }
                     reply(proxy,id,AlarmSettings.status(this),null); break;
                 }
                 case "status": reply(proxy,id,AlarmSettings.status(this),null); break;
+                case "locationStatus": reply(proxy,id,LocationShareService.status(this,request.optString("userId")),null); break;
+                case "locationPermission": {
+                    if (!resumed) throw new IllegalStateException("Open the app to start sharing your location.");
+                    if (sharingReply != null) throw new IllegalStateException("Respond to the existing permission request first.");
+                    if (!LocationShareService.permitted(this)) {
+                        sharingReply = proxy; sharingRequest = id;
+                        requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.ACCESS_COARSE_LOCATION},102);
+                    } else if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED) {
+                        sharingReply = proxy; sharingRequest = id; requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS},103);
+                    } else { checkLocationPermissions(); reply(proxy,id,new JSONObject().put("ready",true),null); }
+                    break;
+                }
+                case "locationStart": {
+                    if (!resumed) throw new IllegalStateException("Open the app to start sharing your location.");
+                    checkLocationPermissions(); String user = request.optString("userId"), token = request.optString("token");
+                    if (!user.matches("[0-9a-fA-F-]{36}") || !token.matches("[A-Za-z0-9_-]{43}")) throw new IllegalArgumentException();
+                    LocationShareService.start(this,token,user); reply(proxy,id,new JSONObject().put("sharing",true),null); break;
+                }
+                case "locationStop": LocationShareService.stop(this); reply(proxy,id,new JSONObject().put("sharing",false),null); break;
                 case "configure": {
                     if (request.has("enabled")) { boolean enabled = request.getBoolean("enabled"); AlarmSettings.prefs(this).edit().putBoolean("enabled",enabled).apply(); if (!enabled) stopService(new Intent(this,EmergencyAlarmService.class)); else notificationPermission(); }
                     if (request.has("maxVolume")) AlarmSettings.prefs(this).edit().putBoolean("max_volume",request.getBoolean("maxVolume")).apply();
@@ -169,6 +208,7 @@ public final class MainActivity extends ComponentActivity {
                 }
                 case "stop": stopService(new Intent(this,EmergencyAlarmService.class)); reply(proxy,id,new JSONObject().put("ok",true),null); break;
                 case "logout": {
+                    LocationShareService.stop(this);
                     stopService(new Intent(this,EmergencyAlarmService.class));
                     AlarmSettings.prefs(this).edit().remove("user").remove("seen").putBoolean("enabled",false).putBoolean("max_volume",false).apply();
                     if (BuildConfig.PUSH_CONFIGURED) { FirebaseMessaging.getInstance().setAutoInitEnabled(false); FirebaseMessaging.getInstance().deleteToken(); }
@@ -177,10 +217,15 @@ public final class MainActivity extends ComponentActivity {
                 }
                 default: reply(proxy,id,null,"Unsupported Android action.");
             }
-        } catch (Exception unavailable) { reply(proxy,id,null,"Android could not complete this action. Check app permissions and try again."); }
+        } catch (Exception unavailable) { reply(proxy,id,null,unavailable instanceof IllegalStateException && unavailable.getMessage() != null ? unavailable.getMessage() : "Android could not complete this action. Check app permissions and try again."); }
     }
     private void notificationPermission() { if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED) requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS},101); }
-    @Override protected void onResume() { super.onResume(); if (web != null) { web.onResume(); refreshInbox(); } }
-    @Override protected void onPause() { if (web != null) web.onPause(); super.onPause(); }
+    private void checkLocationPermissions() {
+        if (!LocationShareService.permitted(this)) throw new IllegalStateException("Allow location access in Android app settings to share your location.");
+        if (!LocationShareService.gpsEnabled(this)) throw new IllegalStateException("Turn on Android Location, then tap Share my location again.");
+        if (!getSystemService(android.app.NotificationManager.class).areNotificationsEnabled()) throw new IllegalStateException("Allow notifications so the location-sharing indicator and Stop sharing button stay visible.");
+    }
+    @Override protected void onResume() { super.onResume(); resumed = true; LocationShareService.retryRemoval(this); if (web != null) { web.onResume(); refreshInbox(); refreshLocation(); } }
+    @Override protected void onPause() { resumed = false; if (web != null) web.onPause(); super.onPause(); }
     @Override protected void onDestroy() { if (current.get()==this) current.clear(); if (locationCallback!=null) locationCallback.invoke(locationOrigin,false,false); web.destroy(); super.onDestroy(); }
 }

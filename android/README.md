@@ -69,8 +69,35 @@ background push is unavailable. It does not claim to have registered a device.
 - Duplicate deliveries, stale alerts older than five minutes, and another
   account's alerts are rejected before alarm playback. Silencing does not mark
   an alert as read. Read acknowledgment remains an explicit inbox action.
-- Location is shared only after permission and while the app is open. There is
-  no background location permission or continuous background tracking.
+
+## Live location in the command center
+
+Tap **Share my location** while the Android app is open. Grant location and
+notification permissions. The app starts a location foreground service with a
+persistent **Stop sharing** notification. It requests fresh GPS fixes every
+second and uploads the newest fix without waiting for the WebView, including
+when the screen is locked or another app is open. Precise location gives the
+best accuracy. GPS, connectivity, battery restrictions, force-stop and device
+policies can delay or stop updates; a one-second interval is a target.
+
+Approved operators receive a server event for each saved update and refresh the
+map automatically. A five-second refresh remains as a reconnect/proxy fallback.
+Markers retain their identity and open popups while their positions change.
+Green **Live** labels mean a fix within 30 seconds; older positions say **Last
+seen** and keep their original timestamp. Cached fixes are not relabeled as live.
+
+The service uses a location-only credential tied to the signed-in session; it
+cannot read residents, send alerts, or grant operator access. Only one native
+sharing device is active per account. Stop sharing removes the point and revokes
+queued uploads. Offline stops keep a pending removal for the next connection;
+the command center shows the previous fix as stale until removal reaches it.
+Logout/recovery invalidates the sharing credential. Force-stopped apps must be
+opened and sharing started again. No boot receiver or “Allow all the time”
+location permission is used.
+
+Deploy the Render API and confirm `/api/config` reports
+`nativeLocationReady: true` before installing the updated pilot. Location sharing
+does not require Firebase; background alert delivery does.
 
 ## Verify on a physical Android phone
 

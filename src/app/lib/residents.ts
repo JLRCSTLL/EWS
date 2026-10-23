@@ -69,6 +69,14 @@ export function locationStatus(user: Resident, at: string) {
   const minutes = locationAgeMinutes(user, at);
   return !user.location ? 'unavailable' : minutes <= 5 ? 'active' : minutes <= 60 ? 'recent' : 'stale';
 }
+export function liveLocationLabel(updatedAt: string, at: string) {
+  const seconds = Math.max(0,Math.floor((Date.parse(at)-Date.parse(updatedAt))/1000));
+  if (!Number.isFinite(seconds)) return 'Location time unavailable';
+  if (seconds <= 30) return `Live · ${seconds}s ago`;
+  if (seconds < 60) return `Last seen ${seconds}s ago`;
+  if (seconds < 3600) return `Last seen ${Math.floor(seconds/60)} min ago`;
+  return `Last seen ${Math.floor(seconds/3600)} hr ago`;
+}
 export function audienceLabel(filter: AudienceFilter) {
   return filter.groups.includes('all') ? 'All app users' : residentGroups.filter(group => filter.groups.includes(group.id)).map(group => group.label).join(' + ');
 }

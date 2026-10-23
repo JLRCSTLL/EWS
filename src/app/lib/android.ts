@@ -2,6 +2,10 @@ export interface AndroidStatus {
   enabled: boolean; maxVolume: boolean; pushConfigured: boolean; notifications: boolean;
   dndAccess: boolean; dndBypass: boolean; alarmVolume: number; alarmMax: number;
 }
+export interface AndroidLocationStatus {
+  supported: boolean; sharing: boolean; permission: boolean; gpsEnabled: boolean;
+  lastSentAt: string | null; message: string;
+}
 type NativeBridge = { postMessage: (message: string) => void; onmessage: ((event: MessageEvent) => void) | null };
 declare global { interface Window { ELigtasAndroid?: NativeBridge } }
 export const isAndroidApp = () => !!window.ELigtasAndroid;
@@ -23,7 +27,7 @@ export function android<T = AndroidStatus>(action: string, values: Record<string
   }
   return new Promise((resolve, reject) => {
     const requestId = ++nextId;
-    const timer = setTimeout(() => { pending.delete(requestId); reject(new Error('Android did not respond. Please try again.')); }, 15000);
+    const timer = setTimeout(() => { pending.delete(requestId); reject(new Error('Android did not respond. Please try again.')); }, action === 'locationPermission' ? 120000 : 15000);
     pending.set(requestId, { resolve, reject, timer });
     bridge.postMessage(JSON.stringify({ requestId, action, ...values }));
   });
