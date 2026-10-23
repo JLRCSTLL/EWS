@@ -24,7 +24,7 @@ function InstallApp() {
     return () => { window.removeEventListener('beforeinstallprompt', ready); window.removeEventListener('appinstalled', done); };
   }, []);
   if (installed || isAndroidApp()) return null;
-  return <><button className="el-install" onClick={async () => { if (prompt) { await prompt.prompt(); setPrompt(null); } else setHelp(value => !value); }}><ArrowDownToLine size={17} /><span>Keep GSAM close<small>Add to your home screen</small></span><ChevronRight size={17} /></button>{help && <p className="el-notice">On iPhone, open this page in Safari, tap Share, then Add to Home Screen. On Android, open your browser menu and choose Install app or Add to Home screen.</p>}</>;
+  return <><button className="el-install" onClick={async () => { if (prompt) { await prompt.prompt(); setPrompt(null); } else setHelp(value => !value); }}><ArrowDownToLine size={17} /><span>Keep TANOVIQ close<small>Add to your home screen</small></span><ChevronRight size={17} /></button>{help && <p className="el-notice">On iPhone, open this page in Safari, tap Share, then Add to Home Screen. On Android, open your browser menu and choose Install app or Add to Home screen.</p>}</>;
 }
 
 function PushSettings() {
@@ -33,7 +33,7 @@ function PushSettings() {
   async function toggle() {
     setBusy(true); setNote('');
     try {
-      if (!('serviceWorker' in navigator) || !('PushManager' in window)) throw new Error('For iPhone notifications, first add GSAM to your Home Screen and open it there. Your inbox works while this page is open.');
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) throw new Error('For iPhone notifications, first add TANOVIQ to your Home Screen and open it there. Your inbox works while this page is open.');
       const permission = await Notification.requestPermission();
       if (permission !== 'granted') throw new Error('Notifications are blocked. You can allow them in browser settings. Your inbox still works.');
       const worker = await navigator.serviceWorker.ready;
@@ -68,7 +68,7 @@ export default function LivePublicApp() {
   useEffect(() => { receipts.current.clear(); }, [state?.user.id]);
   useEffect(() => {
     const route = () => { setPage(currentPage()); setSelected(null); setNotice(''); window.scrollTo(0,0); };
-    window.addEventListener('hashchange',route); document.title = 'GSAM · Personnel operations';
+    window.addEventListener('hashchange',route); document.title = 'TANOVIQ · Personnel operations';
     const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]'); const previous = meta?.content;
     if (meta) meta.content = '#f5f7fb';
     if ('serviceWorker' in navigator) void navigator.serviceWorker.register('/sw.js').catch(() => {});
@@ -94,10 +94,10 @@ export default function LivePublicApp() {
   const openAlert = (alert: LiveAlert) => { if (page !== 'alerts') { location.hash = '#/public/alerts'; setTimeout(() => setSelected(alert.id),0); } else setSelected(alert.id); };
   const locationCard = user && <DutyCard key={user.id} />;
   const alertCard = (alert: LiveAlert) => <button key={alert.id} className={`el-alert-card priority-${alert.priority}`} onClick={() => { if (page !== 'alerts') { location.hash = '#/public/alerts'; setTimeout(() => setSelected(alert.id),0); } else setSelected(alert.id); }}><span className="el-alert-icon"><Bell size={20} /></span><span><span className="el-alert-meta">{alert.priority} priority · {at(alert.created_at)}{!alert.read_at && <i aria-label="Unread" />}</span><strong>{alertLabel(alert)}</strong><p>{alert.content}</p></span><ChevronRight size={17} /></button>;
-  return <div className="el-app"><a className="el-skip" href="#public-main" onClick={e => { e.preventDefault(); document.getElementById('public-main')?.focus(); }}>Skip to content</a><header className="el-header"><a href="#/public" className="el-brand"><span>GSAM<small>PERSONNEL APP</small></span></a><div className={`el-connection ${connected ? 'is-connected' : ''}`} role="status">{connected ? <Wifi size={14} /> : <WifiOff size={14} />}<span>{connected ? 'Connected' : connection === 'connecting' ? 'Connecting' : 'Reconnecting'}</span></div>{user && <a href="#/public/account" className="el-avatar" aria-label="Your account">{user.name.charAt(0).toUpperCase()}</a>}</header>
+  return <div className="el-app"><a className="el-skip" href="#public-main" onClick={e => { e.preventDefault(); document.getElementById('public-main')?.focus(); }}>Skip to content</a><header className="el-header"><a href="#/public" className="el-brand"><span>TANOVIQ<small>See Risk Before It Strikes.</small></span></a><div className={`el-connection ${connected ? 'is-connected' : ''}`} role="status">{connected ? <Wifi size={14} /> : <WifiOff size={14} />}<span>{connected ? 'Connected' : connection === 'connecting' ? 'Connecting' : 'Reconnecting'}</span></div>{user && <a href="#/public/account" className="el-avatar" aria-label="Your account">{user.name.charAt(0).toUpperCase()}</a>}</header>
     <main id="public-main" className="el-main" tabIndex={-1}>
       {!connected && initialized && <div className="el-notice el-connection-error" role="status"><WifiOff size={19} /><span>{live.error || 'You are offline. Updates will resume when connected.'} {state ? 'Showing the last saved update.' : ''}</span><button onClick={() => void live.refresh()} aria-label="Retry connection"><RefreshCw size={18} /></button></div>}
-      {!initialized ? <p className="el-loading">Connecting to your community…</p> : !user || recoveryCode ? <><AuthPanel /><InstallApp /><p className="el-pilot-note">GSAM · Personnel access</p></> : <>
+      {!initialized ? <p className="el-loading">Connecting to your community…</p> : !user || recoveryCode ? <><AuthPanel /><InstallApp /><p className="el-pilot-note">TANOVIQ · Personnel access</p></> : <>
         <AlertAlarm key={user.id} userId={user.id} alerts={alerts} onOpen={openAlert} settings={page === 'account'} />
         {notice && <div className="el-notice" role="status">{notice}<button onClick={() => setNotice('')} aria-label="Dismiss message">×</button></div>}
         {page === 'home' && <><div className="el-greeting"><span className="el-eyebrow">MABUHAY, {user.name.split(' ')[0].toUpperCase()}</span><h1>Ready for<br />your next assignment.</h1><p><MapPin size={15} />{user.onDuty?'On duty · location sharing':'Off duty · location not tracked'}</p></div><div className="el-home-grid"><section className="el-hero"><div><span className="el-eyebrow">YOUR ALERT INBOX</span><h2>{unread ? `${unread} new ${unread === 1 ? 'alert' : 'alerts'} for you` : 'Stay informed. Stay ready.'}</h2><p>{unread ? 'Your command center has an update. Take a moment to read it.' : 'Your group and geofence alerts arrive here from the command center.'}</p><a href="#/public/alerts">Open my alerts <ArrowRight size={18} /></a></div><ShieldCheck size={92} strokeWidth={1} aria-hidden="true" /></section>{locationCard}</div>

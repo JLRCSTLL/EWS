@@ -1,5 +1,9 @@
 
-  # GSAM — Geospatial Situational Awareness Map
+  # TANOVIQ
+
+**See Risk Before It Strikes.**
+
+Tanaw + Vision + IQ. Connected risk awareness, personnel operations, and emergency communications. The map feature is called **Live Operations Map**.
 
   This is a code bundle for Emergency Command Center Dashboard. The original project is available at https://www.figma.com/design/l6MkDSarJMxwwnrkzjzHvj/Emergency-Command-Center-Dashboard.
 
@@ -101,7 +105,7 @@ to critical and high severity, and clears any previous incident search.
 
 Use **Workspace** to access the original configurable dashboard: layout presets,
 draggable/resizable widgets, the widget library, geofence tools, and light mode.
-Select **Live overview** under the E-Ligtas name to return to the new interface.
+Select **Live overview** under the TANOVIQ name to return to the new interface.
 Broadcasts, delivery history, user roles, analytics, and audit logs remain available.
 
 ### Automatic presentation demo

@@ -26,7 +26,7 @@ export function createApp(db, { push, production = process.env.NODE_ENV === 'pro
     if (!['GET','HEAD'].includes(req.method)) {
       const origin = req.get('origin');
       const ownOrigin = `${req.protocol}://${req.get('host')}`;
-      if (!origin || (!allowedOrigins.includes(origin) && origin !== ownOrigin)) return res.status(403).json({ error: 'Open GSAM from its official app address and try again.' });
+      if (!origin || (!allowedOrigins.includes(origin) && origin !== ownOrigin)) return res.status(403).json({ error: 'Open TANOVIQ from its official app address and try again.' });
       if (!req.is('application/json')) return res.status(415).json({ error: 'JSON is required.' });
     }
     next();
@@ -47,7 +47,7 @@ export function createApp(db, { push, production = process.env.NODE_ENV === 'pro
     await db.query("insert into eligtas.sessions(token_hash,user_id,expires_at) values ($1,$2,now()+interval '30 days')", [digest(token), userId]);
     res.cookie('eligtas_session', token, { httpOnly: true, secure: production, sameSite: 'lax', path: '/api', maxAge: 30 * 86400000 });
   }
-  app.get('/api/health', async (_req, res) => { await db.query('select 1'); res.json({ ok: true, service: 'GSAM', version: 2 }); });
+  app.get('/api/health', async (_req, res) => { await db.query('select 1'); res.json({ ok: true, service: 'TANOVIQ', version: 2 }); });
   app.get('/api/config', (_req, res) => res.json({ pushPublicKey: push?.publicKey || null, androidPushReady: !!push?.androidReady, nativeLocationReady: true, registration: true, gsamReady: true, dutyTracking: true }));
   for (const method of ['put','delete']) app[method]('/api/location/native', async (req,res) => {
     const token = /^Bearer ([A-Za-z0-9_-]{43})$/.exec(req.get('authorization') || '')?.[1];

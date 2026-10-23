@@ -1,12 +1,12 @@
 // Cache only the offline notice. Never store accounts, locations or API responses.
-const CACHE = 'eligtas-offline-v1';
+const CACHE = 'eligtas-offline-v2';
 self.addEventListener('install', event => { event.waitUntil(caches.open(CACHE).then(cache => cache.add('/offline.html')).then(() => self.skipWaiting())); });
 self.addEventListener('activate', event => { event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key.startsWith('eligtas-offline-') && key !== CACHE).map(key => caches.delete(key)))).then(() => self.clients.claim())); });
 self.addEventListener('fetch', event => {
   if (event.request.mode === 'navigate') event.respondWith(fetch(event.request).catch(() => caches.match('/offline.html')));
 });
 self.addEventListener('push', event => {
-  let message = { title: 'GSAM alert', body: 'Open your inbox for a new command-center message.' };
+  let message = { title: 'TANOVIQ alert', body: 'Open your inbox for a new command-center message.' };
   try { message = { ...message, ...event.data.json() }; } catch { /* Keep a useful generic notification. */ }
   const urgent = ['high','critical'].includes(message.priority);
   event.waitUntil(Promise.all([

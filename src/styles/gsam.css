@@ -407,10 +407,13 @@
 .ops-brand.gsam-brand {
   min-width: auto;
   gap: 0;
+  flex-shrink: 0;
 }
 .gsam-brand .ops-brand-caption {
-  letter-spacing: 0.08em;
+  letter-spacing: 0.02em;
   font-size: 8px;
+  white-space: nowrap;
+  text-transform: none;
 }
 .gsam-map-heading h1 {
   font-size: clamp(32px, 3.5vw, 56px) !important;

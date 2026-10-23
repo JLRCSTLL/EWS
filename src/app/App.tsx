@@ -577,7 +577,7 @@ export default function App() {
             </div>
             <div className="min-w-0">
               <button onClick={() => setWorkspaceMode(false)} className="text-left" aria-label="Back to live overview">
-                <span className="block truncate text-base font-mono tracking-[0.22em] text-zinc-100 sm:text-lg">GSAM</span>
+                <span className="block truncate text-base font-mono tracking-[0.22em] text-zinc-100 sm:text-lg">TANOVIQ</span>
                 <span className="text-[10px] text-zinc-400">← Live overview</span>
               </button>
             </div>

@@ -1,8 +1,8 @@
 {
   "id": "/?app=eligtas",
-  "name": "GSAM · Personnel",
-  "short_name": "GSAM",
-  "description": "Your command-center alerts, shared location, and assistance requests.",
+  "name": "TANOVIQ · Personnel",
+  "short_name": "TANOVIQ",
+  "description": "See Risk Before It Strikes. Command-center alerts, duty location, and assistance requests.",
   "start_url": "/#/public",
   "scope": "/",
   "display": "standalone",

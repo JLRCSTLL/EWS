@@ -21,5 +21,5 @@ const app = createApp(db, { push, allowedOrigins, bootstrapToken });
 const dist = fileURLToPath(new URL('../dist/', import.meta.url));
 app.use(express.static(dist));
 app.get('/{*path}', (_req, res) => res.sendFile(path.join(dist,'index.html')));
-const server = app.listen(Number(process.env.PORT || 3001), '0.0.0.0', () => console.log(`E-Ligtas service listening on port ${process.env.PORT || 3001}`));
+const server = app.listen(Number(process.env.PORT || 3001), '0.0.0.0', () => console.log(`TANOVIQ service listening on port ${process.env.PORT || 3001}`));
 process.on('SIGTERM', () => server.close(() => void db.close()));

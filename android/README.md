@@ -1,4 +1,4 @@
-# GSAM Android pilot 0.4.0
+# TANOVIQ Android pilot 0.4.1
 
 An installable Android app (Android 8+) for the existing personnel service.
 The public interface loads from `https://ews-kappa.vercel.app/#/public` in an
@@ -32,7 +32,7 @@ and real-device delivery verification remain separate release steps.
 
 ## Connect background notifications
 
-1. In the Firebase project **E-Ligtas** (`e-ligtas-4e8ce`), register an Android
+1. In the Firebase project `e-ligtas-4e8ce`, register an Android
    app with package `ph.eligtas.app.pilot`. Download its `google-services.json`
    into `android/app/`. This local configuration is Git-ignored. Rebuild the APK.
 2. Enable Firebase Cloud Messaging HTTP v1. Configure a service account with only

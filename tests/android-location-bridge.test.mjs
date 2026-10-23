@@ -16,7 +16,7 @@ test('Android location setup reports an old APK and respects the native permissi
   };
   globalThis.window = { ELigtasAndroid: bridge };
   response = () => ({ error: 'Unsupported Android action.' });
-  await assert.rejects(prepareAndroidLocation('test-user'), /Install GSAM Android pilot 0\.2\.0/);
+  await assert.rejects(prepareAndroidLocation('test-user'), /Install the latest TANOVIQ Android pilot/);
   assert.deepEqual(actions.splice(0), ['locationStatus']);
 
   response = action => action === 'locationStatus' ? { data: { supported: true } } : { error: 'Allow location access in Android app settings to share your location.' };

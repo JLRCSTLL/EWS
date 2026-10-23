@@ -1,4 +1,4 @@
-E-Ligtas CCTV demo footage
+TANOVIQ CCTV demo footage
 
 The camera names, locations, alerts, readings, and session timestamps in this
 application are fictional demonstration assignments. These clips are prerecorded

@@ -107,7 +107,7 @@ export function AlertAlarm({ userId, alerts, onOpen, settings }: { userId: strin
       {(settings || !enabled) && <p className="el-caption">{native ? 'High and critical alerts automatically use full alarm volume, including silent ringer mode. Normal announcements follow notification settings. DND must allow alarm audio.' : 'Plays while this app is open after you enable sound. Browsers cannot override silent mode or force full volume.'}</p>}
       {settings && <><div className="el-alarm-actions"><button className="el-secondary" disabled={busy || (native && !enabled)} onClick={() => void run(test)}><Volume2 size={16} />Test alarm · 4 sec</button>{native && <button className="el-secondary" onClick={() => void run(async () => { await android('notifications'); })}>Android notifications</button>}</div>
         {native && status && <div className="el-native-settings">
-          {!status.managedAlarms && <p className="el-notice">Install GSAM Android pilot 0.4.0 for duty permissions and always-enabled emergency alarms.</p>}
+          {!status.managedAlarms && <p className="el-notice">Install TANOVIQ Android pilot 0.4.1 for duty permissions and always-enabled emergency alarms.</p>}
           {status.appVersion && <p className="el-caption">Android app {status.appVersion}</p>}
           <p className="el-caption"><strong>Emergency alarm policy: always enabled, full alarm volume.</strong></p>
           <p className="el-caption">Rises to full alarm volume, then restores your previous volume when stopped. This also affects Test alarm.</p>

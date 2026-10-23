@@ -17,7 +17,7 @@ let nextId = 0, attached: NativeBridge | undefined;
 const pending = new Map<number, { resolve: (value: any) => void; reject: (error: Error) => void; timer: ReturnType<typeof setTimeout> }>();
 export function android<T = AndroidStatus>(action: string, values: Record<string, unknown> = {}): Promise<T> {
   const bridge = window.ELigtasAndroid;
-  if (!bridge) return Promise.reject(new Error('Open the GSAM Android app to use this setting.'));
+  if (!bridge) return Promise.reject(new Error('Open the TANOVIQ Android app to use this setting.'));
   if (attached !== bridge) {
     attached = bridge;
     bridge.onmessage = event => {
@@ -38,7 +38,7 @@ export function android<T = AndroidStatus>(action: string, values: Record<string
 }
 
 export async function prepareAndroidLocation(userId: string) {
-  const upgrade = 'This Android app needs an update to share live locations. Install GSAM Android pilot 0.2.0 or newer, then reopen the app.';
+  const upgrade = 'This Android app needs an update to share live locations. Install the latest TANOVIQ Android pilot, then reopen the app.';
   let status: AndroidLocationStatus;
   try { status = await android<AndroidLocationStatus>('locationStatus', { userId }); }
   catch (error) {
