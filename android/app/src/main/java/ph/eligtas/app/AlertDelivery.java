@@ -22,20 +22,38 @@ final class AlertDelivery {
         prefs.edit().putString("seen", String.join(",", seen)).apply();
         AlarmSettings.channels(c);
         String channel = AlertPolicy.urgent(priority) ? AlarmSettings.EMERGENCY : AlarmSettings.COMMUNITY;
-        if (!AlarmSettings.notificationsAllowed(c, channel)) return false;
+        if (!AlarmSettings.notificationsAllowed(c, channel)) {
+            if (EmergencyAlarmService.activeId.isEmpty()) AlarmSettings.playback(c,id,"blocked","Alert received, but Android notifications are blocked. Allow notifications in app settings.");
+            return false;
+        }
         boolean playing = false;
-        if (canStartAlarm && prefs.getBoolean("enabled", false) && AlertPolicy.mayInterrupt(priority,EmergencyAlarmService.activePriority)) {
+        if (canStartAlarm && AlertPolicy.urgent(priority) && prefs.getBoolean("enabled", false) && AlertPolicy.mayInterrupt(priority,EmergencyAlarmService.activePriority)) {
             try {
+                AlarmSettings.playback(c,id,"starting","Emergency alert received. Starting the alarm…");
                 ContextCompat.startForegroundService(c, new Intent(c, EmergencyAlarmService.class).putExtra("alert", alert.toString()));
                 playing = true;
             } catch (RuntimeException restricted) { /* Fall back to a standard audible notification. */ }
         }
+        if (!playing && EmergencyAlarmService.activeId.isEmpty()) {
+            String reason = !AlertPolicy.urgent(priority) ? "Announcement received. Normal priority does not request an emergency alarm."
+                : !prefs.getBoolean("enabled",false) ? "Emergency alert received. Enable full-volume alerts on this phone to sound the alarm."
+                : "Alert received, but Android did not allow background alarm playback. Check the app's background settings.";
+            AlarmSettings.playback(c,id,AlertPolicy.urgent(priority) ? "blocked" : "announcement",reason);
+        }
         NotificationCompat.Builder notification = notification(c, alert, channel).setAutoCancel(true);
-        // Keep Android's channel sound as a fallback if the OS refuses alarm playback.
-        if (!prefs.getBoolean("enabled", false)) notification.setSilent(true);
+        // A second notification sound can steal audio focus from the alarm service.
+        // Use channel audio only when the alarm could not be started.
+        notification.setSilent(playing || !EmergencyAlarmService.activeId.isEmpty() || !prefs.getBoolean("enabled", false));
         c.getSystemService(NotificationManager.class).notify(id.hashCode(), notification.build());
         MainActivity.refreshInbox();
         return playing;
+    }
+    static void fallback(Context c, JSONObject alert) {
+        if (!alert.optBoolean("test") && AlarmSettings.prefs(c).getBoolean("enabled",false) && AlarmSettings.notificationsAllowed(c,AlarmSettings.EMERGENCY)) {
+            // The original notification was silent while playback was starting.
+            // Allow this replacement to sound if the service could not play.
+            c.getSystemService(NotificationManager.class).notify(alert.optString("id").hashCode(),notification(c,alert,AlarmSettings.EMERGENCY).setAutoCancel(true).setOnlyAlertOnce(false).build());
+        }
     }
     static NotificationCompat.Builder notification(Context c, JSONObject alert, String channel) {
         Intent open = new Intent(c, MainActivity.class).setAction("OPEN_ALERT").putExtra("alertId", alert.optString("id"));

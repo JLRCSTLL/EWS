@@ -7,6 +7,7 @@ import android.content.SharedPreferences;
 import android.media.AudioAttributes;
 import android.media.AudioManager;
 import android.media.RingtoneManager;
+import android.os.Build;
 import org.json.JSONObject;
 
 final class AlarmSettings {
@@ -34,10 +35,41 @@ final class AlarmSettings {
         channels(c);
         NotificationManager manager = c.getSystemService(NotificationManager.class);
         AudioManager audio = c.getSystemService(AudioManager.class);
+        Boolean allowed = alarmsAllowed(c);
         return new JSONObject().put("enabled", prefs(c).getBoolean("enabled", false)).put("maxVolume", prefs(c).getBoolean("max_volume", false))
             .put("pushConfigured", BuildConfig.PUSH_CONFIGURED).put("notifications", notificationsAllowed(c, EMERGENCY))
             .put("dndAccess", manager.isNotificationPolicyAccessGranted()).put("dndBypass", manager.getNotificationChannel(EMERGENCY).canBypassDnd())
-            .put("alarmVolume", audio.getStreamVolume(AudioManager.STREAM_ALARM)).put("alarmMax", audio.getStreamMaxVolume(AudioManager.STREAM_ALARM));
+            .put("alarmVolume", audio.getStreamVolume(AudioManager.STREAM_ALARM)).put("alarmMax", audio.getStreamMaxVolume(AudioManager.STREAM_ALARM))
+            .put("appVersion", BuildConfig.VERSION_NAME).put("enhancedAlarms", true).put("volumeFixed", audio.isVolumeFixed())
+            .put("dndMode", dndMode(manager)).put("dndAlarmsAllowed", allowed == null ? JSONObject.NULL : allowed)
+            .put("alarmState", prefs(c).getString("alarm_state","idle")).put("alarmMessage", prefs(c).getString("alarm_message",""))
+            .put("alarmId", prefs(c).getString("alarm_id",""));
+    }
+    private static String dndMode(NotificationManager manager) {
+        switch (manager.getCurrentInterruptionFilter()) {
+            case NotificationManager.INTERRUPTION_FILTER_ALL: return "off";
+            case NotificationManager.INTERRUPTION_FILTER_ALARMS: return "alarms";
+            case NotificationManager.INTERRUPTION_FILTER_PRIORITY: return "priority";
+            case NotificationManager.INTERRUPTION_FILTER_NONE: return "total-silence";
+            default: return "unknown";
+        }
+    }
+    static Boolean alarmsAllowed(Context c) {
+        NotificationManager manager = c.getSystemService(NotificationManager.class);
+        String mode = dndMode(manager);
+        if (mode.equals("off") || mode.equals("alarms")) return true;
+        if (mode.equals("total-silence")) return false;
+        if (!mode.equals("priority")) return null;
+        // Android 8 does not expose the separate alarm-category policy bit.
+        if (Build.VERSION.SDK_INT < 28) return null;
+        try {
+            NotificationManager.Policy policy = Build.VERSION.SDK_INT >= 30 ? manager.getConsolidatedNotificationPolicy() : manager.getNotificationPolicy();
+            return policy == null ? null : (policy.priorityCategories & NotificationManager.Policy.PRIORITY_CATEGORY_ALARMS) != 0;
+        } catch (SecurityException unavailable) { return null; }
+    }
+    static void playback(Context c, String id, String state, String message) {
+        prefs(c).edit().putString("alarm_id",id).putString("alarm_state",state).putString("alarm_message",message).apply();
+        MainActivity.refreshAlarmStatus();
     }
     static void restoreVolume(Context c) {
         SharedPreferences p = prefs(c); int previous = p.getInt("previous_volume", -1), applied = p.getInt("applied_volume", -1);

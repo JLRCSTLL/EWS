@@ -115,6 +115,9 @@
 .el-alarm-heading > div { flex:1; min-width:130px; }.el-alarm-heading h2 { font-size:15px; margin:0 0 3px; }.el-alarm-heading p { font-size:12px; color:#62738d; margin:0; }
 .el-alarm-actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:16px; }.el-alarm-actions button { min-height:44px; }
 .el-native-settings { margin-top:18px; padding-top:18px; border-top:1px solid #e0e7f0; }.el-native-settings .el-notice { display:flex; gap:10px; align-items:flex-start; }
+.el-alarm-checks { list-style:none; padding:0; margin:16px 0; border:1px solid #dbe3ef; border-radius:12px; overflow:hidden; }
+.el-alarm-checks li { display:flex; justify-content:space-between; flex-wrap:wrap; gap:4px 16px; padding:11px 13px; font-size:12px; background:#f7f9fd; }
+.el-alarm-checks li + li { border-top:1px solid #e2e8f2; }.el-alarm-checks span { color:#536987; }
 .el-alarm-overlay { position:fixed; inset:0; z-index:10020; background:#0a183bb3; backdrop-filter:blur(5px); }
 .el-alarm-dialog { position:fixed; left:50%; top:50%; transform:translate(-50%,-50%); z-index:10021; width:min(460px,calc(100vw - 32px)); max-height:calc(100dvh - 40px); overflow:auto; padding:30px; border-radius:24px; background:#fff; color:#1e3659; box-shadow:0 24px 80px #0005; font:14px/1.6 Inter,Arial,sans-serif; }
 .el-alarm-dialog h2 { font-size:25px; font-weight:650; margin:12px 0; letter-spacing:-.6px; }.el-alarm-dialog [id="alarm-description"] { white-space:pre-wrap; overflow-wrap:anywhere; font-size:15px; color:#384b66; }

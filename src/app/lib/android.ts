@@ -1,6 +1,10 @@
 export interface AndroidStatus {
   enabled: boolean; maxVolume: boolean; pushConfigured: boolean; notifications: boolean;
   dndAccess: boolean; dndBypass: boolean; alarmVolume: number; alarmMax: number;
+  appVersion?: string; enhancedAlarms?: boolean; volumeFixed?: boolean;
+  dndMode?: 'off' | 'alarms' | 'priority' | 'total-silence' | 'unknown'; dndAlarmsAllowed?: boolean | null;
+  alarmState?: 'idle' | 'starting' | 'playing' | 'paused' | 'blocked' | 'finished' | 'announcement';
+  alarmMessage?: string; alarmId?: string;
 }
 export interface AndroidLocationStatus {
   supported: boolean; sharing: boolean; permission: boolean; gpsEnabled: boolean;

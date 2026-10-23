@@ -61,6 +61,12 @@ public final class MainActivity extends ComponentActivity {
             if (activity.trusted(activity.web.getUrl())) activity.web.evaluateJavascript("window.dispatchEvent(new Event('eligtas-native-alert'))", null);
         });
     }
+    static void refreshAlarmStatus() {
+        MainActivity activity = current.get();
+        if (activity != null) activity.runOnUiThread(() -> {
+            if (activity.web != null && activity.trusted(activity.web.getUrl())) activity.web.evaluateJavascript("window.dispatchEvent(new Event('eligtas-native-alarm-state'))",null);
+        });
+    }
     private boolean trusted(String value) {
         if (value == null) return false;
         Uri uri = Uri.parse(value), app = Uri.parse(BuildConfig.APP_ORIGIN);
@@ -68,7 +74,12 @@ public final class MainActivity extends ComponentActivity {
     }
     @Override public void onCreate(Bundle saved) {
         super.onCreate(saved); current = new WeakReference<>(this);
-        if (EmergencyAlarmService.activeId.isEmpty()) AlarmSettings.restoreVolume(this);
+        if (EmergencyAlarmService.activeId.isEmpty()) {
+            AlarmSettings.restoreVolume(this);
+            String state = AlarmSettings.prefs(this).getString("alarm_state","");
+            if (state.equals("starting") || state.equals("playing") || state.equals("paused"))
+                AlarmSettings.playback(this,AlarmSettings.prefs(this).getString("alarm_id",""),"finished","Previous alarm is no longer running. Use Test alarm to check this phone.");
+        }
         AlarmSettings.channels(this);
         if (BuildConfig.PUSH_CONFIGURED) FirebaseApp.initializeApp(this);
         FrameLayout root = new FrameLayout(this); root.setBackgroundColor(Color.rgb(245,247,251));
@@ -159,7 +170,7 @@ public final class MainActivity extends ComponentActivity {
                     if (!user.equals(AlarmSettings.prefs(this).getString("user",""))) {
                         LocationShareService.stopOtherAccount(this,user);
                         stopService(new Intent(this,EmergencyAlarmService.class));
-                        AlarmSettings.prefs(this).edit().putString("user",user).remove("seen").putBoolean("enabled",false).putBoolean("max_volume",false).apply();
+                        AlarmSettings.prefs(this).edit().putString("user",user).remove("seen").remove("alarm_id").remove("alarm_state").remove("alarm_message").putBoolean("enabled",false).putBoolean("max_volume",false).apply();
                     }
                     reply(proxy,id,AlarmSettings.status(this),null); break;
                 }
@@ -190,7 +201,12 @@ public final class MainActivity extends ComponentActivity {
                 }
                 case "notifications": notificationPermission(); if (Build.VERSION.SDK_INT < 33 || checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)==PackageManager.PERMISSION_GRANTED) startActivity(new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE,getPackageName())); reply(proxy,id,AlarmSettings.status(this),null); break;
                 case "channel": startActivity(new Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE,getPackageName()).putExtra(Settings.EXTRA_CHANNEL_ID,AlarmSettings.EMERGENCY)); reply(proxy,id,AlarmSettings.status(this),null); break;
-                case "dnd": startActivity(new Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS)); reply(proxy,id,AlarmSettings.status(this),null); break;
+                case "dnd": {
+                    startActivity(new Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS));
+                    reply(proxy,id,AlarmSettings.status(this),null); break;
+                }
+                case "soundSettings": startActivity(new Intent(Settings.ACTION_SOUND_SETTINGS)); reply(proxy,id,AlarmSettings.status(this),null); break;
+                case "appSettings": startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).setData(Uri.parse("package:"+getPackageName()))); reply(proxy,id,AlarmSettings.status(this),null); break;
                 case "token": {
                     if (!BuildConfig.PUSH_CONFIGURED || !AlarmSettings.notificationsAllowed(this,AlarmSettings.EMERGENCY)) throw new IllegalStateException();
                     FirebaseMessaging.getInstance().setAutoInitEnabled(true);
@@ -204,13 +220,13 @@ public final class MainActivity extends ComponentActivity {
                     if (!AlarmSettings.prefs(this).getBoolean("enabled",false)) throw new IllegalStateException();
                     JSONObject alert = new JSONObject().put("id",UUID.randomUUID().toString()).put("userId",AlarmSettings.prefs(this).getString("user",""))
                         .put("body","TEST ONLY — E-Ligtas alarm sound check. No message was sent.").put("priority","critical").put("createdAt",Instant.now().toString()).put("test",true);
-                    reply(proxy,id,new JSONObject().put("playing",AlertDelivery.deliver(this,alert,true)),null); break;
+                    reply(proxy,id,new JSONObject().put("playing",AlertDelivery.deliver(this,alert,true)).put("alarmId",alert.getString("id")),null); break;
                 }
                 case "stop": stopService(new Intent(this,EmergencyAlarmService.class)); reply(proxy,id,new JSONObject().put("ok",true),null); break;
                 case "logout": {
                     LocationShareService.stop(this);
                     stopService(new Intent(this,EmergencyAlarmService.class));
-                    AlarmSettings.prefs(this).edit().remove("user").remove("seen").putBoolean("enabled",false).putBoolean("max_volume",false).apply();
+                    AlarmSettings.prefs(this).edit().remove("user").remove("seen").remove("alarm_id").remove("alarm_state").remove("alarm_message").putBoolean("enabled",false).putBoolean("max_volume",false).apply();
                     if (BuildConfig.PUSH_CONFIGURED) { FirebaseMessaging.getInstance().setAutoInitEnabled(false); FirebaseMessaging.getInstance().deleteToken(); }
                     getSystemService(android.app.NotificationManager.class).cancelAll();
                     reply(proxy,id,new JSONObject().put("ok",true),null); break;

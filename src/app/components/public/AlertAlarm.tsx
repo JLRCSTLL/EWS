@@ -13,6 +13,7 @@ export function AlertAlarm({ userId, alerts, onOpen, settings }: { userId: strin
   const [active, setActive] = useState<LiveAlert | null>(null), [testing, setTesting] = useState(false);
   const [note, setNote] = useState(''), [busy, setBusy] = useState(false), [push, setPush] = useState('Checking background notifications…');
   const [sounding, setSounding] = useState(false);
+  const [testId, setTestId] = useState('');
   const activeId = active?.id;
   function stop() {
     audio.current?.stop(); if (native) void android('stop').catch(() => {});
@@ -20,8 +21,10 @@ export function AlertAlarm({ userId, alerts, onOpen, settings }: { userId: strin
   }
   function dismiss() { stop(); setActive(null); }
   useEffect(() => {
-    let cancelled = false;
+    let cancelled = false, updating = false, registeredToken = '';
     const update = async () => {
+      if (cancelled || document.hidden || updating) return;
+      updating = true;
       try {
         await android('bind', { userId });
         const state = await android('status');
@@ -31,13 +34,29 @@ export function AlertAlarm({ userId, alerts, onOpen, settings }: { userId: strin
         if (!state.notifications) { setPush('Allow Android notifications to receive background alerts.'); return; }
         const { token } = await android<{token: string}>('token');
         if (cancelled) return;
-        await api('/push/android', { token });
+        if (registeredToken !== token) { await api('/push/android', { token }); registeredToken = token; }
         if (!cancelled) setPush('Background notifications connected');
       } catch (error) { if (!cancelled) setPush(error instanceof Error ? error.message : 'Background push is unavailable.'); }
+      finally { updating = false; }
     };
     if (native) { void update(); window.addEventListener('focus', update); document.addEventListener('visibilitychange', update); window.addEventListener('eligtas-native-alert', update); }
     return () => { cancelled = true; window.removeEventListener('focus', update); document.removeEventListener('visibilitychange', update); window.removeEventListener('eligtas-native-alert', update); audio.current?.dispose(); };
   }, [native,userId]);
+  useEffect(() => {
+    if (!native) return;
+    let cancelled = false, pending = false;
+    const readStatus = async () => {
+      if (cancelled || pending || document.hidden) return;
+      pending = true;
+      try { const value = await android('status'); if (!cancelled) { setStatus(value); setEnabled(value.enabled); } }
+      catch { /* Keep the last known status until the bridge reconnects. */ }
+      finally { pending = false; }
+    };
+    void readStatus();
+    window.addEventListener('eligtas-native-alarm-state',readStatus);
+    const timer = activeId || testing ? setInterval(readStatus,500) : undefined;
+    return () => { cancelled = true; if (timer) clearInterval(timer); window.removeEventListener('eligtas-native-alarm-state',readStatus); };
+  }, [native,activeId,testing]);
   useEffect(() => {
     const arrivals = tracker.current(alerts);
     if (arrivals.length) { setActive(current => presentAlert(current,arrivals[0])); setTesting(false); }
@@ -68,22 +87,47 @@ export function AlertAlarm({ userId, alerts, onOpen, settings }: { userId: strin
     finally { setBusy(false); }
   }
   async function toggle() {
-    if (native) { const next = await android('configure', { enabled: !enabled }); setStatus(next); setEnabled(next.enabled); }
+    if (native) { const next = await android('configure', { enabled: !enabled, ...(!enabled ? { maxVolume: true } : {}) }); setStatus(next); setEnabled(next.enabled); }
     else if (!enabled) { audio.current ??= new BrowserAlarm(); await audio.current.enable(); setEnabled(true); setNote('Sound enabled for this visit. Keep the app open and your device volume audible.'); }
     else { stop(); setEnabled(false); }
   }
   async function test() {
-    setTesting(true);
-    if (native) { const result = await android<{playing:boolean}>('test'); setSounding(result.playing); }
-    else { audio.current ??= new BrowserAlarm(); await audio.current.enable(); setEnabled(true); setSounding(audio.current.play(4000)); }
+    setTestId(''); setTesting(true);
+    try {
+      if (native) { const result = await android<{playing:boolean;alarmId?:string}>('test'); setTestId(result.alarmId || ''); setSounding(result.playing); }
+      else { audio.current ??= new BrowserAlarm(); await audio.current.enable(); setEnabled(true); setSounding(audio.current.play(4000)); }
+    } catch (error) { setTesting(false); throw error; }
   }
   useEffect(() => { if (!testing) return; const timer = setTimeout(() => { setSounding(false); }, 4000); return () => clearTimeout(timer); }, [testing]);
+  const matchingStatus = status?.alarmId === (testing ? testId : activeId);
+  const playbackMessage = native && status?.enhancedAlarms
+    ? matchingStatus && status.alarmMessage ? status.alarmMessage : enabled ? 'Waiting for Android alarm status…' : 'Sound is off. Enable full-volume alerts in Account.'
+    : sounding ? 'Alarm requested · check that you can hear it' : enabled ? 'Alarm stopped or limited by device settings' : 'Sound is off. You can enable it in Account.';
   return <>
     <section className={`el-alarm-settings ${settings ? 'el-card' : 'el-alarm-compact'}`} aria-label="Alert alarm settings">
-      <div className="el-alarm-heading"><span className="el-icon-soft"><BellRing size={21} /></span><div><h2>{native ? 'Emergency alarm' : 'Alert sound'}</h2><p>{enabled ? native ? 'Alarm enabled on this phone' : 'Sound enabled for this visit' : 'Turn on sound for new alerts'}</p></div><button className="el-secondary" disabled={busy} onClick={() => void run(toggle)}>{enabled ? 'Turn off sound' : 'Enable sound'}</button></div>
-      {(settings || !enabled) && <p className="el-caption">{native ? 'High and critical alerts use the phone’s alarm audio. You control volume and Do Not Disturb access below.' : 'Plays while this app is open after you enable sound. Browsers cannot override silent mode or force full volume.'}</p>}
+      <div className="el-alarm-heading"><span className="el-icon-soft"><BellRing size={21} /></span><div><h2>{native ? 'Emergency alarm' : 'Alert sound'}</h2><p>{enabled ? native ? 'Alarm enabled on this phone' : 'Sound enabled for this visit' : 'Turn on sound for new alerts'}</p></div><button className="el-secondary" disabled={busy} onClick={() => void run(toggle)}>{enabled ? 'Turn off sound' : native ? 'Enable full-volume alerts' : 'Enable sound'}</button></div>
+      {(settings || !enabled) && <p className="el-caption">{native ? 'High and critical alerts sound the alarm, including in silent ringer mode. Enabling alerts also enables full alarm volume. Normal announcements follow notification settings. DND requires alarm exceptions.' : 'Plays while this app is open after you enable sound. Browsers cannot override silent mode or force full volume.'}</p>}
       {settings && <><div className="el-alarm-actions"><button className="el-secondary" disabled={busy || (native && !enabled)} onClick={() => void run(test)}><Volume2 size={16} />Test alarm · 4 sec</button>{native && <button className="el-secondary" onClick={() => void run(async () => { await android('notifications'); })}>Android notifications</button>}</div>
-        {native && status && <div className="el-native-settings"><label className="el-check"><input type="checkbox" checked={status.maxVolume} disabled={busy} onChange={e => { const maxVolume = e.target.checked; void run(async () => setStatus(await android('configure', { maxVolume }))); }} />Use full alarm volume for high and critical alerts</label><p className="el-caption">Rises to full alarm volume, then restores your previous volume when stopped. This also affects Test alarm. Silent ringing and alarm volume are separate Android settings.</p><p className="el-caption">Alarm volume: {status.alarmVolume} / {status.alarmMax} · DND exception: {status.dndBypass ? 'Allowed for this channel' : 'Not enabled'}</p><button className="el-secondary" onClick={() => void run(async () => { await android(status.dndAccess ? 'channel' : 'dnd'); })}>{status.dndAccess ? 'Review emergency channel' : 'Allow Do Not Disturb access'}</button><p className="el-caption">In Android settings, allow alarms and this emergency channel during Do Not Disturb. Total silence, blocked notifications, force-stop, power-off, and some battery restrictions can prevent an alarm.</p><p className="el-notice" role="status"><ShieldCheck size={16} />{push}</p></div>}
+        {native && status && <div className="el-native-settings">
+          {!status.enhancedAlarms && <p className="el-notice">Install Android pilot 0.3.0 for improved incoming alarms and delivery diagnostics.</p>}
+          {status.appVersion && <p className="el-caption">Android app {status.appVersion}</p>}
+          <label className="el-check"><input type="checkbox" checked={status.maxVolume} disabled={busy} onChange={e => { const maxVolume = e.target.checked; void run(async () => setStatus(await android('configure', { maxVolume }))); }} />Use full alarm volume for high and critical alerts</label>
+          <p className="el-caption">Rises to full alarm volume, then restores your previous volume when stopped. This also affects Test alarm.</p>
+          <ul className="el-alarm-checks" aria-label="Alarm readiness">
+            <li><strong>Notifications</strong><span>{status.notifications ? 'Allowed' : 'Blocked in Android'}</span></li>
+            <li><strong>Alarm volume</strong><span>{status.maxVolume && !status.volumeFixed ? 'Full volume during emergencies' : `${status.alarmVolume} / ${status.alarmMax}`}</span></li>
+            <li><strong>Do Not Disturb</strong><span>{status.dndMode === 'off' ? 'Off now · check exceptions before enabling' : status.dndAlarmsAllowed === true ? 'Current mode allows alarm audio' : status.dndAlarmsAllowed === false ? 'Current mode blocks alarm audio' : 'Check alarm exceptions in Android'}</span></li>
+            <li><strong>Emergency channel</strong><span>{status.dndBypass ? 'Allowed to interrupt priority DND' : 'Review DND exception'}</span></li>
+          </ul>
+          <div className="el-alarm-actions">
+            {!status.dndAccess && <button className="el-secondary" disabled={busy} onClick={() => void run(async () => { await android('dnd'); })}>Allow Do Not Disturb access</button>}
+            <button className="el-secondary" disabled={busy} onClick={() => void run(async () => { await android('channel'); })}>Emergency notification settings</button>
+            {status.enhancedAlarms && <><button className="el-secondary" disabled={busy} onClick={() => void run(async () => { await android('soundSettings'); })}>Sound & DND settings</button><button className="el-secondary" disabled={busy} onClick={() => void run(async () => { await android('appSettings'); })}>Background app settings</button></>}
+          </div>
+          <p className="el-caption">Allow alarms in every DND or bedtime mode you use. If alerts arrive only after reopening the app, allow background activity in Android app settings. Device restrictions can still delay or silence alerts.</p>
+          <p className="el-notice" role="status"><ShieldCheck size={16} />{push}</p>
+          {status.alarmMessage && <p className="el-notice" role="status"><strong>Last alert on this phone</strong>{status.alarmMessage}</p>}
+        </div>}
       </>}
       {note && <p className="el-notice" role="status">{note}</p>}
     </section>
@@ -93,7 +137,7 @@ export function AlertAlarm({ userId, alerts, onOpen, settings }: { userId: strin
         <span className="el-eyebrow">{testing ? 'SOUND CHECK · NO MESSAGE SENT' : `${active?.priority} PRIORITY · COMMAND CENTER`}</span>
         <Dialog.Title>{testing ? 'Test your alert alarm' : 'New alert for your area'}</Dialog.Title>
         <Dialog.Description id="alarm-description">{testing ? 'This is a local sound check. No emergency alert was sent.' : active?.content}</Dialog.Description>
-        <p className="el-caption" role="status">{sounding ? 'Alarm playing · stops automatically' : enabled ? 'Alarm stopped or limited by device settings' : 'Sound is off. You can enable it in Account.'}</p>
+        <p className="el-caption" role="status">{playbackMessage}</p>
         <div className="el-alarm-actions"><button className="el-secondary" onClick={stop}><VolumeX size={18} />Silence alarm</button><button className="el-primary" onClick={() => { if (active) onOpen(active); dismiss(); }}>{testing ? 'Done' : 'Read alert'}</button></div>
         {!testing && <p className="el-caption">Silencing does not acknowledge the alert. Read it and confirm in your inbox.</p>}
       </Dialog.Content></Dialog.Portal>

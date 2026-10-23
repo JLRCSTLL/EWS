@@ -52,13 +52,15 @@ background push is unavailable. It does not claim to have registered a device.
 
 ## Alarm behavior
 
-- **Enable sound** is an explicit choice, off initially and reset on account change.
+- **Enable full-volume alerts** is an explicit choice, off initially and reset on
+  account change. It enables sound and maximum alarm volume together. Existing
+  choices are preserved on update; the full-volume checkbox can be changed later.
 - Browser/PWA audio requires a gesture for each visit and plays while the page is
   open. Websites cannot force hardware volume or override silent mode.
 - Android high/critical alerts use the alarm audio stream, up to 30 seconds, with
   vibration and a notification-tray **Silence alarm** button. Normal announcements
   use ordinary notifications in the background, respecting device settings.
-- **Use full alarm volume** is a separate opt-in for high/critical alerts. Playback
+- **Use full alarm volume** controls high/critical alerts. Playback
   rises gradually and restores the previous alarm volume afterward, unless the
   user changes it while the alarm plays. Test alarm uses the same preference.
 - Open **Allow Do Not Disturb access**, grant the OS permission, then review the
@@ -69,6 +71,26 @@ background push is unavailable. It does not claim to have registered a device.
 - Duplicate deliveries, stale alerts older than five minutes, and another
   account's alerts are rejected before alarm playback. Silencing does not mark
   an alert as read. Read acknowledgment remains an explicit inbox action.
+
+The command center defaults to **High · emergency alarm**. **Critical** also
+requests an alarm; **Normal · announcement** uses ordinary notification sound.
+Both emergency priorities use high-priority FCM data messages. A high-priority
+FCM delivery can start the alarm foreground service. If Android downgrades or
+blocks that delivery, a channel notification is used and the phone records the
+reason in **Account → Last alert on this phone**.
+
+Pilot 0.3.0 suppresses a competing notification sound when its alarm service starts.
+Transient audio-focus loss pauses the player; it resumes when focus returns,
+within the original 30-second limit. Permanent focus loss stops playback.
+Playback diagnostics distinguish starting, playing, paused and blocked states;
+“started” is not a guarantee of physical sound output. The app shows the current
+DND alarm policy separately from the emergency notification channel exception.
+
+If **Test alarm** works in silent mode but command-center messages do not, first
+check that the message was High or Critical and that **Background notifications
+connected** appears in Account. Check the last-alert status. If nothing arrived
+until reopening the app, review the phone's background-activity and battery
+settings. Do not send a real emergency broadcast for a sound test.
 
 ## Live location in the command center
 
