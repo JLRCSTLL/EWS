@@ -1,5 +1,6 @@
 node_modules/
 dist/
+desktop/release/
 .vercel/
 .local-data/
 
@@ -26,3 +27,15 @@ android/app/google-services.json
 *.jks
 *.keystore
 *-firebase-adminsdk-*.json
+
+# iOS generated projects, local signing configuration and Apple private keys.
+ios/*.xcodeproj/
+ios/build/
+ios/DerivedData/
+ios/App/Info.plist
+ios/App/TANOVIQ.entitlements
+ios/LiveActivity/Info.plist
+ios/*.xcconfig
+*.p8
+*.p12
+*.mobileprovision
