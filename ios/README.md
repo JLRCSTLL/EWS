@@ -1,8 +1,37 @@
-# TANOVIQ for iPhone — source preview 0.1.0
+# TANOVIQ for iPhone — 0.1.0
 
-This is native SwiftUI iPhone source, **not a signed IPA or a TestFlight release**.
-It has not been compiled with Xcode or tested on an iPhone. The host used to
-prepare it is Windows; no Apple Developer membership or macOS builder is connected.
+This is the native SwiftUI iPhone app. The repository includes a GitHub-hosted
+Mac build workflow, so compilation does not require a Mac on the Windows host.
+**Apple distribution signing and TestFlight setup are still pending.**
+
+## Cloud build
+
+The [iPhone build workflow](https://github.com/JLRCSTLL/EWS/actions/workflows/ios-build.yml)
+uses the standard `xcode-27` Mac runner. Pushes affecting iOS source on
+`build/tanoviq-ios` compile the app and its Live Activity extension, run unit and
+UI tests, capture simulator screenshots, and compile an unsigned device archive.
+It uses read-only repository permissions and no Apple credentials. No production
+account is created and no real alert is sent by these tests.
+
+A successful run provides:
+
+- **TANOVIQ-iPhone-Simulator.zip**: compiled `.app` for the arm64 iPhone Simulator.
+- **TANOVIQ-iPhone-Unsigned-Archive.zip**: compiled `.xcarchive` for iPhone hardware.
+  It requires Apple signing and provisioning before installation or distribution.
+- **TANOVIQ-iPhone-build-evidence**: compiler logs, test summary, and screenshots.
+
+GitHub retains these artifacts for seven days. Local copies and checksums are
+saved with the delivered iPhone build. Neither archive is an installable IPA or
+a TestFlight invitation. Simulator checks do not verify physical-phone push,
+background GPS, or audible output.
+
+To run the simulator package on an Apple silicon Mac with Xcode 27, unzip it,
+boot an iPhone simulator, then run:
+
+```sh
+xcrun simctl install booted /full/path/to/TANOVIQ.app
+xcrun simctl launch booted ph.tanoviq.app
+```
 
 ## Design and behavior
 
@@ -102,14 +131,15 @@ Never enable these based solely on a local sound test.
 
 ## TestFlight steps still required
 
-1. Enroll in the Apple Developer Program and get access to a Mac or macOS builder.
+1. Enroll in the Apple Developer Program. The repository's macOS build workflow
+   can handle compilation; Apple signing credentials still need configuring.
 2. Register `ph.tanoviq.app` with Push Notifications and Time Sensitive
    Notifications, plus extension `ph.tanoviq.app.alerts`. Select your team in Xcode
    for both targets; reserve the identifiers in your own account.
 3. Create the App Store Connect app. Check the privacy manifest against the final
    service, complete App Privacy, export compliance and beta review information,
    and supply your organization's privacy-policy/support URLs.
-4. Build, run and fix any SDK/compiler diagnostics. Test light/dark mode, largest
+4. Rebuild with your signing team. Test light/dark mode, largest
    Dynamic Type, Reduce Transparency, iOS 27's glass tint preferences, notification
    actions and Dynamic Island on a real device.
 5. Archive a Release build for Any iOS Device, validate, and upload from Xcode's
