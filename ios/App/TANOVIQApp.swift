@@ -91,6 +91,13 @@ struct SignInView: View {
                 if !store.error.isEmpty { Section { Label(store.error, systemImage: "exclamationmark.circle").foregroundStyle(.red) } }
                 Section { Text("Location is shared only while you are on duty. iPhone permission settings control notifications, background location, and Live Activities.").font(.footnote).foregroundStyle(.secondary) }
             }.navigationTitle("TANOVIQ")
+                .toolbar {
+                    if registering {
+                        ToolbarItem(placement: .topBarLeading) {
+                            Button("Back to sign in", systemImage: "chevron.left") { registering = false }
+                        }
+                    }
+                }
         }
     }
 }

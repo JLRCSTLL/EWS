@@ -14,7 +14,10 @@ final class LaunchTests: XCTestCase {
         XCTAssertTrue(app.textFields["Preferred name"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["Create account"].isEnabled)
         capture("Registration")
-        app.buttons["Already registered? Sign in"].tap()
+        let back = app.buttons["Back to sign in"]
+        XCTAssertTrue(back.waitForExistence(timeout: 5))
+        XCTAssertTrue(back.isHittable)
+        back.tap()
         XCTAssertTrue(app.buttons["Sign in"].exists)
         XCTAssertFalse(app.textFields["Preferred name"].exists)
     }

@@ -2,7 +2,9 @@ import Foundation
 import CoreLocation
 import Combine
 
-@MainActor final class DutyLocation: NSObject, ObservableObject, CLLocationManagerDelegate {
+// Core Location delivers delegates on the run loop where its manager was created.
+// This manager is created and used on MainActor; preserve that legacy contract.
+@MainActor final class DutyLocation: NSObject, ObservableObject, @preconcurrency CLLocationManagerDelegate {
     static let shared = DutyLocation()
     @Published var status = "Off duty · location is not shared"
     @Published var sharing = false

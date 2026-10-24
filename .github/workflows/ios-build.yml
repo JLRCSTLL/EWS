@@ -72,8 +72,6 @@ jobs:
           sleep 1
           xcrun simctl io "$SIMULATOR_ID" screenshot build/evidence/iphone-dark.png
           ditto -c -k --sequesterRsrc --keepParent build/DerivedData/Build/Products/Debug-iphonesimulator/TANOVIQ.app build/TANOVIQ-iPhone-Simulator.zip
-          xcrun xcresulttool get test-results summary --path build/Tests.xcresult > build/evidence/test-summary.json
-          xcrun xcresulttool export attachments --path build/Tests.xcresult --output-path build/evidence/test-attachments
       - name: Compile unsigned iPhone device archive
         run: |
           set -euo pipefail
@@ -96,6 +94,13 @@ jobs:
             ios/build/SHA256SUMS.txt
           if-no-files-found: error
           retention-days: 7
+      - name: Export test results and screenshots
+        if: always()
+        run: |
+          if [ -d build/Tests.xcresult ]; then
+            xcrun xcresulttool get test-results summary --path build/Tests.xcresult > build/evidence/test-summary.json
+            xcrun xcresulttool export attachments --path build/Tests.xcresult --output-path build/evidence/test-attachments
+          fi
       - name: Save build evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
