@@ -15,11 +15,17 @@ clearly separated from connected accounts and alerts.
 | [Command center](https://ews-kappa.vercel.app/) | Browser interface for approved operators | Web |
 | [Personnel app](https://ews-kappa.vercel.app/#/public) | Register, receive alerts, share location while on duty, request help | Mobile web / PWA |
 | [Windows](desktop/README.md) | Dedicated command-center window, splash and desktop controls | 1.1.0, x64 installer / portable |
-| [Android](android/README.md) | Mobile interface with native notifications, alarm controls and on-duty GPS | 0.5.1 pilot, version code 7 |
+| [Android](android/README.md) | Mobile interface with native notifications, alarm controls and on-duty GPS | 0.6.0 pilot, version code 8 |
 | [iPhone](ios/README.md) | SwiftUI app, APNs and Live Activity implementation | Development; no signed IPA or TestFlight release |
 
 Windows and Android load the hosted interface. Rebuilding an installer does not
 publish web or API changes. Native code updates require installing the new package.
+
+The personnel interface uses a floating glass navigation bar, rounded controls,
+larger alert text, and solid message cards. **Account → Glass appearance** adjusts
+navigation tint on that device. Reduced-motion and reduced-transparency preferences
+are respected. This is an iOS 27-inspired design implemented for Android/web,
+not Apple's native Liquid Glass renderer.
 
 ## What operators can do
 
@@ -36,6 +42,9 @@ publish web or API changes. Native code updates require installing the new packa
   All saved areas stay on the map. There is no fixed geofence-count limit; available
   browser storage is the practical limit. Saves are local to that browser/desktop
   profile, not synchronized between operators. Storage failures are reported.
+  Saved areas use solid teal outlines and explicit labels; the selected area is
+  brighter, while unsaved previews use amber dashes. Searching an already-saved
+  boundary selects it instead of creating a duplicate draft.
 - **Reviewed broadcasts:** inspect recipients before sending to a geofence or
   named groups. Group selection or a recognized message `#tag` reaches group
   members regardless of geofence or duty status. Overlapping memberships do not

@@ -1,4 +1,4 @@
-# TANOVIQ Android pilot 0.5.1
+# TANOVIQ Android pilot 0.6.0
 
 An installable Android app (Android 8+) for the existing personnel service.
 The public interface loads from `https://ews-kappa.vercel.app/#/public` in an
@@ -7,10 +7,27 @@ Firebase Cloud Messaging, safe external links, Android back navigation, and
 location permission. Accounts and consented locations use the existing Render
 API through the same HTTPS origin. No separate account system is introduced.
 
-Pilot 0.5.1 (version code 7) retains the notification/location improvements below
+Pilot 0.6.0 (version code 8) retains the notification/location improvements below
 and the existing pilot signing identity. Its hosted interface uses the same Groups
 and command-center 1.1 service. Publishing web/API changes is separate from APK
 installation; see the [deployment guide](../README.md#deployment).
+
+## Mobile design
+
+The hosted interface adopts an iOS 27-inspired layout: large headings, floating
+glass navigation, rounded action controls, grouped settings, and solid, readable
+alert cards. **Account → Glass appearance** adjusts the navigation tint and saves
+the preference on the current device. Controls respect reduced-motion and
+reduced-transparency settings, have visible focus states, and keep the Android
+back-navigation behavior. No Apple fonts or native Apple frameworks are bundled.
+
+The cached notification message and offline/retry screens also use the new teal
+palette, rounded controls and larger text. These native changes require installing
+the 0.6.0 APK. The alarm, location, permissions and acknowledgment policies below
+are unchanged. Physical-phone verification is still needed after installation.
+
+Design references: [iOS 27](https://www.apple.com/os/ios/) and
+[Apple's materials guidance](https://developer.apple.com/design/human-interface-guidelines/materials).
 
 ## Native notification behavior
 

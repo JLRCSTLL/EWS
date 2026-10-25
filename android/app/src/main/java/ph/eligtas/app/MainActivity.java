@@ -5,7 +5,6 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -84,7 +83,7 @@ public final class MainActivity extends ComponentActivity {
         }
         AlarmSettings.channels(this);
         if (BuildConfig.PUSH_CONFIGURED) FirebaseApp.initializeApp(this);
-        FrameLayout root = new FrameLayout(this); root.setBackgroundColor(Color.rgb(245,247,251));
+        FrameLayout root = new FrameLayout(this); root.setBackgroundColor(MobileStyle.BACKGROUND);
         root.setOnApplyWindowInsetsListener((view, insets) -> {
             if (Build.VERSION.SDK_INT >= 30) { android.graphics.Insets bars = insets.getInsets(WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout()); view.setPadding(bars.left,bars.top,bars.right,bars.bottom); }
             else view.setPadding(insets.getSystemWindowInsetLeft(),insets.getSystemWindowInsetTop(),insets.getSystemWindowInsetRight(),insets.getSystemWindowInsetBottom());
@@ -99,10 +98,10 @@ public final class MainActivity extends ComponentActivity {
         WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG);
         progress = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
         root.addView(progress, new FrameLayout.LayoutParams(-1,6));
-        offline = new LinearLayout(this); offline.setOrientation(LinearLayout.VERTICAL); offline.setGravity(android.view.Gravity.CENTER); offline.setPadding(32,32,32,32); offline.setBackgroundColor(Color.rgb(245,247,251));
-        TextView heading = new TextView(this); heading.setText(R.string.offline_title); heading.setTextSize(23); heading.setTextColor(Color.rgb(30,54,89)); offline.addView(heading);
-        TextView description = new TextView(this); description.setText(R.string.offline_description); description.setTextSize(15); description.setPadding(0,20,0,20); offline.addView(description);
-        Button retry = new Button(this); retry.setText(R.string.retry); retry.setOnClickListener(view -> loadPublic()); offline.addView(retry);
+        offline = new LinearLayout(this); offline.setOrientation(LinearLayout.VERTICAL); offline.setGravity(android.view.Gravity.CENTER); int offlinePad = MobileStyle.dp(this,28); offline.setPadding(offlinePad,offlinePad,offlinePad,offlinePad); offline.setBackgroundColor(MobileStyle.BACKGROUND);
+        TextView heading = new TextView(this); heading.setText(R.string.offline_title); heading.setTextSize(28); heading.setTextColor(MobileStyle.INK); heading.setGravity(android.view.Gravity.CENTER); offline.addView(heading);
+        TextView description = new TextView(this); description.setText(R.string.offline_description); description.setTextSize(16); description.setTextColor(MobileStyle.MUTED); description.setGravity(android.view.Gravity.CENTER); description.setPadding(0,offlinePad,0,offlinePad); offline.addView(description);
+        Button retry = new Button(this); retry.setText(R.string.retry); MobileStyle.button(retry,true); retry.setOnClickListener(view -> loadPublic()); offline.addView(retry);
         root.addView(offline, new FrameLayout.LayoutParams(-1,-1)); offline.setVisibility(View.GONE); setContentView(root);
         web.setWebViewClient(new WebViewClient() {
             @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
