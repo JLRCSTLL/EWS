@@ -33,6 +33,7 @@ interface OperationsMapProps {
   onSelect: (selection: MapSelection) => void;
   geofence: GeofenceGeometry | null;
   drawing: boolean;
+  previewing?: boolean;
   onGeofencePoint: (point: GeofencePoint) => void;
   onGeofenceMove: (index: number, point: GeofencePoint) => void;
   areas: AlertGeofence[];
@@ -77,7 +78,7 @@ function focusRoute(map: L.Map, teamId: string) {
 }
 
 export const OperationsMap = forwardRef<OperationsMapHandle, OperationsMapProps>(function OperationsMap(
-  { incidents, layers, region, basemap, selection, onSelect, geofence, drawing, onGeofencePoint, onGeofenceMove, areas, selectedAreaId, onSelectGeofence, showResidents, simulationPaused, simulationReplay, onSimulationTick, publicReports, residents = demoResidents, snapshotAt = demoSnapshotAt, live = false }, ref,
+  { incidents, layers, region, basemap, selection, onSelect, geofence, drawing, previewing = false, onGeofencePoint, onGeofenceMove, areas, selectedAreaId, onSelectGeofence, showResidents, simulationPaused, simulationReplay, onSimulationTick, publicReports, residents = demoResidents, snapshotAt = demoSnapshotAt, live = false }, ref,
 ) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -132,7 +133,7 @@ export const OperationsMap = forwardRef<OperationsMapHandle, OperationsMapProps>
       const desktop = map.getSize().x > 900;
       map.stop().fitBounds(L.latLngBounds(geometry.points.map(point => [point.lat, point.lng])), {
         paddingTopLeft: desktop ? [335, 240] : [35, 200],
-        paddingBottomRight: desktop ? [320, 295] : [35, 180], maxZoom: 13, animate: false,
+        paddingBottomRight: desktop ? [320, 260] : [35, 180], maxZoom: geometry.shape === 'boundary' ? 16 : 13, animate: false,
       });
     },
     addCenterPoint: () => {
@@ -321,11 +322,13 @@ export const OperationsMap = forwardRef<OperationsMapHandle, OperationsMapProps>
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !geofence || !drawing) return;
+    if (!map || !geofence || (!drawing && !previewing)) return;
     const group = L.layerGroup().addTo(map);
     const coordinates = geofence.points.map((point) => L.latLng(point.lat, point.lng));
     const style: L.PathOptions = { color: '#dceef2', fillColor: '#b8dce4', weight: 2, fillOpacity: .13, dashArray: drawing ? '6 5' : undefined, interactive: false, className: 'ops-geofence-boundary' };
-    if (geofence.shape === 'circle' && coordinates.length === 2) {
+    if (geofence.shape === 'boundary') {
+      fenceLayer(geofence, { ...style, color:'#9ce8cc', fillColor:'#79cbae', fillOpacity:.14, weight:2.5 }).addTo(group);
+    } else if (geofence.shape === 'circle' && coordinates.length === 2) {
       L.circle(coordinates[0], { ...style, radius: geofenceDistance(geofence.points[0], geofence.points[1]) }).addTo(group);
       if (drawing) L.polyline(coordinates, { ...style, weight: 1, dashArray: '3 6' }).addTo(group);
     } else if (geofence.shape === 'rectangle' && coordinates.length === 2) {
@@ -348,7 +351,7 @@ export const OperationsMap = forwardRef<OperationsMapHandle, OperationsMapProps>
       });
     });
     return () => { group.remove(); };
-  }, [geofence, drawing]);
+  }, [geofence, drawing, previewing]);
 
   useEffect(() => {
     const item = getSelection(selection);

@@ -1,4 +1,4 @@
-import { getGeofenceError, isPointInGeofence, type AlertGeofence, type GeofenceGeometry } from './geofencing.ts';
+import { getGeofenceError, geofenceMatcher, type AlertGeofence, type GeofenceGeometry } from './geofencing.ts';
 
 export const residentGroups = [
   { id: 'pwd', label: 'PWD', description: 'Persons with disabilities' },
@@ -89,7 +89,8 @@ export function getExposure(users: Resident[], geometry: GeofenceGeometry | null
   const sharedLocation = (user: Resident) => user.location && Number.isFinite(user.location.lat) && Number.isFinite(user.location.lng) &&
     Math.abs(user.location.lat) <= 85 && Math.abs(user.location.lng) <= 180 && Number.isFinite(Date.parse(user.location.updatedAt));
   const unique = [...new Map(users.map(user => [user.id, user])).values()];
-  const located = valid ? unique.filter(user => sharedLocation(user) && (!geometry || isPointInGeofence(user.location!, geometry))) : [];
+  const inside = geometry ? geofenceMatcher(geometry) : () => true;
+  const located = valid ? unique.filter(user => sharedLocation(user) && inside(user.location!)) : [];
   return {
     valid, located, total: located.length,
     active: located.filter(user => locationStatus(user, at) === 'active').length,

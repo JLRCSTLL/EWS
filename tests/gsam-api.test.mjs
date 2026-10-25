@@ -132,7 +132,7 @@ test("GSAM custom operations, group targeting, contact approval and duty control
     },
   );
   await t.test(
-    "operators create projects; only admins define arbitrary hierarchy and member labels",
+    "operators manage groups; personnel cannot create groups or grant access",
     async () => {
       let result = await operator("/projects", {
         name: "Site operation",
@@ -147,10 +147,10 @@ test("GSAM custom operations, group targeting, contact approval and duty control
         403,
       );
       assert.equal(
-        (await operator("/groups", group("My team", "groupA"))).status,
+        (await alpha("/groups", group("My team", "groupA"))).status,
         403,
       );
-      result = await owner("/groups", group("My own top level", "groupA"));
+      result = await operator("/groups", group("My own top level", "groupA"));
       assert.equal(result.status, 201);
       root = result.data.id;
       result = await owner(
@@ -165,6 +165,15 @@ test("GSAM custom operations, group targeting, contact approval and duty control
       result = await owner("/groups", group("Another team", "other"));
       assert.equal(result.status, 201);
       second = result.data.id;
+      assert.equal((await operator(`/groups/${second}/members`, {userIds:[ids.alpha,ids.beta]}, 'PUT')).status,200);
+      assert.equal((await operator(`/groups/${second}/members/${ids.beta}`, {isLeader:true}, 'PUT')).status,200);
+      assert.equal((await alpha(`/groups/${second}/members`, {userIds:[ids.outsider]}, 'PUT')).status,403);
+      assert.equal((await operator(`/groups/${second}/members`, {userIds:[ids.outsider,randomUUID()]}, 'PUT')).status,400);
+      assert.equal((await operator('/state')).data.memberships.some(m => m.group_id === second && m.user_id === ids.outsider),false);
+      assert.equal((await operator('/state')).data.memberships.find(m => m.group_id === second && m.user_id === ids.beta).is_leader,true);
+      assert.equal((await beta('/state')).data.user.role,'resident');
+      await operator(`/groups/${second}/members/${ids.alpha}`,{},'DELETE');
+      await operator(`/groups/${second}/members/${ids.beta}`,{},'DELETE');
       assert.equal(
         (
           await owner(

@@ -1,265 +1,247 @@
-
-  # TANOVIQ
+# TANOVIQ
 
 **See Risk Before It Strikes.**
 
-Tanaw + Vision + IQ. Connected risk awareness, personnel operations, and emergency communications. The map feature is called **Live Operations Map**.
+Tanaw + Vision + IQ. TANOVIQ is a thesis and pilot project for Philippine command
+centers: a shared operations map, on-duty personnel locations, group or
+geofence-targeted alerts, and a mobile inbox for the people receiving them.
 
-  This is a code bundle for Emergency Command Center Dashboard. The original project is available at https://www.figma.com/design/l6MkDSarJMxwwnrkzjzHvj/Emergency-Command-Center-Dashboard.
+This is an independent prototype. It is not an official eGovPH integration or a
+certified emergency service. Demo incidents, CCTV clips and moving vehicles are
+clearly separated from connected accounts and alerts.
 
-  ## Running the code
+| Client | Purpose | Current build |
+| --- | --- | --- |
+| [Command center](https://ews-kappa.vercel.app/) | Browser interface for approved operators | Web |
+| [Personnel app](https://ews-kappa.vercel.app/#/public) | Register, receive alerts, share location while on duty, request help | Mobile web / PWA |
+| [Windows](desktop/README.md) | Dedicated command-center window, splash and desktop controls | 1.1.0, x64 installer / portable |
+| [Android](android/README.md) | Mobile interface with native notifications, alarm controls and on-duty GPS | 0.5.1 pilot, version code 7 |
+| [iPhone](ios/README.md) | SwiftUI app, APNs and Live Activity implementation | Development; no signed IPA or TestFlight release |
 
-  Run `npm i` to install the dependencies.
+Windows and Android load the hosted interface. Rebuilding an installer does not
+publish web or API changes. Native code updates require installing the new package.
 
-  Run `npm run dev` to start the development server.
+## What operators can do
 
-## Connected public app (Render)
+- **Groups:** create a group with its own name and broadcast tag, add registered
+  members, assign a primary leader or additional leaders, and archive groups.
+  Optional parent groups support your own organization. Existing project/task
+  records remain under **Groups → Existing operation assignments**.
+- **Live Operations Map:** view consented on-duty locations, freshness and
+  accuracy; locate shared phones; use colored satellite or street imagery.
+- **Boundary search:** search any supported Philippine barangay, city/municipality
+  or province in the oval header bar. Press Enter and select a result if the name
+  is ambiguous. The actual boundary previews on the map without opening a modal.
+- **Saved geofences:** save the preview, then search another location to add more.
+  All saved areas stay on the map. There is no fixed geofence-count limit; available
+  browser storage is the practical limit. Saves are local to that browser/desktop
+  profile, not synchronized between operators. Storage failures are reported.
+- **Reviewed broadcasts:** inspect recipients before sending to a geofence or
+  named groups. Group selection or a recognized message `#tag` reaches group
+  members regardless of geofence or duty status. Overlapping memberships do not
+  duplicate deliveries. The server recalculates the audience before dispatch.
+- **Desktop bell:** review actual field requests, safe check-ins and broadcasts.
+  Opening an item goes to the relevant workspace. Read state belongs to the
+  signed-in account on that workstation; it never acknowledges a phone alert.
+- **Field response:** review assistance requests, assign available responders,
+  follow status changes and review alert delivery history.
 
-The Android pilot and build instructions are in [android/README.md](android/README.md).
-The public app's **Account → Alert sound** enables audible incoming alerts while
-open. Browser silent-mode and hardware-volume restrictions still apply. The
-Android app adds always-enabled, full-volume high/critical emergency alarms;
-background delivery requires Firebase configuration and device permissions.
+Operators and admins manage groups. Being a group leader does **not** grant
+operator/admin access. New registrations begin as personnel accounts and require
+approval before accessing command-center data.
 
-The default `/#/public` route now uses registered accounts and the shared API.
-Start **both** `npm run server` and `npm run dev` for local development. Node.js
-24 is recommended. The server uses a persistent, git-ignored PGlite database
-locally; production requires `DATABASE_URL` pointing to Postgres and refuses to
-start with ephemeral storage. `npm run build && npm start` serves the complete app.
-The local server creates `.local-data/owner-setup.key` for local owner activation;
-this secret is ignored by Git and is never returned by the API.
+See [the command-center 1.1 guide](docs/command-center-1.1.md) for detailed usage.
 
-- Residents register with a username and a password of at least 12 characters.
-  Save the one-time recovery code; recovery rotates it and revokes old sessions.
-  Passwords use salted scrypt; only hashed session and recovery tokens are stored.
-- **Start duty** begins GPS sharing. **End duty** clears the map point and revokes
-  native uploads. Android uses an ongoing foreground service while on duty; the
-  browser must remain open. OS location permission alone never starts tracking.
-- **Live data** in the command center shows only registered users and consented
-  locations. All registrations start as residents. An approved operator can draw
-  an area, inspect eligible users, select a group, and send a connected alert.
-  The server recalculates the audience and stores the dispatch atomically.
-- **Targeted** counts stored inbox entries. **Received** means the authenticated
-  app fetched and acknowledged the message; **Read** requires the resident's
-  acknowledgment. Push-provider acceptance is not counted as receipt.
-- Inbox, location, assistance, and assignment changes refresh every five seconds
-  while the page is visible and when it regains focus/connectivity. Failed writes
-  show an error and are not silently reported as sent.
-- Residents can see only their own data. Operator access is enforced by the API,
-  including every dispatch and request transition. Owners approve access requests.
-  Self-reported priority groups do not confer operator privileges.
-- Install from the browser menu or **Add to Home Screen**. Enable device
-  notifications in Account. iPhone web push requires a Home Screen installation
-  and supported iOS/Safari. VAPID keys persist in the database. The service worker
-  caches only an offline notice, never personal data or API responses.
+### Boundary data and population counts
 
-### Deploy the shared service
+Search uses [GEODATA Philippine Administrative Boundaries](https://services7.arcgis.com/poQdgvLD6DHnbpsT/arcgis/rest/services/Philippine_Administrative_Boundaries/FeatureServer).
+The provider's indicative 2015/2020 source data may not reflect later administrative
+changes. Search can return multiple places with the same name; include the
+municipality/province to narrow results. Complex coastlines may be simplified,
+with the tolerance disclosed in the preview. Separate islands and polygon holes
+remain distinct in rendering and recipient matching. Confirm boundaries locally
+before operational use.
 
-1. Create a Render Blueprint from this repository using `render.yaml`. It creates
-   the Node service and a Postgres database in Singapore, injects the internal
-   connection string, and generates `BOOTSTRAP_TOKEN`. The web service serves both
-   the app and `/api`, so the Render URL can be used directly from a phone.
-2. The included **free** plans are for evaluation: Render free services sleep
-   after inactivity and free Postgres expires after 30 days. Choose persistent
-   paid capacity before ongoing real-world use; no paid plan is selected here.
-3. The Vercel frontend at `https://ews-kappa.vercel.app` forwards `/api/:path*`
-   to `https://e-ligtas.onrender.com/api/:path*` using the rewrite **before** the
-   SPA fallback in `vercel.json`. The Render blueprint allows that frontend
-   origin in `ALLOWED_ORIGINS`. If either hostname changes, update both settings.
-   Do not expose the database URL, owner key, or VAPID private key to the browser.
-4. Register your own account. In the command center choose **Personnel →
-   Account owner setup**, then enter the generated `BOOTSTRAP_TOKEN` from Render's
-   environment settings. This works once; afterward the owner approves requests
-   from other registered accounts. Remove the bootstrap environment variable once
-   the owner is activated.
-5. On a second device, open the same HTTPS public URL, register, enable location
-   sharing, and optionally select a priority group. Locate that user from the
-   command center, draw an area around their real point, and send a clearly labeled
-   test alert. Confirm both the inbox and the received/read counters. Test a help
-   request and assignment, then end duty and verify the point disappears.
+Only the entered place query is sent to the boundary provider. Personnel records
+and shared GPS coordinates are not sent with it. Map tiles require network access
+and retain provider attribution; see [ATTRIBUTIONS.md](ATTRIBUTIONS.md).
 
-Production checks: `/api/health` on either host must return JSON with `ok: true`;
-`/api/state` must return a JSON 401 when signed out. An HTML response means the
-frontend is not connected to the backend. Vercel production deploys from `main`;
-a successful preview on `ui/map-command-center` does not update the public site.
+Population panels count registered app users with qualifying shared positions,
+not census population. Location timestamps and reported accuracy matter: a marker
+does not prove someone is still at that exact point. Demo counts use fictional
+profiles and must not be presented as live field data.
 
-The deployment is a pilot for operational evaluation.
-The original sample incident feeds, CCTV clips, and moving responder routes remain
-available under **Demo data**, separately from the connected resident workflow.
+## Run locally
 
-## Map-led operations interface
-
-The default screen is a responsive emergency operations view inspired by a dark,
-map-focused command center, with a neutral gray palette, frosted glass panels,
-silver accents, and satellite imagery in its natural colors. It includes satellite/street maps, incident filters,
-selectable teams and facilities, priority alerts, operational summaries, and global
-search (`Ctrl+K` / `Cmd+K`). The region selector switches between Metro Manila and
-all sample regions. Search can locate results outside the current region.
-
-Over the map, use the mouse wheel, a two-finger touchpad scroll, or a pinch gesture
-to zoom. Drag to pan. The plus/minus controls and keyboard navigation also work.
-
-The Incident priorities card summarizes critical, high, medium, and low incidents
-for the selected region. **Review priorities** opens the incident center filtered
-to critical and high severity, and clears any previous incident search.
-
-Use **Workspace** to access the original configurable dashboard: layout presets,
-draggable/resizable widgets, the widget library, geofence tools, and light mode.
-Select **Live overview** under the TANOVIQ name to return to the new interface.
-Broadcasts, delivery history, user roles, analytics, and audit logs remain available.
-
-### Automatic presentation demo
-
-Select **Demo** in the header to start an approximately two-minute walkthrough.
-A visible cursor operates the real controls: it switches map views, draws and
-names a geofence, reviews population and recipient groups, types an alert,
-previews delivery, follows an ambulance, and opens a flood-monitoring camera.
-No further clicks are needed. **Pause**, previous/next, restart, and **Esc** are
-available to the presenter. Playback also pauses when the tab is hidden.
-
-Presentation boundaries are temporary. Its delivery confirmation sends no
-message and adds no history. Finishing or exiting restores the prior page,
-map view, selected area, and unfinished boundary.
-
-### Send an alert to a drawn area
-
-1. Click a named geofence on the map, or select **Geofence** beside **Layers**.
-   The demo starts with a rectangle in Manila, a circle in Quezon City, and a
-   polygon in Marikina. Use the **+** beside Saved areas to draw another area.
-2. Choose **Polygon** (at least three points), **Rectangle** (two opposite corners),
-   or **Circle** (center and edge). Tap the map to add points. Drag handles to adjust
-   the boundary, or use **Undo**. Keyboard users can pan the focused map with arrow
-   keys and choose **Add center point**.
-3. Enter a name and select **Save area**. The population card updates while drawing
-   or editing a valid boundary. Select **Review recipients**, a population group,
-   or **Send alert to this area**.
-4. Choose one or more recipient groups, inspect the exposure map and recipient
-   list, then write a message or choose a template and priority.
-5. **Send demo alert** records the exact recipient IDs, targeting rules, location
-   snapshot time, boundary coordinates, and an audit entry. History labels the
-   result **SIMULATED**. No external notifications are sent.
-
-Saved areas persist in this browser and can be selected, edited, renamed, or removed.
-An area saved by the previous version is migrated alongside the demo areas. Polygon
-boundaries that cross themselves and incomplete/zero-area shapes cannot be saved.
-Alerts retain a snapshot of the boundary even if the saved area is edited later.
-The **Population in geofence** card counts fictional registered app users whose
-last shared position is inside the selected boundary, including boundary points.
-It is not a census estimate or a guarantee that someone is still at that location.
-The PWD, children, seniors, pregnant, and responder groups can overlap. Counts
-include stale locations, which are separately identified; recipients follow the
-stricter location and notification rules below.
-
-### Group messaging and exposure visibility
-
-The demo contains 240 deterministic fictional profiles in `src/app/lib/residents.ts`.
-It does not read device location or contain real personal records. A snapshot is
-created when the page loads; locations do not move or stream in real time.
-
-- Active: shared within 5 minutes of the snapshot. Recent: up to 60 minutes.
-  Older positions are stale and excluded from alerts.
-- Active users only is enabled by default. Turn it off to include recent users.
-- Notifications must be enabled. Missing/invalid locations are excluded, including
-  when targeting all demo app users. The UI explains these exclusions.
-- Multiple groups match **any** selected group; overlapping membership never
-  duplicates a recipient. No matching recipients or no groups disables Send.
-- The exposure map highlights eligible users and dims excluded positions in the
-  selected area. Click a marker, or a recipient in the list, to see their location,
-  age/group information, last update, and reported accuracy.
-- **App users** on the main map toggles the selected area's shared positions.
-  The geographic tests use longitude/latitude containment for polygons/rectangles
-  and a great-circle distance for circles.
-
-The original configurable Workspace retains its legacy sample targeting widgets.
-Use the main map's Broadcast center for the new app-user targeting flow.
-
-### Original public presentation demo
-
-Visit `/?demo=1#/public` for the original same-browser presentation demo.
-Use **Demo data** in the command center for this workflow. The header's Public app
-link opens the connected version described above.
-The responsive mobile web demo uses an eGovPH-inspired white-and-blue interface
-with local alerts, acknowledgment, safe check-ins, assistance requests, nearby
-sample facilities, and three selectable fictional resident profiles. It is an
-independent integration concept, not an official eGovPH service or native app.
-
-For a two-way presentation, keep both views open on the **same origin in the same
-browser profile**:
-
-1. In the command center, select **Marikina flood watch**, choose **PWD** or
-   **All app users**, and send a clearly labeled demo alert. The public app defaults
-   to Juan Dela Cruz (`demo-user-148`), an eligible Marikina resident.
-2. Open the public **Alerts** inbox. Only delivered broadcasts whose saved
-   recipient IDs include this resident appear. A separate sample advisory is
-   always available and is labeled as a sample.
-3. Acknowledge the alert, select **I'm safe**, or submit **Get help** with sample
-   information. Including the fictional location is optional.
-4. Open **Public inbox** in the command center to see the new records, locate the
-   resident, acknowledge a request, assign a demo ambulance/rescue unit, or resolve
-   it. Status updates appear immediately under **My status** in the public app.
-5. Switch the presentation resident in **Account** to demonstrate geographic
-   targeting. Requests allow one open request per resident; closed requests remain
-   in their history.
-
-This connection uses browser storage and storage events, with no server or real
-notifications. Localhost and production do not share records; separate phones,
-private windows, and different browser profiles do not synchronize. All profile
-locations, facilities and response assignments are fictional. The nearby map's
-dashed line is a straight-line illustration, not navigation or evacuation advice.
-
-### Data and services
-
-Operational records come from `src/app/lib/dashboard-data.ts`. They are sample
-data, not a connected emergency feed. Broadcast delivery is simulated locally and
-stored in browser local storage, as in the original project. The interface labels
-this demo state. Connected-mode accounts and alerts instead use the Render API
-and Postgres service documented above.
-
-Satellite imagery uses Esri; the street map uses OpenStreetMap Standard. Both require
-network access. Provider attribution remains visible, and a loading/failure message
-appears when imagery cannot be loaded. See `ATTRIBUTIONS.md`.
-
-### Build
+Use Node.js 24 and npm. From the repository root:
 
 ```sh
 npm ci
-npm run dev
-npm run server
-npm run build
-npm test
 ```
 
-The geometry tests use Node.js 22.18 or newer for native TypeScript loading.
+Start two terminals:
 
-The production build is written to `dist/`. Existing Vercel configuration is retained.
+```sh
+# Terminal 1: shared API and local database
+npm run server
 
-## Custom operations and privacy
+# Terminal 2: web interface
+npm run dev -- --host 127.0.0.1 --port 5173
+```
 
-- **Structure** starts empty. Admins enter their own groups, reporting lines, heads,
-  position titles, and classifications. These labels do not grant system access.
-- **Projects** hold objectives, operational periods, leads, and task assignments.
-  Assigned personnel can update their own task status. Completing a project ends
-  its active duty sessions. The time range is a planning reference, not an automatic timer.
-- **Named groups** and message `#tags` select members anywhere, regardless of duty
-  or GPS, including active subgroups. Tags override geofence targeting. A server
-  recipient preview is required and checked again at send time; changes require
-  review. The final recipient set is frozen and overlapping memberships deduplicate.
-- **Personnel** shows preferred names. Email/phone are optional and masked by the API.
-  Admins request specific fields with a reason; the person approves, declines, or
-  revokes access in Account. Approval lasts 24 hours, applies only to the requesting
-  admin, and is revoked if contacts change. Legacy health groups are not displayed
-  to other accounts.
-- Admin/operator access is separate from group titles. Admins manage structure
-  and grant operator access. Operators manage projects, inspect duty locations,
-  and send reviewed alerts. Personnel only access their own records.
+Open [the local command center](http://127.0.0.1:5173/) or
+[the local personnel app](http://127.0.0.1:5173/#/public). Vite proxies `/api` to
+port 3001. Localhost on a phone refers to the phone, not your development computer.
 
-The additive schema migration preserves accounts, sessions and alert history.
-It clears legacy off-duty locations and applies the personnel alert policy once.
-Existing phones must start a new duty session. Deploy the Render backend first;
-confirm `/api/config` reports `gsamReady` and `dutyTracking`, then deploy the web
-frontend and install Android pilot 0.4.0 using the existing pilot signing key.
-The Android package and backend schema identifiers remain unchanged for updates.
+With no `DATABASE_URL` and outside production mode, the server uses persistent
+PGlite storage in Git-ignored `.local-data/`. It creates a local owner setup key
+at `.local-data/owner-setup.key`. Register an account, open **Personnel → Account
+owner setup**, and use that key once. Treat it as a secret.
 
-Run `npm test` for group delivery, audience changes/replays, contact privacy, access
-control, native location revocation, and legacy migration regression checks.
-Tests use isolated data and mocked push; they do not send emergency messages.
+The server reads process environment variables; it does not automatically load
+`.env.example`. That file documents the required settings. Production requires
+Postgres and refuses ephemeral storage.
+
+To serve a built frontend and API together:
+
+```sh
+npm run build
+npm start
+```
+
+## Build and verify
+
+```sh
+npm test
+npm run build
+npm run desktop:install
+npm run desktop:test
+npm run desktop:package
+```
+
+Windows packages are written to `desktop/release/`. They are unsigned evaluation
+builds. Android requires JDK 17, Android SDK 36 and local Firebase configuration:
+
+```powershell
+cd android
+.\gradlew.bat :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
+```
+
+The Android pilot is debug-signed with package `ph.eligtas.app.pilot`; use the
+same signing key when updating an existing installation. See the platform READMEs
+for permissions, signing, installation and device testing. Do not commit APKs,
+installers, keystores, signing passwords or Apple credentials.
+
+Automated API tests use isolated databases and mocked push delivery. They cover
+authorization, group targeting, audience changes, boundary containment, location
+revocation, contact privacy and notification receipts. They do not prove that a
+physical phone rang, received GPS indoors or handled manufacturer battery limits.
+
+## Connected mobile workflow
+
+1. Register with a preferred name, username and a password of at least 12
+   characters. Keep the one-time recovery code securely; recovery revokes old
+   sessions.
+2. Grant the relevant OS location and notification permissions, then **Start
+   duty** to share location. Permission alone never starts tracking. **End duty**
+   stops uploads, revokes the location token and removes the map point.
+3. A permitted operator selects a geofence or group, reviews the server-calculated
+   audience, then sends an explicitly labeled test alert.
+4. Receive and acknowledge the message. **Targeted** counts stored inbox entries;
+   **Received** means the authenticated app fetched and acknowledged receipt;
+   **Read** requires an explicit read acknowledgment. Provider acceptance does
+   not count as device receipt.
+5. Test a help request and safe check-in from the phone, and review them in the
+   command center. End duty after the test.
+
+Location events use a live stream with refresh/reconnection fallback. Position
+frequency depends on the device, OS, permission, network and available GPS.
+Browser location sharing requires the page to remain active; Android uses an
+ongoing foreground service while on duty.
+
+On Android, high/critical alerts request the native emergency alarm. The expanded
+notification includes message text, **Read message** and **Silence alarm**; the
+native reader can display a cached alert without waiting for the web inbox.
+Silencing stops only that alert and does not mark it read. Full-volume alarm
+behavior still depends on OS permissions, DND policy and device restrictions.
+Normal announcements use ordinary notifications. Web browsers cannot override
+hardware silent mode. See [Android alarm behavior](android/README.md#alarm-behavior).
+
+The iPhone implementation requires Apple signing, APNs configuration and device
+validation. Critical Alerts require Apple's entitlement approval and user
+permission. No store acceptance or TestFlight availability is implied.
+
+## Deployment
+
+`render.yaml` defines the Node API and Postgres service.
+`vercel.json` routes frontend `/api/*` requests to
+`https://e-ligtas.onrender.com/api/*` before the SPA fallback.
+
+1. Configure Render's server environment using `.env.example`. Keep
+   `DATABASE_URL`, `BOOTSTRAP_TOKEN`, `FCM_SERVICE_ACCOUNT_JSON`, APNs private
+   keys and push private keys server-only. Never use `VITE_*` for secrets.
+2. Deploy the API/schema first. For command-center 1.1, `/api/config` must report
+   `groupManagementReady: true`, `boundaryGeofencesReady: true` and
+   `commandCenterVersion: "1.1.0"`.
+3. Deploy the frontend to the existing Vercel `ews` project. Production uses
+   `main`; a branch preview does not update the public domain. The
+   `.vercelignore` file excludes local data, secrets and native app build trees.
+4. Check `/api/health` on both hosts for JSON with `ok: true`. Signed-out
+   `/api/state` must return JSON with HTTP 401. HTML at an API endpoint indicates
+   a routing problem.
+5. Bootstrap the initial owner once, then remove the production bootstrap token.
+   Approve operator accounts through the authenticated application.
+6. Reload installed clients and perform a controlled two-device test. Confirm
+   actual location visibility and alert receipt before relying on the deployment.
+
+Keep `ALLOWED_ORIGINS`, `PUBLIC_APP_URL`, the Vercel rewrite and native origin
+allowlists aligned when changing hostnames. Evaluation hosting may sleep or have
+storage/availability limits; review the selected plan before a continuing pilot.
+
+## Privacy and repository security
+
+Preferred names, live coordinates and alert history are still personal data.
+Access is enforced by the API: personnel see their own records; operators see
+authorized operational data. Optional email/phone fields are masked. An admin
+requests specific fields with a reason; the person approves, declines or revokes
+access. Approval is scoped to that requester, expires after 24 hours and is
+revoked when contacts change.
+
+Password hashes use salted scrypt. Session and recovery tokens are hashed on the
+server. Local databases, environment files, Firebase service accounts and signing
+material are excluded from Git. Public service URLs, Firebase project identifiers
+and the VAPID **public** key are not server credentials.
+
+The [25 October 2026 repository review](docs/security-review-2026-10-25.md) found
+no credential leaks in the fetched Git history or source snapshot. GitHub secret
+scanning and push protection were enabled with no open secret alerts. A
+checksum-verified Gitleaks workflow now scans pushes and pull requests with
+redacted output. This is a scoped check, not a guarantee that all security issues
+have been excluded. See [SECURITY.md](SECURITY.md) for handling a suspected leak.
+
+## Presentation mode
+
+Select **Demo** for the automatic cursor-led walkthrough. Demo alerts never send
+external messages. Sample incidents, responder routes and CCTV footage are
+simulated or prerecorded, not connected emergency feeds.
+
+`/?demo=1#/public` opens the original same-browser personnel demonstration.
+Its records use local storage and do not synchronize across separate phones,
+browser profiles or origins. Use the normal `/#/public` route for connected
+accounts and the shared backend.
+
+## Source layout
+
+| Path | Contents |
+| --- | --- |
+| `src/app/components/operations/` | Command center, groups, map, search and notification bell |
+| `src/app/components/public/` | Personnel mobile web interface |
+| `src/app/lib/` | Shared UI data, geometry, targeting and service client |
+| `server/` | Authentication, API, schema, dispatch, location and push |
+| `tests/` | API and shared-logic regression tests |
+| `desktop/` | Windows Electron shell, splash, packaging and security tests |
+| `android/` | Native Android wrapper, notifications, alarms and location |
+| `ios/` | SwiftUI app, Live Activity extension and iPhone build setup |
+| `docs/` | Operator guide and scoped security review |
+
+The original interface attribution is retained in [ATTRIBUTIONS.md](ATTRIBUTIONS.md).

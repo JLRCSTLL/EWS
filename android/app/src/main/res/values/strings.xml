@@ -2,4 +2,9 @@
     <string name="offline_title">TANOVIQ needs a connection</string>
     <string name="offline_description">Check your internet connection, then retry. Previously delivered notifications remain in Android’s notification tray.</string>
     <string name="retry">Try again</string>
+    <string name="silence_alarm">Silence alarm</string>
+    <string name="alarm_silenced">Alarm silenced</string>
+    <string name="acknowledge_message">Acknowledge message</string>
+    <string name="acknowledgment_queued">Acknowledgment queued · syncs when online</string>
+    <string name="close_message">Close</string>
 </resources>

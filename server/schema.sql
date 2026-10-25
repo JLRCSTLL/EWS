@@ -83,6 +83,22 @@ create table if not exists eligtas.android_devices (
   updated_at timestamptz not null default now()
 );
 create index if not exists android_devices_user on eligtas.android_devices(user_id);
+create table if not exists eligtas.ios_devices (
+  token text primary key,
+  user_id uuid not null references eligtas.users(id) on delete cascade,
+  session_hash text not null references eligtas.sessions(token_hash) on delete cascade,
+  environment text not null check (environment in ('sandbox','production')),
+  live_start_token text,
+  live_enabled boolean not null default false,
+  critical_enabled boolean not null default false,
+  updated_at timestamptz not null default now()
+);
+create index if not exists ios_devices_user on eligtas.ios_devices(user_id);
+create table if not exists eligtas.ios_activities (
+  token text primary key,
+  device_token text not null references eligtas.ios_devices(token) on delete cascade,
+  alert_id uuid not null references eligtas.alerts(id) on delete cascade
+);
 create table if not exists eligtas.settings (key text primary key, value jsonb not null);
 create table if not exists eligtas.audit (
   id uuid primary key,
@@ -130,6 +146,8 @@ create table if not exists eligtas.group_members (
   primary key (group_id,user_id)
 );
 create index if not exists group_members_user on eligtas.group_members(user_id);
+alter table eligtas.group_members add column if not exists is_leader boolean not null default false;
+update eligtas.group_members m set is_leader=true from eligtas.team_groups g where m.group_id=g.id and m.user_id=g.head_id and not m.is_leader;
 create table if not exists eligtas.tasks (
   id uuid primary key,
   project_id uuid not null references eligtas.projects(id),

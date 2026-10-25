@@ -45,7 +45,7 @@ export function dispatchSpec(body) {
   const { area } = body;
   if (
     !area ||
-    !["polygon", "rectangle", "circle"].includes(area.shape) ||
+    !["polygon", "rectangle", "circle", "boundary"].includes(area.shape) ||
     !Array.isArray(area.points) ||
     area.points.length > 100 ||
     area.points.some(

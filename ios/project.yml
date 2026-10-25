@@ -1,0 +1,86 @@
+name: TANOVIQ
+options:
+  bundleIdPrefix: ph.tanoviq
+  deploymentTarget:
+    iOS: "17.2"
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    IPHONEOS_DEPLOYMENT_TARGET: "17.2"
+    TARGETED_DEVICE_FAMILY: "1"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    CODE_SIGN_STYLE: Automatic
+  configs:
+    Debug:
+      APNS_ENVIRONMENT: development
+    Release:
+      APNS_ENVIRONMENT: production
+targets:
+  TANOVIQ:
+    type: application
+    platform: iOS
+    sources: [App, Shared]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ph.tanoviq.app
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: TANOVIQ
+        CFBundleURLTypes:
+          - CFBundleURLName: ph.tanoviq.alert
+            CFBundleURLSchemes: [tanoviq]
+        ITSAppUsesNonExemptEncryption: false
+        UILaunchScreen:
+          UIColorName: LaunchBackground
+          UIImageName: Brand
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        UIBackgroundModes: [remote-notification, location]
+        NSSupportsLiveActivities: true
+        TANOVIQCriticalAlertsApproved: false
+        NSLocationWhenInUseUsageDescription: "Share your position with approved command-center operators while you are on duty."
+        NSLocationAlwaysAndWhenInUseUsageDescription: "Continue sending your position during duty when the screen is locked or another app is open. End duty stops sharing."
+    entitlements:
+      path: App/TANOVIQ.entitlements
+      properties:
+        aps-environment: $(APNS_ENVIRONMENT)
+        com.apple.developer.usernotifications.time-sensitive: true
+    dependencies:
+      - target: TANOVIQAlerts
+    scheme:
+      testTargets: [TANOVIQTests, TANOVIQUITests]
+  TANOVIQAlerts:
+    type: app-extension
+    platform: iOS
+    sources: [LiveActivity, Shared]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ph.tanoviq.app.alerts
+        APPLICATION_EXTENSION_API_ONLY: YES
+        SKIP_INSTALL: YES
+    info:
+      path: LiveActivity/Info.plist
+      properties:
+        CFBundleDisplayName: TANOVIQ Alerts
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+  TANOVIQTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [Tests]
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+    dependencies:
+      - target: TANOVIQ
+  TANOVIQUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [UITests]
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+    dependencies:
+      - target: TANOVIQ

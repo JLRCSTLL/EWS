@@ -231,7 +231,7 @@ export function PersonnelAssignments() {
     <section className="el-card">
       <h2>My assignments</h2>
       <p className="el-caption">
-        Your groups and position titles are assigned by an administrator.
+        Your groups and leaders are assigned by a command-center operator.
       </p>
       <div className="gsam-mobile-assignments">
         {(state.memberships || []).map((m) => {
@@ -242,9 +242,9 @@ export function PersonnelAssignments() {
                 #{group.tag} · {group.name}
               </strong>
               <small>
-                {m.title || "Member"}
+                {m.is_leader || group.head_id === m.user_id ? "Leader" : m.title || "Member"}
                 {m.category && ` · ${m.category}`}
-                {group.head_id === state.user.id ? " · Group head" : ""}
+                {group.head_id === state.user.id ? " · Primary leader" : ""}
               </small>
             </article>
           ) : null;

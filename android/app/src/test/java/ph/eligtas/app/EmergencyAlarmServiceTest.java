@@ -37,6 +37,7 @@ public class EmergencyAlarmServiceTest {
         app = RuntimeEnvironment.getApplication();
         AlarmSettings.prefs(app).edit().clear().putString("user","resident").putBoolean("enabled",true).putBoolean("max_volume",true).commit();
         EmergencyAlarmService.activeId = ""; EmergencyAlarmService.activePriority = "";
+        AlertStore.clear(app);
         NotificationManager notifications = app.getSystemService(NotificationManager.class);
         shadowOf(notifications).setNotificationsEnabled(true);
         notifications.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALL);
@@ -49,6 +50,7 @@ public class EmergencyAlarmServiceTest {
         alert = new JSONObject().put("id",UUID.randomUUID().toString()).put("userId","resident")
             .put("priority","high").put("createdAt",Instant.now().toString()).put("body","TEST ONLY");
         controller = Robolectric.buildService(EmergencyAlarmService.class).create();
+        AlertStore.save(app,alert);
     }
     @After public void cleanup() { controller.destroy(); }
     private void start() {
@@ -95,5 +97,18 @@ public class EmergencyAlarmServiceTest {
         assertEquals("finished",AlarmSettings.prefs(app).getString("alarm_state",""));
         assertNotNull(shadowOf(audio).getLastAbandonedAudioFocusRequest());
         assertEquals(ShadowMediaPlayer.State.END,shadowOf(player).getState());
+        assertNotNull(shadowOf(app.getSystemService(NotificationManager.class)).getNotification(AlertDelivery.notificationId(alert.optString("id"))));
+    }
+    @Test public void silenceActionStopsPlaybackWithoutOpeningAnyActivity() throws Exception {
+        start();
+        new AlertActionReceiver().onReceive(app,new Intent("SILENCE_ALERT").putExtra("alertId",alert.getString("id")));
+        assertEquals(EmergencyAlarmService.class.getName(),shadowOf(app).getNextStoppedService().getComponent().getClassName());
+        assertNull(shadowOf(app).getNextStartedActivity());
+        controller.get().onDestroy();
+        assertEquals(ShadowMediaPlayer.State.END,shadowOf(player).getState());
+    }
+    @Test public void silenceBeforeServiceStartsPreventsQueuedPlayback() throws Exception {
+        AlertActionReceiver.silence(app,alert.getString("id"));
+        start();assertNull(player);assertTrue(shadowOf(controller.get()).isStoppedBySelf());
     }
 }

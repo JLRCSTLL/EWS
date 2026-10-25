@@ -33,14 +33,17 @@ public final class EmergencyAlarmService extends Service {
         try {
             JSONObject alert = new JSONObject(intent.getStringExtra("alert"));
             if (!AlarmSettings.prefs(this).getBoolean("enabled", false) || !alert.optString("userId").equals(AlarmSettings.prefs(this).getString("user", ""))) { stopSelf(); return START_NOT_STICKY; }
+            if (AlertStore.silenced(this,alert.optString("id"))) { if(activeId.isEmpty()) stopSelf(); return START_NOT_STICKY; }
             if (!AlertPolicy.mayInterrupt(alert.optString("priority"),activePriority)) return START_NOT_STICKY;
+            if (currentAlert != null && !activeId.equals(alert.optString("id"))) {
+                stopForeground(STOP_FOREGROUND_DETACH); AlertDelivery.showQuiet(this,currentAlert);
+            }
             releaseAudio(); currentAlert = alert; AlarmSettings.channels(this); activeId = alert.optString("id"); activePriority = alert.optString("priority");
-            Intent stop = new Intent(this, EmergencyAlarmService.class).setAction("STOP");
-            PendingIntent silence = PendingIntent.getService(this, 2, stop, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-            Notification notification = AlertDelivery.notification(this, alert, AlarmSettings.PLAYBACK).setOngoing(true).setSilent(true)
-                .addAction(new NotificationCompat.Action.Builder(0, "Silence alarm", silence).build()).build();
-            if (Build.VERSION.SDK_INT >= 29) startForeground(1042, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);
-            else startForeground(1042, notification);
+            // Same notification as the received message: text and controls stay together.
+            Notification notification = AlertDelivery.notification(this, alert, AlarmSettings.PLAYBACK).setOngoing(true).build();
+            int notificationId=AlertDelivery.notificationId(activeId);
+            if (Build.VERSION.SDK_INT >= 29) startForeground(notificationId, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);
+            else startForeground(notificationId, notification);
             AudioManager audio = getSystemService(AudioManager.class);
             AudioAttributes attributes = new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_ALARM).setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build();
             focus = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
@@ -102,7 +105,11 @@ public final class EmergencyAlarmService extends Service {
     }
     @Override public void onDestroy() {
         String id = activeId;
-        releaseAudio(); stopForeground(STOP_FOREGROUND_REMOVE);
+        boolean failed=failureReported;
+        JSONObject cached=AlertStore.get(this,id);
+        stopForeground(STOP_FOREGROUND_DETACH);
+        if(!failed && cached!=null) AlertDelivery.showQuiet(this,cached);
+        releaseAudio();
         if (!id.isEmpty() && id.equals(AlarmSettings.prefs(this).getString("alarm_id","")) && !AlarmSettings.prefs(this).getString("alarm_state","").equals("blocked"))
             AlarmSettings.playback(this,id,"finished","Alarm stopped. Your previous alarm volume was restored.");
         super.onDestroy();

@@ -28,6 +28,8 @@ public class AlertDeliveryTest {
         shadowOf(notifications).setNotificationsEnabled(true);
         AlarmSettings.prefs(app).edit().clear().putString("user","resident").putBoolean("enabled",true).putBoolean("max_volume",true).commit();
         EmergencyAlarmService.activeId = ""; EmergencyAlarmService.activePriority = "";
+        AlertStore.clear(app);
+        AlarmSettings.channels(app);
     }
     private JSONObject alert(String priority) throws Exception {
         return new JSONObject().put("id",UUID.randomUUID().toString()).put("userId","resident")
@@ -40,8 +42,9 @@ public class AlertDeliveryTest {
         assertEquals(EmergencyAlarmService.class.getName(),start.getComponent().getClassName());
         assertEquals(alert.toString(),start.getStringExtra("alert"));
         Notification notification = shadowOf(notifications).getNotification(alert.getString("id").hashCode());
-        assertEquals(AlarmSettings.EMERGENCY,notification.getChannelId());
-        assertEquals(Notification.GROUP_ALERT_SUMMARY,notification.getGroupAlertBehavior());
+        assertEquals(AlarmSettings.PLAYBACK,notification.getChannelId());
+        assertEquals(NotificationManager.IMPORTANCE_HIGH,notifications.getNotificationChannel(AlarmSettings.PLAYBACK).getImportance());
+        assertNull(notifications.getNotificationChannel(AlarmSettings.PLAYBACK).getSound());
         assertEquals("starting",AlarmSettings.prefs(app).getString("alarm_state",""));
     }
     @Test public void downgradedPushUsesChannelFallbackAndReportsWhyTheAlarmDidNotStart() throws Exception {
@@ -103,5 +106,45 @@ public class AlertDeliveryTest {
         audio.setStreamVolume(AudioManager.STREAM_ALARM,3,0);
         AlarmSettings.restoreVolume(app);
         assertEquals(3,audio.getStreamVolume(AudioManager.STREAM_ALARM));
+    }
+    @Test public void messageAndSilenceAreAvailableOnTheSameNotification() throws Exception {
+        JSONObject alert=alert("high"); AlertDelivery.deliver(app,alert,true);
+        Notification notice=shadowOf(notifications).getNotification(AlertDelivery.notificationId(alert.getString("id")));
+        assertEquals("TEST ONLY",notice.extras.getCharSequence(Notification.EXTRA_BIG_TEXT).toString());
+        assertEquals("Silence alarm",notice.actions[0].title);
+        assertEquals("Read message",notice.actions[1].title);
+        Intent action=shadowOf(notice.actions[0].actionIntent).getSavedIntent();
+        assertEquals(AlertActionReceiver.class.getName(),action.getComponent().getClassName());
+        assertEquals(alert.getString("id"),action.getStringExtra("alertId"));
+        assertEquals(AlertMessageActivity.class.getName(),shadowOf(notice.contentIntent).getSavedIntent().getComponent().getClassName());
+    }
+    @Test public void silencingOldAlertCannotStopNewerAlarmAndNeverMarksRead() throws Exception {
+        JSONObject old=alert("high"); AlertStore.save(app,old);
+        EmergencyAlarmService.activeId=UUID.randomUUID().toString();
+        new AlertActionReceiver().onReceive(app,new Intent("SILENCE_ALERT").putExtra("alertId",old.getString("id")));
+        assertNull(shadowOf(app).getNextStoppedService());
+        assertTrue(AlertStore.silenced(app,old.getString("id")));
+        assertFalse(AlertStore.get(app,old.getString("id")).has("read"));
+    }
+    @Test public void notificationsKeepDistinctMessageTargetsAndHideOtherAccounts() throws Exception {
+        JSONObject a=alert("high"),b=alert("high");
+        Notification first=AlertDelivery.notification(app,a,AlarmSettings.EMERGENCY).build();
+        Notification second=AlertDelivery.notification(app,b,AlarmSettings.EMERGENCY).build();
+        assertNotEquals(first.contentIntent,second.contentIntent);
+        assertEquals(a.getString("id"),shadowOf(first.contentIntent).getSavedIntent().getStringExtra("alertId"));
+        AlertStore.save(app,a);AlarmSettings.prefs(app).edit().putString("user","another-person").commit();
+        assertNull(AlertStore.get(app,a.getString("id")));
+        AlertDelivery.showQuiet(app,a);
+        assertNull(shadowOf(notifications).getNotification(AlertDelivery.notificationId(a.getString("id"))));
+    }
+    @Test public void fullTextUpdatePreservesAlarmControlsWithoutReplayingSound() throws Exception {
+        JSONObject alert=alert("high");EmergencyAlarmService.activeId=alert.getString("id");
+        alert.put("body","Full command-center instructions");AlertDelivery.updateText(app,alert);
+        Notification notice=shadowOf(notifications).getNotification(AlertDelivery.notificationId(alert.getString("id")));
+        assertEquals("Full command-center instructions",notice.extras.getCharSequence(Notification.EXTRA_BIG_TEXT).toString());
+        assertNotEquals(0,notice.flags & Notification.FLAG_ONGOING_EVENT);
+        assertEquals(AlarmSettings.PLAYBACK,notice.getChannelId());
+        assertNull(notifications.getNotificationChannel(AlarmSettings.PLAYBACK).getSound());
+        assertEquals("Silence alarm",notice.actions[0].title);
     }
 }

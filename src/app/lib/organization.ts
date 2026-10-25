@@ -13,6 +13,7 @@ export interface GroupMember {
   user_id: string;
   title: string;
   category: string;
+  is_leader?: boolean;
 }
 export interface Project {
   id: string;

@@ -20,6 +20,8 @@
             <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
         </activity>
         <service android:name=".EmergencyAlarmService" android:exported="false" android:foregroundServiceType="mediaPlayback" />
+        <activity android:name=".AlertMessageActivity" android:exported="false" android:theme="@style/AppTheme" />
+        <receiver android:name=".AlertActionReceiver" android:exported="false" />
         <service android:name=".LocationShareService" android:exported="false" android:foregroundServiceType="location" android:stopWithTask="false" />
         <service android:name=".AlertMessagingService" android:exported="false">
             <intent-filter><action android:name="com.google.firebase.MESSAGING_EVENT" /></intent-filter>

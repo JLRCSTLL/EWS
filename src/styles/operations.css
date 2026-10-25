@@ -5,7 +5,7 @@
   --ops-faint: #b8b8b8;
   --ops-line: rgba(255, 255, 255, .2);
   --ops-accent: #dedede;
-  --ops-glass: linear-gradient(135deg, rgba(255, 255, 255, .065), rgba(255, 255, 255, .012) 42%, rgba(255, 255, 255, .025)), rgba(27, 27, 27, .94);
+  --ops-glass: linear-gradient(135deg, rgba(255, 255, 255, .085), rgba(255, 255, 255, .015) 55%), rgba(28, 31, 33, .78);
   --ops-glass-shadow: inset 0 1px 0 rgba(255, 255, 255, .22), inset 1px 0 0 rgba(255, 255, 255, .055), inset 0 -1px 0 rgba(255, 255, 255, .035), 0 10px 32px rgba(0, 0, 0, .16), 0 2px 6px rgba(0, 0, 0, .08);
   font-family: 'Inter', 'Segoe UI', sans-serif;
   color: var(--ops-text);
@@ -79,7 +79,7 @@
 .ops-quick-stats strong { display: block; font-size: 31px; font-weight: 300; line-height: 1; margin: 10px 0 8px; letter-spacing: -.06em; font-variant-numeric: tabular-nums; }
 .ops-quick-stats strong small { font-size: 13px; color: #868686; letter-spacing: 0; }
 .ops-stat-caption { display: flex; align-items: center; gap: 5px; font-size: 10px; color: #a1a1a1; }
-.ops-glass { border: 1px solid var(--ops-line); border-radius: 14px; background: var(--ops-glass); backdrop-filter: blur(28px) saturate(.25); -webkit-backdrop-filter: blur(28px) saturate(.25); box-shadow: var(--ops-glass-shadow); }
+.ops-glass { border: 1px solid var(--ops-line); border-radius: 14px; background: var(--ops-glass); backdrop-filter: blur(24px) saturate(.65); -webkit-backdrop-filter: blur(24px) saturate(.65); box-shadow: var(--ops-glass-shadow); }
 .ops-card-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .ops-card-heading > svg { color: #a5a5a5; }
 .ops-card-heading h2 { display: flex; align-items: center; gap: 8px; }

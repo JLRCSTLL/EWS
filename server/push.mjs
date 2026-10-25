@@ -1,5 +1,6 @@
 import webpush from 'web-push';
 import { setupAndroidPush } from './android-push.mjs';
+import { setupIosPush } from './ios-push.mjs';
 
 export function validSubscription(value) {
   try {
@@ -12,6 +13,7 @@ export function validSubscription(value) {
 }
 export async function setupPush(db) {
   const android = setupAndroidPush(db);
+  const ios = setupIosPush(db);
   const generated = webpush.generateVAPIDKeys();
   await db.query("insert into eligtas.settings(key,value) values ('vapid',$1) on conflict do nothing", [JSON.stringify(generated)]);
   const { rows } = await db.query("select value from eligtas.settings where key='vapid'");
@@ -20,8 +22,11 @@ export async function setupPush(db) {
   return {
     publicKey: keys.publicKey,
     androidReady: !!android,
+    iosReady: !!ios,
+    acknowledge: (userId,alertId) => ios?.acknowledge(userId,alertId) || Promise.resolve(),
     async send(alert) {
       const androidDelivery = android?.send(alert).catch(() => console.error('Android push task failed; the alert remains in the inbox.'));
+      const iosDelivery = ios?.send(alert).catch(() => console.error('iOS push task failed; the alert remains in the inbox.'));
       const { rows: subscriptions } = await db.query('select s.* from eligtas.push_subscriptions s join eligtas.receipts r on r.user_id=s.user_id where r.alert_id=$1', [alert.id]);
       for (let start = 0; start < subscriptions.length; start += 5) {
         await Promise.allSettled(subscriptions.slice(start, start + 5).map(async sub => {
@@ -30,6 +35,7 @@ export async function setupPush(db) {
         }));
       }
       await androidDelivery;
+      await iosDelivery;
     },
   };
 }

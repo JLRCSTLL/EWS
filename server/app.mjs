@@ -7,6 +7,8 @@ import { locations } from './location.mjs';
 import { locationEvents } from './location-events.mjs';
 import { organizationRoutes, organizationState, contactVisibility } from './organization.mjs';
 import { dispatchRoutes } from './dispatch.mjs';
+import { iosRoutes } from './ios-routes.mjs';
+import { accountRoutes } from './account.mjs';
 
 const groupsAllowed = ['pwd', 'children', 'seniors', 'pregnant', 'responders'];
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -31,7 +33,7 @@ export function createApp(db, { push, production = process.env.NODE_ENV === 'pro
     }
     next();
   });
-  app.use(express.json({ limit: '24kb' }));
+  app.use(express.json({ limit: '1mb' }));
   const limits = new Map();
   function rateLimit(req, key, max, windowMs = 15 * 60000) {
     const id = `${key}:${req.ip}`;
@@ -48,7 +50,7 @@ export function createApp(db, { push, production = process.env.NODE_ENV === 'pro
     res.cookie('eligtas_session', token, { httpOnly: true, secure: production, sameSite: 'lax', path: '/api', maxAge: 30 * 86400000 });
   }
   app.get('/api/health', async (_req, res) => { await db.query('select 1'); res.json({ ok: true, service: 'TANOVIQ', version: 2 }); });
-  app.get('/api/config', (_req, res) => res.json({ pushPublicKey: push?.publicKey || null, androidPushReady: !!push?.androidReady, nativeLocationReady: true, registration: true, gsamReady: true, dutyTracking: true }));
+  app.get('/api/config', (_req, res) => res.json({ pushPublicKey: push?.publicKey || null, androidPushReady: !!push?.androidReady, iosPushReady: !!push?.iosReady, accountDeletionReady: true, nativeLocationReady: true, registration: true, gsamReady: true, dutyTracking: true, groupManagementReady: true, boundaryGeofencesReady: true, commandCenterVersion: '1.1.0' }));
   for (const method of ['put','delete']) app[method]('/api/location/native', async (req,res) => {
     const token = /^Bearer ([A-Za-z0-9_-]{43})$/.exec(req.get('authorization') || '')?.[1];
     res.json(await location.native(token,req.method,req.body));
@@ -102,6 +104,7 @@ export function createApp(db, { push, production = process.env.NODE_ENV === 'pro
     if (!rows.length) return next(Object.assign(new Error('Your session expired. Please sign in again.'), { status: 401 }));
     req.user = rows[0]; next();
   });
+  accountRoutes(app, db, { rateLimit, changed: events.changed, production });
   app.get('/api/state', async (req, res) => {
     const operator = isOperator(req.user) && req.query.view !== 'public';
     const users = operator ? (await db.query('select * from eligtas.users order by created_at desc')).rows : [req.user];
@@ -158,9 +161,12 @@ export function createApp(db, { push, production = process.env.NODE_ENV === 'pro
   app.post('/api/alerts/:id/receipt', async (req, res) => {
     if (!uuid.test(req.params.id)) fail(400, 'Invalid alert.');
     const { rows } = await db.query('update eligtas.receipts set received_at=coalesce(received_at,now()),read_at=case when $3 then coalesce(read_at,now()) else read_at end where alert_id=$1 and user_id=$2 returning alert_id', [req.params.id, req.user.id, req.body.read === true]);
-    if (!rows.length) fail(404, 'Alert not found.'); res.json({ ok: true });
+    if (!rows.length) fail(404, 'Alert not found.');
+    if (req.body.read === true) void push?.acknowledge?.(req.user.id,req.params.id).catch(()=>console.error('iOS Live Activity acknowledgment could not be delivered.'));
+    res.json({ ok: true });
   });
   dispatchRoutes(app,db,push,rateLimit,events.changed);
+  iosRoutes(app,db,push,tokenFrom,rateLimit);
   app.post('/api/requests', async (req, res) => {
     const { id, type, people, includeLocation } = req.body;
     if (!uuid.test(id) || !['Evacuation','Medical assistance','Rescue','Other assistance'].includes(type) || !Number.isInteger(people) || people < 1 || people > 20 || typeof includeLocation !== 'boolean') fail(400, 'Check the assistance request.');

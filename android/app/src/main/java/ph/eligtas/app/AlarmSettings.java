@@ -11,7 +11,7 @@ import android.os.Build;
 import org.json.JSONObject;
 
 final class AlarmSettings {
-    static final String EMERGENCY = "emergency_alerts_v1", COMMUNITY = "community_alerts_v1", PLAYBACK = "active_alarm_v1";
+    static final String EMERGENCY = "emergency_alerts_v1", COMMUNITY = "community_alerts_v1", PLAYBACK = "active_alarm_controls_v2";
     static SharedPreferences prefs(Context c) { return c.getSharedPreferences("eligtas_alarm", Context.MODE_PRIVATE); }
     static void channels(Context c) {
         NotificationManager manager = c.getSystemService(NotificationManager.class);
@@ -23,7 +23,10 @@ final class AlarmSettings {
         manager.createNotificationChannel(urgent);
         NotificationChannel normal = new NotificationChannel(COMMUNITY, "Community announcements", NotificationManager.IMPORTANCE_DEFAULT);
         normal.setLockscreenVisibility(android.app.Notification.VISIBILITY_PRIVATE); manager.createNotificationChannel(normal);
-        NotificationChannel playing = new NotificationChannel(PLAYBACK, "Alarm controls", NotificationManager.IMPORTANCE_LOW);
+        // High visual priority, no competing notification audio: the service plays
+        // the alarm. A new channel ID is required; Android channel importance is immutable.
+        NotificationChannel playing = new NotificationChannel(PLAYBACK, "Active emergency alerts", NotificationManager.IMPORTANCE_HIGH);
+        playing.setDescription("Shows emergency message text and Silence alarm together during playback.");
         playing.setSound(null, null); playing.setLockscreenVisibility(android.app.Notification.VISIBILITY_PRIVATE); manager.createNotificationChannel(playing);
     }
     static boolean notificationsAllowed(Context c, String channel) {
@@ -37,7 +40,7 @@ final class AlarmSettings {
         AudioManager audio = c.getSystemService(AudioManager.class);
         Boolean allowed = alarmsAllowed(c);
         return new JSONObject().put("enabled", prefs(c).getBoolean("enabled", false)).put("maxVolume", prefs(c).getBoolean("max_volume", false))
-            .put("pushConfigured", BuildConfig.PUSH_CONFIGURED).put("notifications", notificationsAllowed(c, EMERGENCY))
+            .put("pushConfigured", BuildConfig.PUSH_CONFIGURED).put("notifications", notificationsAllowed(c, EMERGENCY) && notificationsAllowed(c, PLAYBACK))
             .put("dndAccess", manager.isNotificationPolicyAccessGranted()).put("dndBypass", manager.getNotificationChannel(EMERGENCY).canBypassDnd())
             .put("alarmVolume", audio.getStreamVolume(AudioManager.STREAM_ALARM)).put("alarmMax", audio.getStreamMaxVolume(AudioManager.STREAM_ALARM))
             .put("appVersion", BuildConfig.VERSION_NAME).put("enhancedAlarms", true).put("volumeFixed", audio.isVolumeFixed())

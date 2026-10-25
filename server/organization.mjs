@@ -188,7 +188,7 @@ export function organizationRoutes(app, db, changed) {
   app.post("/api/projects", (req, res) => saveProject(req, res, false));
   app.put("/api/projects/:id", (req, res) => saveProject(req, res, true));
   async function saveGroup(req, res, editing) {
-    admin(req);
+    operator(req);
     const b = req.body,
       id = editing ? idOrNull(req.params.id) : randomUUID();
     const name = value(b.name, 80, "group name", true),
@@ -253,8 +253,8 @@ export function organizationRoutes(app, db, changed) {
       }
       if (head)
         await tx.query(
-          "insert into eligtas.group_members(group_id,user_id,title) values ($1,$2,$3) on conflict(group_id,user_id) do nothing",
-          [id, head, "Head"],
+          "insert into eligtas.group_members(group_id,user_id,title,is_leader) values ($1,$2,$3,true) on conflict(group_id,user_id) do update set is_leader=true",
+          [id, head, ""],
         );
       await audit(
         tx,
@@ -269,7 +269,7 @@ export function organizationRoutes(app, db, changed) {
   app.post("/api/groups", (req, res) => saveGroup(req, res, false));
   app.put("/api/groups/:id", (req, res) => saveGroup(req, res, true));
   app.put("/api/groups/:id/members/:userId", async (req, res) => {
-    admin(req);
+    operator(req);
     const id = idOrNull(req.params.id),
       userId = idOrNull(req.params.userId);
     const title = value(req.body.title || "", 80, "position title"),
@@ -282,10 +282,12 @@ export function organizationRoutes(app, db, changed) {
         )
       ).rows[0];
       if (!group || group.archived) fail(404, "Active group not found.");
+      if (req.body.isLeader !== undefined && typeof req.body.isLeader !== "boolean") fail(400, "Choose a valid member role.");
+      if (group.head_id === userId && req.body.isLeader === false) fail(409, "Change the primary leader in group settings first.");
       await exists(tx, "users", userId);
       await tx.query(
-        "insert into eligtas.group_members(group_id,user_id,title,category) values ($1,$2,$3,$4) on conflict(group_id,user_id) do update set title=excluded.title,category=excluded.category",
-        [id, userId, title, category],
+        "insert into eligtas.group_members(group_id,user_id,title,category,is_leader) values ($1,$2,$3,$4,$5) on conflict(group_id,user_id) do update set title=excluded.title,category=excluded.category,is_leader=coalesce($6,eligtas.group_members.is_leader)",
+        [id, userId, title, category, group.head_id === userId || req.body.isLeader === true, req.body.isLeader ?? null],
       );
       await audit(tx, req.user.id, "assign_group_member", userId);
     });
@@ -293,7 +295,7 @@ export function organizationRoutes(app, db, changed) {
     res.json({ ok: true });
   });
   app.delete("/api/groups/:id/members/:userId", async (req, res) => {
-    admin(req);
+    operator(req);
     const id = idOrNull(req.params.id),
       userId = idOrNull(req.params.userId);
     await db.transaction(async (tx) => {
@@ -305,7 +307,7 @@ export function organizationRoutes(app, db, changed) {
       ).rows[0];
       if (!group) fail(404, "Group not found.");
       if (group.head_id === userId)
-        fail(409, "Choose another head before removing this member.");
+        fail(409, "Change the primary leader in group settings before removing this member.");
       await tx.query(
         "delete from eligtas.group_members where group_id=$1 and user_id=$2",
         [id, userId],
@@ -314,6 +316,24 @@ export function organizationRoutes(app, db, changed) {
     });
     changed();
     res.json({ ok: true });
+  });
+  app.put("/api/groups/:id/members", async (req, res) => {
+    operator(req);
+    const id = idOrNull(req.params.id), ids = req.body.userIds;
+    if (!Array.isArray(ids) || !ids.length || ids.length > 100 || ids.some(userId => typeof userId !== 'string' || !uuid.test(userId))) fail(400, "Select between 1 and 100 registered people.");
+    const unique = [...new Set(ids)];
+    await db.transaction(async tx => {
+      const group = (await tx.query("select * from eligtas.team_groups where id=$1 for update", [id])).rows[0];
+      if (!group || group.archived) fail(404, "Active group not found.");
+      const people = (await tx.query("select id from eligtas.users where id=any($1::uuid[])", [unique])).rows;
+      if (people.length !== unique.length) fail(400, "One of the selected people is no longer registered. Refresh the directory.");
+      for (const userId of unique) {
+        await tx.query("insert into eligtas.group_members(group_id,user_id) values ($1,$2) on conflict(group_id,user_id) do nothing", [id,userId]);
+      }
+      await audit(tx, req.user.id, "add_group_members", id);
+    });
+    changed();
+    res.json({ ok: true, count: unique.length });
   });
   app.post("/api/tasks", async (req, res) => {
     operator(req);

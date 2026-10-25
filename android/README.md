@@ -1,4 +1,4 @@
-# TANOVIQ Android pilot 0.4.1
+# TANOVIQ Android pilot 0.5.1
 
 An installable Android app (Android 8+) for the existing personnel service.
 The public interface loads from `https://ews-kappa.vercel.app/#/public` in an
@@ -6,6 +6,34 @@ origin-restricted WebView. Native code handles alarms, notification permissions,
 Firebase Cloud Messaging, safe external links, Android back navigation, and
 location permission. Accounts and consented locations use the existing Render
 API through the same HTTPS origin. No separate account system is introduced.
+
+Pilot 0.5.1 (version code 7) retains the notification/location improvements below
+and the existing pilot signing identity. Its hosted interface uses the same Groups
+and command-center 1.1 service. Publishing web/API changes is separate from APK
+installation; see the [deployment guide](../README.md#deployment).
+
+## Native notification behavior
+
+The message, expanded text and **Silence alarm** action now share one notification,
+including during native alarm playback. Silence targets that alert only, works
+offline without opening the app, and never acknowledges the message. An older
+notification cannot stop a newer alarm. The text remains after playback ends.
+
+**Read message** opens a native, cached message view immediately, without waiting
+for the web inbox. Its explicit **Acknowledge message** action queues a receipt
+with Android WorkManager; the UI says it is queued until it can be sent. A signed-in
+background worker fetches the full text, so long messages use their complete inbox
+content once online. Android's lock-screen preview policy remains in effect.
+
+Rotated Firebase tokens register with the existing authenticated session in a
+retryable background worker instead of waiting for the WebView to open. Receipts
+also sync from push delivery; they do not claim physical sound verification.
+Worker inputs contain operation/alert/account IDs, never session credentials.
+Expired sign-in still requires signing in again, and force-stop/manufacturer
+battery restrictions can still prevent or delay FCM delivery.
+
+The APK includes these Android changes and can use the current server endpoints.
+No Apple setup or iOS backend deployment is needed to install this Android update.
 
 ## Build and install
 

@@ -1,0 +1,110 @@
+name: TANOVIQ iPhone build
+
+on:
+  push:
+    branches: [build/tanoviq-ios]
+    paths: ['ios/**', '.github/workflows/ios-build.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  iphone:
+    runs-on: xcode-27
+    timeout-minutes: 35
+    defaults:
+      run:
+        working-directory: ios
+        shell: bash
+    steps:
+      - name: Check out iPhone source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Prepare Xcode project and iPhone simulator
+        run: |
+          set -euo pipefail
+          mkdir -p build/evidence
+          xcodebuild -version | tee build/evidence/xcode-version.txt
+          xcodebuild -showsdks > build/evidence/sdks.txt
+          xcodebuild -version | head -1 | grep -E '^Xcode 27\.'
+          if ! command -v xcodegen >/dev/null; then brew install xcodegen; fi
+          xcodegen --version | tee build/evidence/xcodegen-version.txt
+          xcodegen generate
+          xcrun simctl list devices available --json > build/evidence/simulators.json
+          SIMULATOR_ID=$(python3 - <<'PY'
+          import json, re
+          data = json.load(open('build/evidence/simulators.json'))['devices']
+          candidates = [(tuple(map(int, re.findall(r'\d+', runtime))), device)
+                        for runtime, devices in data.items() if '.iOS-' in runtime
+                        for device in devices if device.get('isAvailable') and device['name'].startswith('iPhone')]
+          candidates.sort(key=lambda x: (x[0], 'Pro' in x[1]['name'], 'Max' not in x[1]['name']), reverse=True)
+          if not candidates: raise SystemExit('No available iPhone simulator')
+          print(candidates[0][1]['udid'])
+          PY
+          )
+          echo "SIMULATOR_ID=$SIMULATOR_ID" >> "$GITHUB_ENV"
+          xcrun simctl boot "$SIMULATOR_ID"
+          xcrun simctl bootstatus "$SIMULATOR_ID" -b
+          xcrun simctl status_bar "$SIMULATOR_ID" override --time '9:41' --batteryState charged --batteryLevel 100
+      - name: Compile and run iPhone tests
+        run: |
+          set -euo pipefail
+          xcodebuild -project TANOVIQ.xcodeproj -scheme TANOVIQ -configuration Debug \
+            -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
+            -derivedDataPath build/DerivedData -resultBundlePath build/Tests.xcresult \
+            -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO test \
+            2>&1 | tee build/evidence/tests.log
+      - name: Capture simulator appearance and package runnable simulator app
+        run: |
+          set -euo pipefail
+          xcrun simctl launch "$SIMULATOR_ID" ph.tanoviq.app
+          sleep 3
+          xcrun simctl ui "$SIMULATOR_ID" appearance light
+          sleep 1
+          xcrun simctl io "$SIMULATOR_ID" screenshot build/evidence/iphone-light.png
+          xcrun simctl ui "$SIMULATOR_ID" appearance dark
+          sleep 1
+          xcrun simctl io "$SIMULATOR_ID" screenshot build/evidence/iphone-dark.png
+          ditto -c -k --sequesterRsrc --keepParent build/DerivedData/Build/Products/Debug-iphonesimulator/TANOVIQ.app build/TANOVIQ-iPhone-Simulator.zip
+      - name: Compile unsigned iPhone device archive
+        run: |
+          set -euo pipefail
+          xcodebuild -project TANOVIQ.xcodeproj -scheme TANOVIQ -configuration Release \
+            -destination 'generic/platform=iOS' -archivePath build/TANOVIQ.xcarchive \
+            -derivedDataPath build/DeviceDerivedData CODE_SIGNING_ALLOWED=NO archive \
+            2>&1 | tee build/evidence/archive.log
+          ditto -c -k --sequesterRsrc --keepParent build/TANOVIQ.xcarchive build/TANOVIQ-iPhone-Unsigned-Archive.zip
+          printf '%s\n' 'Simulator zip: runs in an iPhone Simulator on a Mac.' \
+            'Unsigned archive: compiled for iPhone hardware, requires Apple signing before installation.' \
+            'No IPA or TestFlight release has been produced.' > build/READ-ME.txt
+          shasum -a 256 build/TANOVIQ-iPhone-*.zip > build/SHA256SUMS.txt
+      - name: Save compiled iPhone packages
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: TANOVIQ-iPhone-build
+          path: |
+            ios/build/TANOVIQ-iPhone-*.zip
+            ios/build/READ-ME.txt
+            ios/build/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 7
+      - name: Export test results and screenshots
+        if: always()
+        run: |
+          if [ -d build/Tests.xcresult ]; then
+            xcrun xcresulttool get test-results summary --path build/Tests.xcresult > build/evidence/test-summary.json
+            xcrun xcresulttool export attachments --path build/Tests.xcresult --output-path build/evidence/test-attachments
+          fi
+      - name: Save build evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: TANOVIQ-iPhone-build-evidence
+          path: ios/build/evidence/
+          retention-days: 7

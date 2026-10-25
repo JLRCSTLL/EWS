@@ -1,0 +1,47 @@
+{
+  "name": "tanoviq-command-center",
+  "productName": "TANOVIQ Command Center",
+  "version": "1.1.0",
+  "description": "TANOVIQ Windows command center. See Risk Before It Strikes.",
+  "author": "TANOVIQ",
+  "private": true,
+  "main": "main.cjs",
+  "scripts": {
+    "postinstall": "node node_modules/electron/install.js",
+    "start": "electron .",
+    "test": "node --test tests/*.test.cjs",
+    "package": "electron-builder --win nsis portable --x64 --publish never",
+    "package:dir": "electron-builder --win --x64 --dir --publish never"
+  },
+  "devDependencies": {
+    "electron": "45.0.0",
+    "electron-builder": "26.18.0"
+  },
+  "build": {
+    "appId": "ph.tanoviq.commandcenter",
+    "productName": "TANOVIQ Command Center",
+    "copyright": "Copyright © 2026 TANOVIQ",
+    "asar": true,
+    "directories": { "output": "release", "buildResources": "assets" },
+    "files": ["main.cjs", "policy.cjs", "preload.cjs", "shell/**", "assets/**", "package.json"],
+    "win": {
+      "target": ["nsis", "portable"],
+      "icon": "assets/tanoviq.ico",
+      "executableName": "TANOVIQ Command Center",
+      "requestedExecutionLevel": "asInvoker"
+    },
+    "nsis": {
+      "artifactName": "TANOVIQ-Command-Center-Setup-${version}-${arch}.${ext}",
+      "oneClick": false,
+      "perMachine": false,
+      "allowElevation": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "TANOVIQ Command Center",
+      "deleteAppDataOnUninstall": false,
+      "runAfterFinish": true
+    },
+    "portable": { "artifactName": "TANOVIQ-Command-Center-Portable-${version}-${arch}.${ext}" }
+  }
+}

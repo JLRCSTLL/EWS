@@ -6,6 +6,7 @@ import { PGlite } from '@electric-sql/pglite';
 import { createApp } from '../server/app.mjs';
 import { validSubscription } from '../server/push.mjs';
 import { demoGeofences } from '../src/app/lib/residents.ts';
+import { boundaryGeometry } from '../src/app/lib/place-search.ts';
 
 test('registered devices and approved command center share real persisted state with access control', async t => {
   const db = new PGlite();
@@ -68,6 +69,15 @@ test('registered devices and approved command center share real persisted state 
   });
   const dispatch = () => ({id:randomUUID(),area:demoGeofences[2],groups:['pwd'],activeOnly:true,priority:'normal',content:'QA TEST — no emergency. Cross-device alert.'});
   await t.test('server calculates geofence/group recipients, rejects resident sends and empty audiences', async () => {
+    const outline = boundaryGeometry({type:'MultiPolygon',coordinates:[[[[121.10,14.64],[121.12,14.64],[121.12,14.66],[121.10,14.66],[121.10,14.64]]]]});
+    const area = {...outline,id:'searched-area',name:'Searched boundary'};
+    const preview = await owner('/alerts/preview',{...dispatch(),area});
+    assert.equal(preview.status,200);
+    assert.equal(preview.data.recipients.length,1);
+    const hole = boundaryGeometry({type:'Polygon',coordinates:[[[121.10,14.64],[121.12,14.64],[121.12,14.66],[121.10,14.66],[121.10,14.64]],[[121.105,14.645],[121.115,14.645],[121.115,14.655],[121.105,14.655],[121.105,14.645]]]});
+    const excluded = await owner('/alerts/preview',{...dispatch(),area:{...hole,id:'hole-area',name:'Excluded interior'}});
+    assert.equal(excluded.status,200);
+    assert.equal(excluded.data.recipients.length,0);
     assert.equal((await phone('/alerts',dispatch())).status,403);
     assert.equal((await owner('/alerts',{...dispatch(),area:{...demoGeofences[2],points:[]}})).status,400);
     assert.equal((await owner('/alerts',{...dispatch(),groups:['seniors']})).status,409);

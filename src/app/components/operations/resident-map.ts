@@ -3,6 +3,7 @@ import { geofenceDistance, type GeofenceGeometry } from '../../lib/geofencing';
 import { liveLocationLabel, locationAgeMinutes, locationStatus, matchesGroup, residentGroups, type Resident } from '../../lib/residents';
 
 export function fenceLayer(geometry: GeofenceGeometry, style: L.PathOptions = {}) {
+  if (geometry.shape === 'boundary') return L.polygon(geometry.polygons!.map(rings => rings.map(ring => ring.map(point => L.latLng(point.lat,point.lng)))), style);
   const points = geometry.points.map(point => L.latLng(point.lat, point.lng));
   if (geometry.shape === 'circle') return L.circle(points[0], { ...style, radius: geofenceDistance(geometry.points[0], geometry.points[1]) });
   if (geometry.shape === 'rectangle') return L.rectangle(L.latLngBounds(points), style);

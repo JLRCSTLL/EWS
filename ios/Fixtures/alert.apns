@@ -1,0 +1,11 @@
+{
+  "aps": {
+    "alert": { "title": "TANOVIQ · TEST ONLY", "body": "LOCAL PREVIEW — no emergency. This sample demonstrates an expanded notification and its actions." },
+    "category": "TANOVIQ_ALERT",
+    "thread-id": "local-preview",
+    "interruption-level": "active"
+  },
+  "alertId": "00000000-0000-4000-8000-000000000001",
+  "userId": "REPLACE_WITH_YOUR_ISOLATED_TEST_ACCOUNT_UUID",
+  "priority": "normal"
+}

@@ -1,13 +1,16 @@
 node_modules/
 dist/
+desktop/release/
 .vercel/
 .local-data/
 
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*
+!.env.example
+.secrets/
+secrets/
+security-reports/
+.idea/
 
 *.log
 npm-debug.log*
@@ -26,3 +29,27 @@ android/app/google-services.json
 *.jks
 *.keystore
 *-firebase-adminsdk-*.json
+*service-account*.json
+*service_account*.json
+credentials.json
+*.pem
+*.key
+*.pfx
+
+# Deliver installers separately; never commit binaries or their embedded config.
+*.apk
+*.aab
+*.ipa
+*.exe
+
+# iOS generated projects, local signing configuration and Apple private keys.
+ios/*.xcodeproj/
+ios/build/
+ios/DerivedData/
+ios/App/Info.plist
+ios/App/TANOVIQ.entitlements
+ios/LiveActivity/Info.plist
+ios/*.xcconfig
+*.p8
+*.p12
+*.mobileprovision

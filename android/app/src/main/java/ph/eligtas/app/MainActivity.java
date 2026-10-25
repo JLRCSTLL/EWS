@@ -173,11 +173,14 @@ public final class MainActivity extends ComponentActivity {
                 case "bind": {
                     String user = request.optString("userId"); if (!user.matches("[0-9a-fA-F-]{36}")) throw new IllegalArgumentException();
                     if (!user.equals(AlarmSettings.prefs(this).getString("user",""))) {
+                        AlertStore.clear(this);
+                        getSystemService(android.app.NotificationManager.class).cancelAll();
                         LocationShareService.stopOtherAccount(this,user);
                         stopService(new Intent(this,EmergencyAlarmService.class));
                         AlarmSettings.prefs(this).edit().putString("user",user).remove("seen").remove("alarm_id").remove("alarm_state").remove("alarm_message").putBoolean("enabled",true).putBoolean("max_volume",true).apply();
                     }
                     AlarmSettings.prefs(this).edit().putBoolean("enabled",true).putBoolean("max_volume",true).apply();
+                    NativeAlertWorker.registerCurrent(this);
                     if (!AlarmSettings.prefs(this).getBoolean("duty_setup_shown",false)) web.post(this::personnelPermissionSetup);
                     reply(proxy,id,AlarmSettings.status(this),null); break;
                 }
@@ -232,9 +235,11 @@ public final class MainActivity extends ComponentActivity {
                 }
                 case "stop": stopService(new Intent(this,EmergencyAlarmService.class)); reply(proxy,id,new JSONObject().put("ok",true),null); break;
                 case "logout": {
+                    androidx.work.WorkManager.getInstance(this).cancelAllWorkByTag("tanoviq-alert-network");
+                    AlertStore.clear(this);
                     LocationShareService.stop(this);
                     stopService(new Intent(this,EmergencyAlarmService.class));
-                    AlarmSettings.prefs(this).edit().remove("user").remove("seen").remove("alarm_id").remove("alarm_state").remove("alarm_message").putBoolean("enabled",false).putBoolean("max_volume",false).apply();
+                    AlarmSettings.prefs(this).edit().remove("user").remove("seen").remove("alarm_id").remove("alarm_state").remove("alarm_message").remove("push_token").remove("push_registration").putBoolean("enabled",false).putBoolean("max_volume",false).apply();
                     if (BuildConfig.PUSH_CONFIGURED) { FirebaseMessaging.getInstance().setAutoInitEnabled(false); FirebaseMessaging.getInstance().deleteToken(); }
                     getSystemService(android.app.NotificationManager.class).cancelAll();
                     reply(proxy,id,new JSONObject().put("ok",true),null); break;

@@ -96,7 +96,7 @@ export function StructureWorkspace({
     </div>
   );
 }
-function Projects() {
+export function Projects() {
   const { state } = useLive(),
     { busy, note, save } = useSave();
   const projects = state?.projects || [],
