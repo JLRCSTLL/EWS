@@ -1,7 +1,7 @@
 {
   "name": "tanoviq-command-center",
   "productName": "TANOVIQ Command Center",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "TANOVIQ Windows command center. See Risk Before It Strikes.",
   "author": "TANOVIQ",
   "private": true,

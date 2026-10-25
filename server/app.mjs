@@ -9,6 +9,7 @@ import { organizationRoutes, organizationState, contactVisibility } from './orga
 import { dispatchRoutes } from './dispatch.mjs';
 import { iosRoutes } from './ios-routes.mjs';
 import { accountRoutes } from './account.mjs';
+import { auditRoutes } from './audit.mjs';
 
 const groupsAllowed = ['pwd', 'children', 'seniors', 'pregnant', 'responders'];
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -50,7 +51,7 @@ export function createApp(db, { push, production = process.env.NODE_ENV === 'pro
     res.cookie('eligtas_session', token, { httpOnly: true, secure: production, sameSite: 'lax', path: '/api', maxAge: 30 * 86400000 });
   }
   app.get('/api/health', async (_req, res) => { await db.query('select 1'); res.json({ ok: true, service: 'TANOVIQ', version: 2 }); });
-  app.get('/api/config', (_req, res) => res.json({ pushPublicKey: push?.publicKey || null, androidPushReady: !!push?.androidReady, iosPushReady: !!push?.iosReady, accountDeletionReady: true, nativeLocationReady: true, registration: true, gsamReady: true, dutyTracking: true, groupManagementReady: true, boundaryGeofencesReady: true, commandCenterVersion: '1.1.0' }));
+  app.get('/api/config', (_req, res) => res.json({ pushPublicKey: push?.publicKey || null, androidPushReady: !!push?.androidReady, iosPushReady: !!push?.iosReady, accountDeletionReady: true, nativeLocationReady: true, registration: true, gsamReady: true, dutyTracking: true, groupManagementReady: true, boundaryGeofencesReady: true, auditLogsReady: true, commandCenterVersion: '1.1.0' }));
   for (const method of ['put','delete']) app[method]('/api/location/native', async (req,res) => {
     const token = /^Bearer ([A-Za-z0-9_-]{43})$/.exec(req.get('authorization') || '')?.[1];
     res.json(await location.native(token,req.method,req.body));
@@ -105,6 +106,7 @@ export function createApp(db, { push, production = process.env.NODE_ENV === 'pro
     req.user = rows[0]; next();
   });
   accountRoutes(app, db, { rateLimit, changed: events.changed, production });
+  auditRoutes(app, db);
   app.get('/api/state', async (req, res) => {
     const operator = isOperator(req.user) && req.query.view !== 'public';
     const users = operator ? (await db.query('select * from eligtas.users order by created_at desc')).rows : [req.user];

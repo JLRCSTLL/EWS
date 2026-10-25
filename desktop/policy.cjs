@@ -35,6 +35,13 @@ function shellAsset(value) {
 function canNotify(permission, origin, base = PRODUCTION_URL) {
   return permission === 'notifications' && origin === new URL(base).origin;
 }
+function canSaveActivityLog({ url, filename, mimeType, bytes, pageUrl }, base = PRODUCTION_URL) {
+  const download = parseUrl(url);
+  return isCommandUrl(pageUrl, base) && !!download && download.protocol === 'blob:' && download.origin === new URL(base).origin &&
+    /^TANOVIQ-(activity|demo)-logs-\d{4}-\d{2}-\d{2}\.csv$/.test(filename) &&
+    typeof mimeType === 'string' && mimeType.split(';')[0].trim().toLowerCase() === 'text/csv' &&
+    Number.isSafeInteger(bytes) && bytes > 0 && bytes <= 2 * 1024 * 1024;
+}
 function windowBounds(saved, areas) {
   const primary = areas[0] || { x: 0, y: 0, width: 1440, height: 900 };
   const width = Math.min(primary.width, Math.max(960, Number(saved?.width) || 1440));
@@ -43,4 +50,4 @@ function windowBounds(saved, areas) {
   const visible = Number.isFinite(x) && Number.isFinite(y) && areas.some(a => x >= a.x && y >= a.y && x + width <= a.x + a.width && y + height <= a.y + a.height);
   return { x: visible ? x : primary.x + Math.round((primary.width - width) / 2), y: visible ? y : primary.y + Math.round((primary.height - height) / 2), width, height };
 }
-module.exports = { PRODUCTION_URL, SHELL_URL, TOOLBAR_HEIGHT, commandUrl, isCommandUrl, isExternalUrl, shellAsset, canNotify, windowBounds };
+module.exports = { PRODUCTION_URL, SHELL_URL, TOOLBAR_HEIGHT, commandUrl, isCommandUrl, isExternalUrl, shellAsset, canNotify, canSaveActivityLog, windowBounds };

@@ -2,7 +2,7 @@
 const { app, BrowserWindow, WebContentsView, Menu, session, protocol, ipcMain, dialog, shell, nativeTheme, screen, powerSaveBlocker } = require('electron');
 const fs = require('node:fs');
 const path = require('node:path');
-const { PRODUCTION_URL, SHELL_URL, TOOLBAR_HEIGHT, commandUrl, isCommandUrl, isExternalUrl, shellAsset, canNotify, windowBounds } = require('./policy.cjs');
+const { PRODUCTION_URL, SHELL_URL, TOOLBAR_HEIGHT, commandUrl, isCommandUrl, isExternalUrl, shellAsset, canNotify, canSaveActivityLog, windowBounds } = require('./policy.cjs');
 
 app.setName('TANOVIQ Command Center');
 app.setAppUserModelId('ph.tanoviq.commandcenter');
@@ -165,7 +165,13 @@ async function createWindow() {
   remoteSession = session.fromPartition('persist:tanoviq-command');
   remoteSession.setPermissionRequestHandler((contents, permission, callback, details) => callback(contents === view?.webContents && isCommandUrl(contents.getURL(), base) && canNotify(permission, details.requestingUrl ? new URL(details.requestingUrl).origin : '', base)));
   remoteSession.setPermissionCheckHandler((contents, permission, origin) => contents === view?.webContents && isCommandUrl(contents.getURL(), base) && canNotify(permission, origin, base));
-  remoteSession.on('will-download', event => event.preventDefault());
+  remoteSession.on('will-download', (event, item, contents) => {
+    if (contents !== view?.webContents || !canSaveActivityLog({ url: item.getURL(), filename: item.getFilename(), mimeType: item.getMimeType(), bytes: item.getTotalBytes(), pageUrl: contents.getURL() }, base)) {
+      event.preventDefault(); return;
+    }
+    // The operator chooses the destination; no automatic writes or file opening.
+    item.setSaveDialogOptions({ title: 'Export TANOVIQ activity logs', defaultPath: path.join(app.getPath('downloads'), item.getFilename()), filters: [{ name: 'CSV activity log', extensions: ['csv'] }], buttonLabel: 'Save log' });
+  });
   remoteSession.webRequest.onHeadersReceived({ urls: [`${new URL(base).origin}/*`] }, (details, callback) => {
     const headers = { ...details.responseHeaders };
     if (details.resourceType === 'mainFrame' && base === PRODUCTION_URL) headers['Content-Security-Policy'] = ["default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' https: data: blob:; media-src 'self' https: blob:; connect-src 'self' https:; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'"];

@@ -8,7 +8,7 @@ database and does not provide offline broadcasts.
 
 ## Install and use
 
-1. Run `TANOVIQ-Command-Center-Setup-1.1.0-x64.exe`. The assisted installer installs
+1. Run `TANOVIQ-Command-Center-Setup-1.1.1-x64.exe`. The assisted installer installs
    for your Windows user and offers Start menu and desktop shortcuts.
 2. Open **TANOVIQ Command Center**. The logo screen remains visible while the
    command interface loads. A connection failure shows a retry screen and retries
@@ -48,6 +48,20 @@ Mouse-wheel and touchpad map zoom remain the web application's controls.
 of operator authorization, fresh GPS, alert receipt, or physical alarm playback.
 The app does not remain running in the notification area after it is closed.
 Phone background alarms still depend on the existing Android/FCM setup.
+
+### Activity logs (1.1.1)
+
+Open **Logs** in the command-center navigation. Approved operators can search
+shared audit records, filter event types and time periods, and browse older pages.
+The latest page refreshes every 15 seconds; **Refresh** returns to the latest page.
+Times are displayed in Philippine time. **Export shown** saves the visible page as
+CSV using the Windows save dialog. Version 1.1.1 is required for desktop CSV export;
+older clients can view the updated log interface after reloading.
+
+Only CSV log blobs from the trusted command-center page are eligible for download,
+with a 2 MiB size limit. Other downloads remain blocked. Logs exclude raw contact
+details, precise locations, and alert bodies. Demo activity is labeled separately.
+The Render backend must include `/api/audit` for live records to load.
 
 ## Development and packaging
 
@@ -91,7 +105,7 @@ installer; there is no automatic desktop updater in this release.
   browser. File, script, and OS-protocol links cannot launch through the app.
 - Camera, microphone, geolocation, clipboard-read, screen capture, and device
   permissions are denied. Only notifications from the configured origin are
-  eligible. Unsolicited downloads and popup windows are blocked.
+  eligible. Downloads other than bounded CSV log exports and popup windows are blocked.
 - No database password, Firebase credential, bootstrap token, or operator
   credential is included in the package. Authorization remains on the server.
 

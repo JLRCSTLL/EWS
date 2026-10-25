@@ -107,6 +107,7 @@ create table if not exists eligtas.audit (
   target_id uuid,
   created_at timestamptz not null default now()
 );
+create index if not exists audit_chronological on eligtas.audit(created_at desc, id desc);
 revoke all on all tables in schema eligtas from public;
 
 -- Additive GSAM migration. Organizational labels never grant application access.

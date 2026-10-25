@@ -14,7 +14,7 @@ clearly separated from connected accounts and alerts.
 | --- | --- | --- |
 | [Command center](https://ews-kappa.vercel.app/) | Browser interface for approved operators | Web |
 | [Personnel app](https://ews-kappa.vercel.app/#/public) | Register, receive alerts, share location while on duty, request help | Mobile web / PWA |
-| [Windows](desktop/README.md) | Dedicated command-center window, splash and desktop controls | 1.1.0, x64 installer / portable |
+| [Windows](desktop/README.md) | Dedicated command-center window, splash and desktop controls | 1.1.1, x64 installer / portable |
 | [Android](android/README.md) | Mobile interface with native notifications, alarm controls and on-duty GPS | 0.6.0 pilot, version code 8 |
 | [iPhone](ios/README.md) | SwiftUI app, APNs and Live Activity implementation | Development; no signed IPA or TestFlight release |
 
@@ -52,6 +52,13 @@ not Apple's native Liquid Glass renderer.
 - **Desktop bell:** review actual field requests, safe check-ins and broadcasts.
   Opening an item goes to the relevant workspace. Read state belongs to the
   signed-in account on that workstation; it never acknowledges a phone alert.
+- **Logs:** approved operators can search shared activity by event, preferred
+  name, or record, filter by category/time, browse older entries, and export the
+  displayed page as CSV. The latest page refreshes every 15 seconds. Broadcasts,
+  group/operation changes, access decisions, and assistance status updates come
+  from the server's audit records. Demo logs remain separate. Contact details,
+  precise GPS positions, and message contents are excluded; record names reflect
+  current labels. Deploy the API update to enable `/api/audit` on hosted clients.
 - **Field response:** review assistance requests, assign available responders,
   follow status changes and review alert delivery history.
 
