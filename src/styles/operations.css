@@ -5,8 +5,12 @@
   --ops-faint: #b8b8b8;
   --ops-line: rgba(255, 255, 255, .2);
   --ops-accent: #dedede;
-  --ops-glass: linear-gradient(135deg, rgba(255, 255, 255, .085), rgba(255, 255, 255, .015) 55%), rgba(28, 31, 33, .78);
-  --ops-glass-shadow: inset 0 1px 0 rgba(255, 255, 255, .22), inset 1px 0 0 rgba(255, 255, 255, .055), inset 0 -1px 0 rgba(255, 255, 255, .035), 0 10px 32px rgba(0, 0, 0, .16), 0 2px 6px rgba(0, 0, 0, .08);
+  /* One glass material for the search field and floating map widgets. */
+  --ops-glass: linear-gradient(105deg, #edf5ed14, #edf5ed05), #3039349e;
+  --ops-glass-hover: linear-gradient(105deg, #edf5ed20, #edf5ed0a), #303934b8;
+  --ops-glass-border: #e5f8ef45;
+  --ops-glass-filter: blur(22px) saturate(.75);
+  --ops-glass-shadow: inset 0 1px 0 #ffffff20, 0 4px 16px #0002;
   font-family: 'Inter', 'Segoe UI', sans-serif;
   color: var(--ops-text);
   font-size: 12px;
@@ -73,7 +77,7 @@
 .ops-demo-badge { font-size: 10px; color: #ababab; border: 1px solid #d2d2d218; border-radius: 4px; padding: 2px 5px; }
 .ops-quick-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
 .ops-quick-stats > button { border: 1px solid var(--ops-line); background: var(--ops-glass); border-radius: 12px; text-align: left; padding: 13px; backdrop-filter: blur(24px) saturate(0); -webkit-backdrop-filter: blur(24px) saturate(0); box-shadow: var(--ops-glass-shadow); }
-.ops-quick-stats > button:hover { background: linear-gradient(135deg, #ffffff12, #ffffff04), #333333f5; border-color: #ffffff36; }
+.ops-quick-stats > button:hover { background: var(--ops-glass-hover); border-color: #ffffff60; }
 .ops-quick-stats button > span:first-child { display: flex; align-items: center; gap: 6px; color: #b9b9b9; font-size: 10px; }
 .ops-quick-stats button > span:first-child svg { color: #b3b3b3; }
 .ops-quick-stats strong { display: block; font-size: 31px; font-weight: 300; line-height: 1; margin: 10px 0 8px; letter-spacing: -.06em; font-variant-numeric: tabular-nums; }
@@ -102,7 +106,7 @@
 .ops-section-heading > button { display: flex; align-items: center; gap: 4px; background: none; border: 0; color: #a9a9a9; font-size: 10px; }
 .ops-team-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .ops-team-card { min-width: 0; text-align: left; border-radius: 12px; border: 1px solid var(--ops-line); background: var(--ops-glass); padding: 12px 11px 10px; overflow: hidden; color: #ebebeb; backdrop-filter: blur(24px) saturate(0); -webkit-backdrop-filter: blur(24px) saturate(0); box-shadow: var(--ops-glass-shadow); }
-.ops-team-card:hover { background: linear-gradient(140deg, #ffffff12, #ffffff04), #373737f5; border-color: #ffffff40; }
+.ops-team-card:hover { background: var(--ops-glass-hover); border-color: #ffffff60; }
 .ops-team-card .ops-card-heading { font-size: 10px; gap: 2px; }
 .ops-team-card .ops-card-heading svg { color: #aeaeae; width: 11px; }
 .ops-team-type { display: block; font-size: 10px; color: #a7a7a7; margin-top: 4px; }
@@ -123,7 +127,7 @@
 .ops-team-location span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ops-team-updated { font-size: 10px; color: #929292; padding-top: 4px; }
 .ops-broadcast-button { display: flex; align-items: center; width: 100%; gap: 9px; background: var(--ops-glass); border: 1px solid #ffffff26; border-radius: 11px; color: #e6e6e6; padding: 13px 12px; margin-top: 12px; text-align: left; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); box-shadow: inset 0 1px 0 #ffffff0a; }
-.ops-broadcast-button:hover { background: #3b3b3bf5; }
+.ops-broadcast-button:hover { background: var(--ops-glass-hover); }
 .ops-broadcast-icon { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: #cccccc13; color: #cecece; }
 .ops-broadcast-button strong { font-size: 10px; font-weight: 400; display: block; }
 .ops-broadcast-button small { font-size: 10px; color: #a9a9a9; display: block; margin-top: 4px; }
@@ -525,8 +529,13 @@
 .ops-map-tools > *, .ops-map-filters > button { pointer-events: auto; }
 .ops-broadcast-button:disabled { opacity: .5; cursor: not-allowed; }
 .ops-area-label { border: 0; background: none; }
-.ops-area-label span { display: block; max-width: 180px; width: max-content; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #d5dfe0; background: #202929c9; border: 1px solid #ffffff30; border-radius: 5px; padding: 5px 8px; font: 10px/1.4 'Inter', sans-serif; backdrop-filter: blur(12px); box-shadow: 0 3px 12px #0004; }
-.ops-area-label.is-selected span { border-color: #dceef2a0; background: #313c3de6; color: #fff; }
+.ops-area-label > span { display: block; max-width: 220px; width: max-content; color: #f3fff9; background: #132c25f2; border: 1px solid #7ee7cc; border-left: 3px solid #7ee7cc; border-radius: 7px; padding: 6px 10px; font: 10px/1.4 'Inter', sans-serif; box-shadow: 0 2px 8px #0008; }
+.ops-area-label strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; font-weight: 600; }
+.ops-area-label small { display: block; color: #aeeedc; font-size: 9px; margin-top: 2px; }
+.ops-area-label.is-selected > span { border-color: #e2fff7; background: #245245f5; box-shadow: 0 0 0 2px #102b23dd, 0 3px 12px #0008; }
+.ops-area-label.is-selected small { color: #e2fff7; }
+.ops-area-label.is-preview > span { border-color: #ffd386; border-left-style: dashed; background: #3a2a13f2; }
+.ops-area-label.is-preview small { color: #ffe0ac; }
 .ops-area-label:focus-visible { outline: 2px solid #fff; }
 .ops-fence-picker { display: flex; align-items: flex-end; gap: 7px; margin-top: 14px; }
 .ops-fence-picker label { flex: 1; min-width: 0; color: #bdbdbd; font-size: 10px; }
@@ -730,7 +739,23 @@
   .ops-route-target strong { font-size: 13px; }
 }
 
-/* Solid surfaces preserve contrast on devices without backdrop filtering. */
+/* Keep every map widget on the same glass material as the search bar. */
+.ops-glass, .ops-team-card, .ops-quick-stats > button, .ops-broadcast-button,
+.ops-region, .ops-map-tool, .ops-map-controls > div {
+  border-color: var(--ops-glass-border);
+  backdrop-filter: var(--ops-glass-filter);
+  -webkit-backdrop-filter: var(--ops-glass-filter);
+  box-shadow: var(--ops-glass-shadow);
+}
+.ops-glass { color: #f0f7f3; }
+.ops-glass .ops-command-note, .ops-population-scope, .ops-population-total small,
+.ops-population-footer, .ops-alerts-caption { color: #cbd8d1; }
+
+/* Solid surfaces preserve contrast when blur is unavailable or unwanted. */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .ops-glass, .ops-team-card, .ops-quick-stats > button, .ops-popover, .ops-dialog, .ops-map-controls > div { background: #303030; }
+  .ops-app, .ops-dialog, .ops-popover { --ops-glass: #29312d; --ops-glass-hover: #36423b; --ops-glass-filter: none; }
+  .ops-popover, .ops-dialog { background: #29312d; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .ops-app, .ops-dialog, .ops-popover { --ops-glass: #29312d; --ops-glass-hover: #36423b; --ops-glass-filter: none; }
 }

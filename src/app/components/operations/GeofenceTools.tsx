@@ -32,7 +32,7 @@ export function GeofenceTools(props: Props) {
       {draft.shape !== 'boundary' && <div className="ops-fence-shapes" role="group" aria-label="Geofence shape">
         {(['polygon', 'rectangle', 'circle'] as const).map((shape) => <button key={shape} aria-pressed={draft.shape === shape} onClick={() => props.onDraw(shape)}>{shape}</button>)}
       </div>}
-      <p className="ops-fence-instruction" role="status">{error || `${formatGeofenceArea(draft)} · ready to save`}</p>
+      <p className="ops-fence-instruction" role="status">{error || `Preview · not saved · ${formatGeofenceArea(draft)}`}</p>
       {draft.shape === 'boundary' ? <p className="ops-fence-hint">{draft.source?.note}<br /><a href={draft.source?.url} target="_blank" rel="noreferrer">{draft.source?.label}</a><br />Includes all mapped parts and excludes holes. Save to reuse this area.</p> : <p className="ops-fence-hint">Tap the map to add points. Drag a point to adjust it.</p>}
       {draft.shape !== 'boundary' && <div className="ops-fence-actions">
         <button onClick={props.onUndo} disabled={!draft.points.length}><Undo2 size={12} />Undo</button>

@@ -283,9 +283,16 @@ export function OperationsDashboard({ auditLogs, messages, onSendMessage, onOpen
 
   const previewBoundary = (place: BoundaryPlace, geometry: GeofenceGeometry) => {
     openView('map'); setSection(null); setSelection(null); setAlertsVisible(false);
-    setDraftName(place.label.slice(0,60)); setFenceDraft(geometry); setFenceEditor(true);
-    setEditingFenceId(visibleGeofences.find(area => area.source?.recordId === geometry.source?.recordId)?.id || null);
-    requestAnimationFrame(() => mapRef.current?.frameDemoArea(geometry));
+    const sourceId = geometry.source?.recordId;
+    const existing = sourceId ? visibleGeofences.find(area => area.source?.recordId === sourceId) : undefined;
+    setFenceEditor(true); setEditingFenceId(null);
+    if (existing) {
+      setSelectedFenceId(existing.id); setFenceDraft(null);
+      toast.info('This geofence is already saved on this workstation.');
+    } else {
+      setDraftName(place.label.slice(0,60)); setFenceDraft(geometry);
+    }
+    requestAnimationFrame(() => mapRef.current?.frameDemoArea(existing || geometry));
   };
   const focusSearch = () => { openView('map'); setSection(null); requestAnimationFrame(() => document.getElementById('operations-place-search')?.focus()); };
 
@@ -336,7 +343,7 @@ export function OperationsDashboard({ auditLogs, messages, onSendMessage, onOpen
     <OperationsMap ref={mapRef} incidents={liveView ? [] : incidents} layers={liveView ? { incidents: false, responders: false, infrastructure: false, risk: false } : layers} region={region} basemap={basemap} selection={selection} onSelect={setSelection} publicReports={tourIndex === null && !liveView ? publicReports : []}
       residents={liveView ? realUsers : undefined} snapshotAt={liveView ? live.locationNow : undefined} live={liveView}
       geofence={fenceDraft || alertGeofence} drawing={!!fenceDraft && fenceDraft.shape !== 'boundary'} previewing={!!fenceDraft} onGeofencePoint={addFencePoint}
-      areas={visibleGeofences} selectedAreaId={selectedFenceId} onSelectGeofence={selectFence} showResidents={showResidents}
+      areas={visibleGeofences} selectedAreaId={fenceDraft ? null : selectedFenceId} onSelectGeofence={selectFence} showResidents={showResidents}
       simulationPaused={simulationPaused || activeView === 'cctv' || (tourIndex !== null && !tourPlaying)} simulationReplay={simulationReplay} onSimulationTick={setSimulationElapsed}
       onGeofenceMove={(index, point) => setFenceDraft((current) => current ? { ...current, points: current.points.map((previous, i) => i === index ? point : previous) } : current)} />
     <header className="ops-header">

@@ -77,6 +77,29 @@ function focusRoute(map: L.Map, teamId: string) {
   });
 }
 
+function addFenceOutline(geometry: GeofenceGeometry, style: L.PathOptions, group: L.LayerGroup) {
+  // A dark casing keeps the colored boundary visible on both pale roads and satellite imagery.
+  fenceLayer(geometry, { ...style, color: '#081c17', weight: (style.weight || 3) + 4, opacity: .9, fill: false, interactive: false, className: 'ops-fence-casing' }).addTo(group);
+  return fenceLayer(geometry, { opacity: 1, lineJoin: 'round', lineCap: 'round', ...style }).addTo(group);
+}
+
+function addFenceLabel(boundary: L.Polygon | L.Circle, name: string, status: 'saved' | 'selected' | 'preview', group: L.LayerGroup, onSelect?: () => void) {
+  const label = document.createElement('span');
+  const title = document.createElement('strong'); title.textContent = name;
+  const detail = document.createElement('small');
+  detail.textContent = status === 'preview' ? 'Preview · not saved' : status === 'selected' ? 'Saved geofence · selected' : 'Saved geofence';
+  label.append(title, detail);
+  const description = `${name}. ${detail.textContent}${onSelect ? '. Select geofence.' : '.'}`;
+  const labelPoint = boundary instanceof L.Circle ? boundary.getLatLng() : boundary.getCenter();
+  const marker = L.marker(labelPoint, {
+    title: description, alt: description,
+    icon: L.divIcon({ className: `ops-area-label${status === 'selected' ? ' is-selected' : status === 'preview' ? ' is-preview' : ''}`, html: label, iconSize: [200, 46], iconAnchor: [100, 23] }),
+    keyboard: !!onSelect, interactive: !!onSelect, zIndexOffset: status === 'saved' ? 1100 : 1200,
+  }).addTo(group);
+  marker.getElement()?.setAttribute('aria-label', description);
+  if (onSelect) { marker.on('click', onSelect); marker.getElement()?.setAttribute('aria-pressed', String(status === 'selected')); }
+}
+
 export const OperationsMap = forwardRef<OperationsMapHandle, OperationsMapProps>(function OperationsMap(
   { incidents, layers, region, basemap, selection, onSelect, geofence, drawing, previewing = false, onGeofencePoint, onGeofenceMove, areas, selectedAreaId, onSelectGeofence, showResidents, simulationPaused, simulationReplay, onSimulationTick, publicReports, residents = demoResidents, snapshotAt = demoSnapshotAt, live = false }, ref,
 ) {
@@ -248,22 +271,16 @@ export const OperationsMap = forwardRef<OperationsMapHandle, OperationsMapProps>
     const map = mapRef.current;
     if (!map) return;
     const group = L.layerGroup().addTo(map);
-    areas.forEach(area => {
+    // Draw the selected area last so overlapping saved areas cannot cover its outline.
+    [...areas].sort((a, b) => Number(a.id === selectedAreaId) - Number(b.id === selectedAreaId)).forEach(area => {
       const selected = area.id === selectedAreaId;
-      const boundary = fenceLayer(area, {
-        color: selected ? '#dceef2' : '#adc1c4', weight: selected ? 2.5 : 1.5,
-        fillColor: '#b8dce4', fillOpacity: selected && !drawing ? .12 : .025,
-        dashArray: selected ? undefined : '5 6', interactive: !drawing,
-      }).addTo(group);
+      const boundary = addFenceOutline(area, {
+        color: selected ? '#d8fff3' : '#71e7c9', weight: selected ? 4 : 3,
+        fillColor: '#43caa6', fillOpacity: selected ? .17 : .1,
+        interactive: !drawing, className: `ops-geofence-boundary${selected ? ' is-selected' : ''}`,
+      }, group);
       boundary.on('click', () => onSelectGeofenceRef.current(area.id));
-      const label = document.createElement('span');
-      label.textContent = area.name || 'Unnamed area';
-      const marker = L.marker(boundary.getBounds().getNorthWest(), {
-        title: `Select geofence: ${area.name || 'Unnamed area'}`, alt: `Select geofence: ${area.name || 'Unnamed area'}`,
-        icon: L.divIcon({ className: `ops-area-label${selected ? ' is-selected' : ''}`, html: label, iconSize: [160, 26], iconAnchor: [0, 26] }),
-        keyboard: !drawing, interactive: !drawing, zIndexOffset: 1100,
-      }).addTo(group).on('click', () => onSelectGeofenceRef.current(area.id));
-      marker.getElement()?.setAttribute('aria-label', `Select geofence: ${area.name || 'Unnamed area'}`);
+      addFenceLabel(boundary, area.name || 'Unnamed area', selected ? 'selected' : 'saved', group, drawing ? undefined : () => onSelectGeofenceRef.current(area.id));
     });
     return () => { group.remove(); };
   }, [areas, selectedAreaId, drawing]);
@@ -325,16 +342,12 @@ export const OperationsMap = forwardRef<OperationsMapHandle, OperationsMapProps>
     if (!map || !geofence || (!drawing && !previewing)) return;
     const group = L.layerGroup().addTo(map);
     const coordinates = geofence.points.map((point) => L.latLng(point.lat, point.lng));
-    const style: L.PathOptions = { color: '#dceef2', fillColor: '#b8dce4', weight: 2, fillOpacity: .13, dashArray: drawing ? '6 5' : undefined, interactive: false, className: 'ops-geofence-boundary' };
-    if (geofence.shape === 'boundary') {
-      fenceLayer(geofence, { ...style, color:'#9ce8cc', fillColor:'#79cbae', fillOpacity:.14, weight:2.5 }).addTo(group);
-    } else if (geofence.shape === 'circle' && coordinates.length === 2) {
-      L.circle(coordinates[0], { ...style, radius: geofenceDistance(geofence.points[0], geofence.points[1]) }).addTo(group);
-      if (drawing) L.polyline(coordinates, { ...style, weight: 1, dashArray: '3 6' }).addTo(group);
-    } else if (geofence.shape === 'rectangle' && coordinates.length === 2) {
-      L.rectangle(L.latLngBounds(coordinates), style).addTo(group);
-    } else if (geofence.shape === 'polygon' && coordinates.length >= 3) {
-      L.polygon(coordinates, style).addTo(group);
+    const style: L.PathOptions = { color: '#ffd386', fillColor: '#f6bf61', weight: 3, fillOpacity: .13, dashArray: '8 6', interactive: false, className: 'ops-geofence-boundary is-preview' };
+    const complete = geofence.shape === 'boundary' || (geofence.shape === 'polygon' ? coordinates.length >= 3 : coordinates.length === 2);
+    if (complete) {
+      const boundary = addFenceOutline(geofence, style, group);
+      addFenceLabel(boundary, drawing ? 'Boundary draft' : 'Boundary preview', 'preview', group);
+      if (drawing && geofence.shape === 'circle') L.polyline(coordinates, { ...style, weight: 1, dashArray: '3 6' }).addTo(group);
     } else if (coordinates.length > 1) {
       L.polyline(coordinates, style).addTo(group);
     }

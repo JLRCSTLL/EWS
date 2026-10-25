@@ -24,6 +24,6 @@ export function PopulationPanel({ saved, draft, onReview, onChooseArea, resident
       {!live && <div className="ops-population-groups">{residentGroups.map(group => <button key={group.id} title={group.description} disabled={!!draft || !saved?.name.trim()} onClick={() => onReview(group.id)} aria-label={`Review ${group.label}: ${exposure.counts[group.id]} in geofence`}><strong>{exposure.counts[group.id]}</strong><span>{group.label}</span></button>)}</div>}
       <div className="ops-population-footer"><span>Groups overlap · last shared locations</span><button disabled={!!draft || !saved?.name.trim()} onClick={() => onReview('all')}>{draft ? 'Save to review' : 'Review recipients'}<ArrowUpRight size={12} /></button></div>
     </> : <div className="ops-population-empty"><p>{draft ? getGeofenceError(draft) : 'Select an area on the map to see residents and priority groups.'}</p>{!draft && <button className="ops-secondary-button" onClick={onChooseArea}>Choose or draw a geofence<ArrowUpRight size={13} /></button>}</div>}
-    <p className="ops-population-note">{live ? 'On-duty personnel with shared GPS. Active = updated ≤5 min. Use Structure for group broadcasts anywhere.' : 'Demo app users, not census population. Active = seen within 5 min of snapshot.'}</p>
+    <p className="ops-population-note">{live ? 'On-duty personnel with shared GPS. Active = updated ≤5 min. Use Groups for group broadcasts anywhere.' : 'Demo app users, not census population. Active = seen within 5 min of snapshot.'}</p>
   </section>;
 }
