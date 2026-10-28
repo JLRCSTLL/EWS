@@ -1,17 +1,20 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ArrowLeft, ArrowRight, Check, MousePointer2, Pause, Play, RotateCcw, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, MousePointer2, Pause, Play, Repeat2, RotateCcw, X } from 'lucide-react';
 import { presentationSteps, tourCardPosition, tourCueAt, tourMoveDuration, tourStepDuration, tourTypingInterval } from '../../lib/presentation-tour';
 import '../../../styles/presentation-tour.css';
 
 interface Props {
   index: number;
+  run: number;
+  cycle: number;
   onNext: () => void;
   onBack: () => void;
   onRestart: () => void;
   onExit: () => void;
   onJump: (index: number) => void;
   onPlayingChange: (playing: boolean) => void;
+  onSpeedChange: (speed: number) => void;
   projectPoint: (point: { lat: number; lng: number }) => { x: number; y: number } | null;
   onMapPoint: (point: { lat: number; lng: number }) => void;
 }
@@ -26,14 +29,14 @@ function enterValue(element: HTMLElement, value: string) {
 }
 
 export function PresentationTour(props: Props) {
-  const { index, onNext, onBack, onRestart, onExit } = props;
+  const { index, run, cycle, onNext, onBack, onRestart, onExit } = props;
   const step = presentationSteps[index];
   const card = useRef<HTMLDivElement>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   const callbacks = useRef(props);
   callbacks.current = props;
   const pointer = useRef({ x: window.innerWidth / 2, y: 90 });
-  const clock = useRef({ index, elapsed: 0, cueIndex: -1, acted: false, typed: -1, waiting: 0,
+  const clock = useRef({ index, run, elapsed: 0, cueIndex: -1, acted: false, typed: -1, waiting: 0,
     element: null as HTMLElement | null, from: pointer.current, bounds: null as Rect | null });
   const [playing, setPlaying] = useState(true);
   const [speed, setSpeed] = useState(1);
@@ -45,11 +48,13 @@ export function PresentationTour(props: Props) {
   const cue = step.cues[visual.cue] || step.cues[0];
 
   useEffect(() => { props.onPlayingChange(playing); }, [playing, props.onPlayingChange]);
+  useEffect(() => { props.onSpeedChange(speed); }, [speed, props.onSpeedChange]);
 
   useEffect(() => {
-    if (clock.current.index !== index) {
-      clock.current = { index, elapsed: 0, cueIndex: -1, acted: false, typed: -1, waiting: 0, element: null, from: pointer.current, bounds: null };
+    if (clock.current.index !== index || clock.current.run !== run) {
+      clock.current = { index, run, elapsed: 0, cueIndex: -1, acted: false, typed: -1, waiting: 0, element: null, from: pointer.current, bounds: null };
       setProblem('');
+      setVisual(current => ({ ...current, cue: 0, elapsed: 0, rect: null }));
     }
     heading.current?.focus({ preventScroll: true });
     if (!playing) return;
@@ -113,13 +118,15 @@ export function PresentationTour(props: Props) {
       setVisual({ ...pointer.current, pressed: !!action.kind && frame.elapsed >= tourMoveDuration && frame.elapsed < tourMoveDuration + 450,
         typing: action.kind === 'type' && state.acted, cue: frame.index, elapsed: state.elapsed, rect: rect.width > 0 && rect.height > 0 ? rect : null });
       const size = card.current?.getBoundingClientRect();
-      const placed = tourCardPosition(rect, { width: window.innerWidth, height: window.innerHeight }, { width: size?.width || 310, height: size?.height || 240 });
+      const narration = document.querySelector<HTMLElement>('[data-demo="mobile-narration"]')?.getBoundingClientRect();
+      const placed = narration?.width ? { left: narration.left, top: Math.max(18, Math.min(narration.top, window.innerHeight - (size?.height || 360) - 18)) }
+        : tourCardPosition(rect, { width: window.innerWidth, height: window.innerHeight }, { width: size?.width || 310, height: size?.height || 240 });
       setPosition(current => current.left === placed.left && current.top === placed.top ? current : placed);
       state.elapsed += delta * speed;
       if (state.elapsed >= duration) { window.clearInterval(timer); callbacks.current.onNext(); }
     }, 33);
     return () => window.clearInterval(timer);
-  }, [index, playing, duration, speed]);
+  }, [index, run, playing, duration, speed]);
 
   useEffect(() => {
     const keys = (event: KeyboardEvent) => {
@@ -154,11 +161,11 @@ export function PresentationTour(props: Props) {
       <div className="ops-tour-actions">
         <button disabled={!index} onClick={onBack} aria-label="Previous demo step"><ArrowLeft size={15} /></button>
         <button className="ops-tour-play" onClick={() => { setProblem(''); setPlaying(value => !value); }} aria-label={playing ? 'Pause automatic demo' : 'Resume automatic demo'}>{playing ? <Pause size={14} /> : <Play size={14} />}{playing ? 'Pause' : 'Resume'}</button>
-        <button onClick={last ? onExit : onNext} aria-label={last ? 'Finish guided demo' : 'Next demo step'}>{last ? <Check size={15} /> : <ArrowRight size={15} />}</button>
+        <button onClick={onNext} aria-label={last ? 'Begin next demo loop' : 'Next demo step'}>{last ? <Repeat2 size={15} /> : <ArrowRight size={15} />}</button>
         <button onClick={onRestart} aria-label="Restart guided demo"><RotateCcw size={14} /></button>
       </div>
       <div className="ops-tour-options"><label>Chapter<select aria-label="Demo chapter" value={index} onChange={event=>props.onJump(Number(event.target.value))}>{presentationSteps.map((item,i)=><option key={item.id} value={i}>{i+1}. {item.label}</option>)}</select></label><label>Speed<select aria-label="Demo playback speed" value={speed} onChange={event=>setSpeed(Number(event.target.value))}><option value={1}>1×</option><option value={1.5}>1.5×</option><option value={2}>2×</option></select></label></div>
-      <div className="ops-tour-footer"><span>Automatic · Demo data · No real alerts</span><span>Esc to exit</span></div>
+      <div className="ops-tour-footer"><span>Loop {cycle} · No real alerts</span><span>Repeats automatically · Esc to exit</span></div>
     </div>
   </div>, document.body);
 }

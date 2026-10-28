@@ -1,4 +1,5 @@
 import { demoGeofences } from './residents.ts';
+import { mobilePresentationHelpNote } from './presentation-mobile.ts';
 
 export const presentationArea = demoGeofences.find(area => area.id === 'demo-marikina')!;
 export const presentationMessage = 'DEMO ALERT: Flood conditions are being monitored in your area. Prepare your emergency bag, follow local evacuation guidance, and request assistance if you need help reaching a safe location.';
@@ -14,7 +15,7 @@ export interface TourCue {
 
 export const presentationSteps: { id: string; label: string; title: string; description: string; cues: TourCue[] }[] = [
   { id: 'welcome', label: 'Welcome', title: 'Command Center Platform in action',
-    description: 'Follow the cursor through a complete command-center workflow. Everything runs automatically with sample data.',
+    description: 'Follow the cursor from the command center to the mobile app and back. This web presentation loops automatically with sample data. Press Esc to return to your workspace.',
     cues: [{ target: '.ops-brand', label: 'Your emergency command center', duration: 4000 }] },
   { id: 'profile', label: 'Emergency profile', title: 'Know how to help',
     description: 'Registration includes an optional emergency profile. People choose what to share, while contact information stays masked until access is approved.',
@@ -94,6 +95,53 @@ export const presentationSteps: { id: string; label: string; title: string; desc
       { target: '.ops-send-demo', kind: 'click', label: 'Simulate delivery to this audience', duration: 2000 },
       { target: '.ops-tour-delivery', label: 'Presentation confirmation · nothing sent', duration: 3500 },
     ] },
+  { id: 'mobile-alert', label: 'Mobile app · alerts', title: 'Now, on the phone',
+    description: 'See the mobile experience after an alert: open the notification, read the instructions, and acknowledge it. The operator sees the read receipt immediately in this simulation.',
+    cues: [
+      { target: '[data-demo="mobile-home-screen"]', label: 'Meet the TANOVIQ mobile app', duration: 3200 },
+      { target: '[data-demo="mobile-notification"]', kind: 'click', label: 'Open the sample flood notification', duration: 2400 },
+      { target: '[data-demo="mobile-alert-message"]', label: 'Read the command center’s instructions', duration: 4200 },
+      { target: '[data-demo="mobile-acknowledge"]', kind: 'click', label: 'Confirm that the alert has been read', duration: 2300 },
+      { target: '[data-demo="mobile-command-receipt"]', label: 'The operator sees Alex’s acknowledgment', duration: 3300 },
+      { target: '[data-demo="mobile-nav-account"]', kind: 'click', label: 'Open Account & privacy on the phone', duration: 2100 },
+      { target: '[data-demo="mobile-profile"]', label: 'Emergency needs are shared by choice; contacts stay masked', duration: 3600 },
+    ] },
+  { id: 'mobile-help', label: 'Mobile app · assistance', title: 'Help goes both ways',
+    description: 'Start a sample duty session, share a fictional position, and request evacuation assistance. Watch the operator assign a response team and the phone display the update.',
+    cues: [
+      { target: '[data-demo="mobile-nav-area"]', kind: 'click', label: 'Open My area on the phone', duration: 1900 },
+      { target: '[data-demo="mobile-share-location"]', kind: 'click', label: 'Start duty with a fictional GPS position', duration: 2300 },
+      { target: '[data-demo="mobile-command-location"]', label: 'The shared location appears for the operator', duration: 3300 },
+      { target: '[data-demo="mobile-nav-help"]', kind: 'click', label: 'Request help from the phone', duration: 1900 },
+      { target: '[aria-label="Mobile demo assistance needed"]', kind: 'select', value: 'Evacuation', label: 'Choose evacuation assistance', duration: 1800 },
+      { target: '[aria-label="Mobile demo people needing assistance"]', kind: 'type', value: '2', label: 'Indicate how many people need help', duration: 1600 },
+      { target: '[aria-label="Mobile demo assistance details"]', kind: 'type', value: mobilePresentationHelpNote, label: 'Describe the situation and assistance needed', duration: 4900 },
+      { target: '[data-demo="mobile-send-help"]', kind: 'click', label: 'Submit the sample request with its location', duration: 2200 },
+      { target: '[data-demo="mobile-command-request"]', label: 'The request arrives in the command-center inbox', duration: 3300 },
+      { target: '[data-demo="mobile-assign-response"]', kind: 'click', label: 'The operator assigns a sample response team', duration: 2300 },
+      { target: '[data-demo="mobile-request-status"]', label: 'The phone shows the assigned team and request progress', duration: 4200 },
+    ] },
+  { id: 'mobile-responder', label: 'Ambulance navigation', title: 'An alert becomes a route',
+    description: 'Send an ambulance its assignment and incident location together. Receipt opens the responder map automatically, then the simulated vehicle follows directions to the emergency.',
+    cues: [
+      { target: '[data-demo="navigation-ready"]', label: 'Ambulance 01 is ready for an assignment', duration: 2400 },
+      { target: '[data-demo="navigation-send"]', kind: 'click', label: 'Send the demo dispatch with its emergency destination', duration: 2400 },
+      { target: '[data-demo="navigation-received"]', label: 'The alert opens navigation without a tap on the phone', duration: 4200 },
+      { target: '[data-demo="navigation-phone"]', label: 'Follow the route line and changing turn instructions', duration: 9000 },
+      { target: '[data-demo="navigation-tracking"]', label: 'The operator follows ambulance progress to the scene', duration: 9500 },
+      { target: '[data-demo="navigation-destination"]', label: 'The ambulance reaches the sample emergency location', duration: 4000 },
+    ] },
+  { id: 'mobile-evacuation', label: 'Resident evacuation', title: 'An alert opens the way',
+    description: 'An evacuation alert automatically opens the resident’s map toward the nearest available sample evacuation center. The route and progress appear on both sides.',
+    cues: [
+      { target: '[data-demo="navigation-dispatch"]', label: 'Prepare an evacuation alert for residents in the area', duration: 2400 },
+      { target: '[data-demo="navigation-send"]', kind: 'click', label: 'Send the sample evacuation alert', duration: 2400 },
+      { target: '[data-demo="navigation-received"]', label: 'The resident map opens automatically on receipt', duration: 4000 },
+      { target: '[data-demo="navigation-nearest"]', label: 'Choose the nearest available center; exclude the closed shelter', duration: 4500 },
+      { target: '[data-demo="navigation-phone"]', label: 'Follow walking directions toward the evacuation center', duration: 8000 },
+      { target: '[data-demo="navigation-tracking"]', label: 'See progress toward the sample destination', duration: 6500 },
+      { target: '[data-demo="navigation-destination"]', label: 'The resident reaches the sample evacuation center', duration: 4000 },
+    ] },
   { id: 'responders', label: 'Response', title: 'Follow the ambulance',
     description: 'Select an ambulance and fit its road route. Watch its position, destination, distance, and ETA update at demo speed.',
     cues: [
@@ -121,8 +169,8 @@ export const presentationSteps: { id: string; label: string; title: string; desc
       { target: '.activity-table', label: 'Trace the group workflow', duration: 2800 },
     ] },
   { id: 'complete', label: 'Complete', title: 'From awareness to response',
-    description: 'Register emergency needs, organize teams, monitor an area, communicate, and review activity. Your original workspace returns automatically; demo changes are discarded.',
-    cues: [{ target: '.ops-demo-button', label: 'Replay any time with Demo', duration: 4500 }] },
+    description: 'Alerts, mobile acknowledgments, ambulance dispatch and resident evacuation work together. The presentation will restart automatically with fresh sample data. Exit any time to restore your original workspace.',
+    cues: [{ target: '.ops-demo-button', label: 'Starting the next loop automatically', duration: 4500 }] },
 ];
 
 export const tourMoveDuration = 700;
@@ -140,6 +188,7 @@ export function tourCueAt(index: number, elapsed: number) {
 
 export function tourStepIndex(current: number, action: 'next' | 'back' | 'restart') {
   if (action === 'restart') return 0;
+  if (action === 'next' && current === presentationSteps.length - 1) return 0;
   return Math.max(0, Math.min(presentationSteps.length - 1, current + (action === 'next' ? 1 : -1)));
 }
 

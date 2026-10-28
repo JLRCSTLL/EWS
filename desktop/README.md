@@ -18,7 +18,7 @@ The desktop display name is temporarily **Command Center Platform**. The mobile 
 3. Select **Personnel**, then sign in with your existing TANOVIQ account.
    New registrations still require operator/administrator approval. Installing
    this client does not grant command-center privileges.
-4. Select **Live data** for connected operations. On-duty Android personnel with
+4. The client opens **connected operations**. On-duty Android personnel with
    a successfully uploaded fix appear in the shared locations view. Use the
    existing geofence/group broadcast and recipient-review workflow.
 5. Sign out from **Personnel** when leaving a shared workstation. Closing the
@@ -46,6 +46,10 @@ should sign future releases with its own certificate.
 | Connection indicator | Recheck shared-service reachability |
 
 Mouse-wheel and touchpad map zoom remain the web application's controls.
+The looping presentation and **Demo data** selector are available only in a web
+browser. They are removed from the Windows client, which always uses connected
+operations. Reloading the updated hosted interface applies this change to
+already-installed clients without replacing their installer.
 "Service connected" means the health endpoint is reachable; it is not evidence
 of operator authorization, fresh GPS, alert receipt, or physical alarm playback.
 The app does not remain running in the notification area after it is closed.

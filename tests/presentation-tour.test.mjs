@@ -2,14 +2,30 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { presentationSteps, presentationArea, presentationMessage, tourStepIndex, tourCardPosition, tourCueAt, tourStepDuration, tourMoveDuration, tourTypingInterval } from '../src/app/lib/presentation-tour.ts';
 import { createPresentationState, changePresentationGroup } from '../src/app/lib/presentation-data.ts';
+import { canUseWebDemo } from '../src/app/lib/presentation-platform.ts';
 
 test('the presentation follows the full alert workflow and navigation stays within the tour', () => {
-  assert.deepEqual(presentationSteps.map(step => step.id), ['welcome', 'profile', 'teams', 'map', 'geofence', 'population', 'audience', 'exposure', 'message', 'responders', 'cctv', 'logs', 'complete']);
+  assert.deepEqual(presentationSteps.map(step => step.id), ['welcome', 'profile', 'teams', 'map', 'geofence', 'population', 'audience', 'exposure', 'message', 'mobile-alert', 'mobile-help', 'mobile-responder', 'mobile-evacuation', 'responders', 'cctv', 'logs', 'complete']);
   assert.equal(tourStepIndex(0, 'back'), 0);
-  assert.equal(tourStepIndex(presentationSteps.length - 1, 'next'), presentationSteps.length - 1);
+  assert.equal(tourStepIndex(presentationSteps.length - 1, 'next'), 0);
   assert.equal(tourStepIndex(6, 'back'), 5);
   assert.equal(tourStepIndex(6, 'next'), 7);
   assert.equal(tourStepIndex(6, 'restart'), 0);
+});
+
+test('continuous playback traverses every chapter again and desktop clients cannot enter a demo', () => {
+  let index = 0;
+  const visited = [];
+  for (let i = 0; i < presentationSteps.length * 3; i++) {
+    visited.push(index);
+    index = tourStepIndex(index, 'next');
+  }
+  assert.equal(index, 0);
+  assert.deepEqual(visited.slice(presentationSteps.length, presentationSteps.length * 2), visited.slice(0, presentationSteps.length));
+  assert.equal(canUseWebDemo('Mozilla/5.0 Chrome/142.0.0.0 Safari/537.36'), true);
+  assert.equal(canUseWebDemo('Mozilla/5.0 (iPhone) Version/27.0 Mobile Safari/605.1.15'), true);
+  assert.equal(canUseWebDemo('Mozilla/5.0 tanoviq-command-center/1.1.2 Chrome/149.0.0.0 Electron/45.0.0 Safari/537.36'), false);
+  assert.equal(canUseWebDemo('Mozilla/5.0 TANOVIQDesktop/2.0'), false);
 });
 
 test('presentation groups are isolated, add leaders, and include members outside a geofence', () => {

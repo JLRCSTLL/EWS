@@ -31,6 +31,11 @@ import { CommandSidebar } from './CommandSidebar';
 import { ResponderRouteCard } from './ResponderRouteCard';
 import { CctvMonitoring } from './CctvMonitoring';
 import { PresentationTour } from './PresentationTour';
+import { PresentationNavigation } from './PresentationNavigation';
+import { isNavigationChapter } from '../../lib/presentation-navigation';
+import { canUseWebDemo } from '../../lib/presentation-platform';
+import { PresentationMobile } from './PresentationMobile';
+import { isMobilePresentationChapter } from '../../lib/presentation-mobile';
 import { PresentationGroups, PresentationPersonnel, PresentationGroupBroadcast } from './PresentationWorkspace';
 import { presentationLogs, type PresentationTeam } from '../../lib/presentation-data';
 import { PublicActivityPanel } from './PublicActivityPanel';
@@ -138,7 +143,8 @@ function OperationsClock() {
 
 export function OperationsDashboard({ auditLogs, messages, onSendMessage, onOpenWorkspace, onFullscreen, isFullscreen }: Props) {
   const live = useLive();
-  const [liveMode, setLiveMode] = useState(() => new URLSearchParams(location.search).get('demo') !== '1');
+  const demoAvailable = canUseWebDemo(navigator.userAgent);
+  const [liveMode, setLiveMode] = useState(() => !demoAvailable || new URLSearchParams(location.search).get('demo') !== '1');
   const publicState = usePublicDemo();
   const publicPending = publicState.requests.filter(isOpenRequest).length;
   const publicReports = useMemo(() => [
@@ -148,11 +154,14 @@ export function OperationsDashboard({ auditLogs, messages, onSendMessage, onOpen
   const [section, setSection] = useState<Section>(null);
   const [activeView, setActiveView] = useState<'map' | 'cctv'>(() => window.location.hash === '#/cctv' ? 'cctv' : 'map');
   const [tourIndex, setTourIndex] = useState<number | null>(null);
-  const liveView = liveMode && tourIndex === null;
+  const tourChapter = tourIndex === null ? '' : presentationSteps[tourIndex].id;
+  const liveView = (!demoAvailable || liveMode) && tourIndex === null;
   const approved = live.state && ['operator','admin'].includes(live.state.user.role);
   const realUsers = useMemo(() => approved ? live.state!.users.map(asResident) : [], [approved,live.state?.users]);
   const [tourRun, setTourRun] = useState(0);
   const [tourPlaying, setTourPlaying] = useState(true);
+  const [tourSpeed, setTourSpeed] = useState(1);
+  const [tourCycle, setTourCycle] = useState(1);
   const [presentationTeam, setPresentationTeam] = useState<PresentationTeam | null>(null);
   const [presentationAreas, setPresentationAreas] = useState<AlertGeofence[]>(demoGeofences);
   const [region, setRegion] = useState<Region>('metro-manila');
@@ -185,7 +194,15 @@ export function OperationsDashboard({ auditLogs, messages, onSendMessage, onOpen
   const mapRef = useRef<OperationsMapHandle>(null);
   const captureTourState = () => ({ activeView, section, region, filter, selection, layers, basemap, alertsVisible, selectedFenceId, fenceEditor, fenceDraft, draftName, editingFenceId, showResidents, simulationPaused, broadcastGroup, broadcastActiveOnly, broadcastTab, scrollY: window.scrollY, mapView: mapRef.current?.captureView() });
   const beforeTour = useRef<ReturnType<typeof captureTourState> | null>(null);
-  const startTour = () => { beforeTour.current = captureTourState(); setTourPlaying(true); setTourIndex(0); setTourRun(value => value + 1); };
+  const startTour = () => {
+    if (!demoAvailable) return;
+    beforeTour.current = captureTourState(); setTourPlaying(true); setTourSpeed(1); setTourCycle(1); setTourIndex(0); setTourRun(value => value + 1);
+  };
+  const advanceTour = () => {
+    if (tourIndex === null) return;
+    if (tourIndex === presentationSteps.length - 1) { setTourRun(value => value + 1); setTourCycle(value => value + 1); }
+    setTourIndex(tourStepIndex(tourIndex, 'next'));
+  };
   const exitTour = () => {
     const previous = beforeTour.current;
     if (previous) {
@@ -361,12 +378,12 @@ export function OperationsDashboard({ auditLogs, messages, onSendMessage, onOpen
         <button data-demo="nav-personnel" className={section === 'connected' ? 'is-active' : ''} onClick={() => setSection('connected')}><Smartphone size={12} />Personnel</button>
         {(liveView || tourIndex !== null) && <button data-demo="nav-groups" className={section === 'groups' ? 'is-active' : ''} onClick={() => setSection('groups')}><Users size={13} />Groups</button>}
         {navigation.filter(([id]) => !liveView || id === 'public' || id === 'activity').map(([id, label]) => <button key={id} data-demo={`nav-${id}`} className={section === id ? 'is-active' : ''} onClick={() => setSection(id)}>{label}{id === 'incidents' && <span className="ops-nav-count">{regionalIncidents.length}</span>}{id === 'public' && (liveView ? live.state?.requests.filter(openRequest).length || 0 : publicPending) > 0 && <span className="ops-nav-count">{liveView ? live.state?.requests.filter(openRequest).length : publicPending}</span>}</button>)}
-        <button onClick={onOpenWorkspace}>Workspace<ArrowUpRight size={12} /></button>
+        {demoAvailable && <button onClick={onOpenWorkspace}>Workspace<ArrowUpRight size={12} /></button>}
       </nav>
       <div className="ops-header-actions">
-        <div className="ops-data-modes" role="group" aria-label="Data source"><button aria-pressed={liveView} className={liveView ? 'is-active' : ''} onClick={() => locatePhone()}>Live data</button><button aria-pressed={!liveView} className={!liveView ? 'is-active' : ''} onClick={() => { setLiveMode(false); setSection(null); }}>Demo data</button></div>
+        {demoAvailable && <div className="ops-data-modes" role="group" aria-label="Data source"><button aria-pressed={liveView} className={liveView ? 'is-active' : ''} onClick={() => locatePhone()}>Live data</button><button aria-pressed={!liveView} className={!liveView ? 'is-active' : ''} onClick={() => { setLiveMode(false); setSection(null); }}>Demo data</button></div>}
         <a href="#/public" target="_blank" rel="noreferrer" className="ops-public-app-link" aria-label="Open public mobile app" title="Open public mobile app"><Smartphone size={14} /><span>Personnel app</span></a>
-        <button className="ops-demo-button" onClick={startTour} aria-label="Start guided demo"><Play size={12} />Demo</button>
+        {demoAvailable && <button className="ops-demo-button" onClick={startTour} aria-label="Start guided demo"><Play size={12} />Demo</button>}
         <PlaceSearch onPreview={previewBoundary} onClear={() => { if (fenceDraft?.shape === 'boundary') { setFenceDraft(null); setFenceEditor(false); } }} />
         <span className="ops-header-divider" />
         <CommandNotifications onOpen={destination => { setLiveMode(true); if (destination === 'broadcast') setBroadcastTab('history'); setSection(destination); }} />
@@ -481,10 +498,15 @@ export function OperationsDashboard({ auditLogs, messages, onSendMessage, onOpen
       {section === 'users' && <div className="ops-legacy-panels"><UserManagement /></div>}
       {section === 'public' && (liveView ? <ConnectedOperations tab="inbox" onLocate={locatePhone} /> : <PublicActivityPanel state={publicState} onLocate={point => { openView('map'); setSelection(null); setFenceEditor(false); setAlertsVisible(false); requestAnimationFrame(() => mapRef.current?.focusPoint(point)); }} />)}
       {section === 'broadcast' && presentationTeam && tourIndex !== null ? <PresentationGroupBroadcast team={presentationTeam} /> : section === 'broadcast' && <><div className="ops-dialog-tabs" role="group" aria-label="Broadcast view"><button className={broadcastTab === 'compose' ? 'is-active' : ''} aria-pressed={broadcastTab === 'compose'} onClick={() => setBroadcastTab('compose')}><Send size={14} />Compose broadcast</button><button className={broadcastTab === 'history' ? 'is-active' : ''} aria-pressed={broadcastTab === 'history'} onClick={() => setBroadcastTab('history')}>Delivery history<span>{liveView ? live.state?.alerts.length || 0 : messages.length}</span></button></div>{liveView ? <ConnectedOperations key={`${broadcastTab}-${broadcastGroup}-${teamGroupId||''}`} initialTeamGroupId={teamGroupId} tab={broadcastTab} areas={visibleGeofences} selectedId={selectedFenceId} initialGroup={broadcastGroup} initialActiveOnly={broadcastActiveOnly} onSelectArea={setSelectedFenceId} onLocate={locatePhone} /> : broadcastTab === 'compose' ? <AudienceBroadcastPanel key={tourIndex === null ? 'operator' : 'presentation'} presentationMode={tourIndex !== null} areas={visibleGeofences} selectedId={selectedFenceId} initialGroup={broadcastGroup} initialActiveOnly={broadcastActiveOnly} onSelectArea={setSelectedFenceId} onSendMessage={onSendMessage} onHistory={() => setBroadcastTab('history')} /> : <div className="ops-legacy-panels"><MessageHistory messages={messages} /></div>}</>}
-      {section === 'help' && <div className="ops-help"><p>Select any incident or team to see its location and details. Use <strong>Layers</strong> to adjust the map, or switch between satellite and street views. Select <strong>Geofence</strong> to draw a polygon, rectangle, or circle, save the area, and send an alert to it. Undo removes the last point; drag handles to edit. Keyboard users can pan the focused map with arrow keys and use <strong>Add center point</strong>.</p><p><kbd>Ctrl / ⌘ K</kbd> focuses place search. Search any Philippine barangay, city, municipality, or province, then save its mapped boundary. Map controls support keyboard navigation. Press <kbd>Esc</kbd> to dismiss details.</p><p><strong>Workspace</strong> opens your customizable dashboard, including the original geofence tools, widget library, layout presets, and light mode.</p><p className="ops-help-note">This project currently uses sample operational data. Broadcasts and audit changes stay in this browser. Connect production data and delivery services before operational use.</p><button className="ops-secondary-button" onClick={onOpenWorkspace}><LayoutGrid size={15} />Open workspace<ArrowUpRight size={14} /></button></div>}
+      {section === 'help' && <div className="ops-help"><p>Use <strong>Layers</strong> to adjust the map, or switch between satellite and street views. Select <strong>Geofence</strong> to draw a polygon, rectangle, or circle, save the area, and prepare an alert. Undo removes the last point; drag handles to edit. Keyboard users can pan the focused map with arrow keys and use <strong>Add center point</strong>.</p><p><kbd>Ctrl / ⌘ K</kbd> focuses place search. Search any Philippine barangay, city, municipality, or province, then save its mapped boundary. Map controls support keyboard navigation. Press <kbd>Esc</kbd> to dismiss details.</p>
+        <p className="ops-help-note">{liveView ? 'Sign in through Personnel with approved operator access to view shared locations and send alerts. Review the recipients before broadcasting.' : 'This view uses sample operational data. Demo broadcasts and audit changes stay in this browser.'}</p>
+        {demoAvailable && <><p><strong>Workspace</strong> opens the original customizable sample dashboard, widget library, and layout presets.</p><button className="ops-secondary-button" onClick={onOpenWorkspace}><LayoutGrid size={15} />Open workspace<ArrowUpRight size={14} /></button></>}
+      </div>}
     </DialogContent></Dialog>
-    {tourIndex !== null && <PresentationTour key={tourRun} index={tourIndex} onNext={() => { if (tourIndex === presentationSteps.length - 1) exitTour(); else setTourIndex(tourStepIndex(tourIndex, 'next')); }} onBack={() => setTourIndex(tourStepIndex(tourIndex, 'back'))} onRestart={() => { setTourIndex(0); setTourRun(value => value + 1); }} onExit={exitTour}
-      onJump={setTourIndex} onPlayingChange={setTourPlaying} projectPoint={point => mapRef.current?.projectPoint(point) || null} onMapPoint={addFencePoint} />}
+    {demoAvailable && isMobilePresentationChapter(tourChapter) && <PresentationMobile key={`${tourRun}-${tourChapter}`} chapter={tourChapter} />}
+    {demoAvailable && isNavigationChapter(tourChapter) && <PresentationNavigation key={`${tourRun}-${tourChapter}`} chapter={tourChapter} playing={tourPlaying} speed={tourSpeed} />}
+    {demoAvailable && tourIndex !== null && <PresentationTour run={tourRun} cycle={tourCycle} index={tourIndex} onNext={advanceTour} onBack={() => setTourIndex(tourStepIndex(tourIndex, 'back'))} onRestart={() => { setTourIndex(0); setTourRun(value => value + 1); setTourCycle(1); }} onExit={exitTour}
+      onJump={setTourIndex} onPlayingChange={setTourPlaying} onSpeedChange={setTourSpeed} projectPoint={point => mapRef.current?.projectPoint(point) || null} onMapPoint={addFencePoint} />}
     <Toaster position="bottom-right" theme="dark" richColors closeButton />
   </div>;
 }
