@@ -10,8 +10,8 @@ import { dispatchRoutes } from './dispatch.mjs';
 import { iosRoutes } from './ios-routes.mjs';
 import { accountRoutes } from './account.mjs';
 import { auditRoutes } from './audit.mjs';
+import { normalizeProfile } from './profile.mjs';
 
-const groupsAllowed = ['pwd', 'children', 'seniors', 'pregnant', 'responders'];
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const fail = (status, message) => { throw Object.assign(new Error(message), { status }); };
 const text = (value, min, max, label) => typeof value === 'string' && value.trim().length >= min && value.trim().length <= max ? value.trim() : fail(400, `Check ${label}.`);
@@ -51,7 +51,7 @@ export function createApp(db, { push, production = process.env.NODE_ENV === 'pro
     res.cookie('eligtas_session', token, { httpOnly: true, secure: production, sameSite: 'lax', path: '/api', maxAge: 30 * 86400000 });
   }
   app.get('/api/health', async (_req, res) => { await db.query('select 1'); res.json({ ok: true, service: 'TANOVIQ', version: 2 }); });
-  app.get('/api/config', (_req, res) => res.json({ pushPublicKey: push?.publicKey || null, androidPushReady: !!push?.androidReady, iosPushReady: !!push?.iosReady, accountDeletionReady: true, nativeLocationReady: true, registration: true, gsamReady: true, dutyTracking: true, groupManagementReady: true, boundaryGeofencesReady: true, auditLogsReady: true, commandCenterVersion: '1.1.0' }));
+  app.get('/api/config', (_req, res) => res.json({ pushPublicKey: push?.publicKey || null, androidPushReady: !!push?.androidReady, iosPushReady: !!push?.iosReady, accountDeletionReady: true, nativeLocationReady: true, registration: true, registrationProfileReady: true, gsamReady: true, dutyTracking: true, groupManagementReady: true, boundaryGeofencesReady: true, auditLogsReady: true, commandCenterVersion: '1.1.0' }));
   for (const method of ['put','delete']) app[method]('/api/location/native', async (req,res) => {
     const token = /^Bearer ([A-Za-z0-9_-]{43})$/.exec(req.get('authorization') || '')?.[1];
     res.json(await location.native(token,req.method,req.body));
@@ -62,9 +62,10 @@ export function createApp(db, { push, production = process.env.NODE_ENV === 'pro
     if (!/^[a-z0-9_]+$/.test(username)) fail(400, 'Username can contain letters, numbers, and underscores.');
     const name = text(req.body.name, 2, 80, 'preferred name');
     const password = passwordInput(req.body.password);
+    const profile = normalizeProfile(req.body);
     const id = randomUUID(), recoveryCode = randomToken();
     const passwordHash = await hashPassword(password);
-    try { await db.query('insert into eligtas.users(id,username,name,password_hash,recovery_hash) values ($1,$2,$3,$4,$5)', [id, username, name, passwordHash, digest(recoveryCode)]); }
+    try { await db.query('insert into eligtas.users(id,username,name,password_hash,recovery_hash,email,phone,municipality,province,barangay,groups,emergency_profile) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)', [id, username, name, passwordHash, digest(recoveryCode),profile.email,profile.phone,profile.municipality,profile.province,profile.barangay,profile.groups,JSON.stringify(profile.emergencyProfile)]); }
     catch (error) { if (error.code === '23505') fail(409, 'That username is already taken. Choose another or sign in.'); throw error; }
     await session(res, id);
     res.status(201).json({ recoveryCode });
@@ -124,16 +125,12 @@ export function createApp(db, { push, production = process.env.NODE_ENV === 'pro
     res.json(await location.start(req.user.id,digest(tokenFrom(req))));
   });
   app.put('/api/profile', async (req, res) => {
-    const name = text(req.body.name, 2, 80, 'preferred name'), municipality = text(req.body.municipality, 0, 80, 'municipality');
-    const groups = req.body.groups;
-    if (!Array.isArray(groups) || groups.length > 5 || groups.some(g => !groupsAllowed.includes(g)) || (groups.includes('children') && groups.includes('seniors'))) fail(400, 'Select valid profile groups.');
-    const email = req.body.email === undefined ? req.user.email : text(req.body.email,0,254,'email');
-    const phone = req.body.phone === undefined ? req.user.phone : text(req.body.phone,0,30,'phone');
-    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) fail(400,'Enter a valid email or leave it empty.');
-    if (phone && !/^\+?[0-9 ()-]{7,30}$/.test(phone)) fail(400,'Enter a valid phone number or leave it empty.');
+    const name = text(req.body.name, 2, 80, 'preferred name');
+    const profile = normalizeProfile(req.body, req.user);
     await db.transaction(async tx => {
-      await tx.query('update eligtas.users set name=$1,municipality=$2,groups=$3,alerts_enabled=true,email=$4,phone=$5,updated_at=now() where id=$6',[name,municipality,[...new Set(groups)],email,phone,req.user.id]);
-      if (email !== req.user.email || phone !== req.user.phone) await tx.query("update eligtas.contact_requests set status='revoked',expires_at=null where user_id=$1 and status='approved'",[req.user.id]);
+      await tx.query('update eligtas.users set name=$1,municipality=$2,groups=$3,alerts_enabled=true,email=$4,phone=$5,province=$6,barangay=$7,emergency_profile=$8,updated_at=now() where id=$9',[name,profile.municipality,profile.groups,profile.email,profile.phone,profile.province,profile.barangay,JSON.stringify(profile.emergencyProfile),req.user.id]);
+      const contactChanged = JSON.stringify(profile.emergencyProfile.emergencyContact) !== JSON.stringify(req.user.emergency_profile?.emergencyContact);
+      if (profile.email !== req.user.email || profile.phone !== req.user.phone || contactChanged) await tx.query("update eligtas.contact_requests set status='revoked',expires_at=null where user_id=$1 and status in ('approved','pending')",[req.user.id]);
     }); events.changed();
     res.json({ ok: true });
   });

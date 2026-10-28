@@ -124,6 +124,9 @@ create table if not exists eligtas.projects (
 );
 alter table eligtas.users add column if not exists email text not null default '' check (length(email) <= 254);
 alter table eligtas.users add column if not exists phone text not null default '' check (length(phone) <= 30);
+alter table eligtas.users add column if not exists province text not null default '' check (length(province) <= 80);
+alter table eligtas.users add column if not exists barangay text not null default '' check (length(barangay) <= 100);
+alter table eligtas.users add column if not exists emergency_profile jsonb not null default '{}' check (jsonb_typeof(emergency_profile) = 'object');
 alter table eligtas.users add column if not exists on_duty boolean not null default false;
 alter table eligtas.users add column if not exists duty_at timestamptz;
 alter table eligtas.users add column if not exists duty_project_id uuid references eligtas.projects(id);
@@ -171,6 +174,9 @@ create table if not exists eligtas.contact_requests (
   check (user_id <> requester_id)
 );
 create unique index if not exists contact_request_pending on eligtas.contact_requests(user_id,requester_id) where status='pending';
+-- Extend the existing approval mechanism without granting access to old approvals.
+alter table eligtas.contact_requests drop constraint if exists contact_requests_fields_check;
+alter table eligtas.contact_requests add constraint contact_requests_fields_check check (cardinality(fields)>0 and fields <@ array['email','phone','emergencyContact']::text[]);
 alter table eligtas.alerts alter column area drop not null;
 alter table eligtas.alerts add column if not exists target_mode text not null default 'geofence';
 alter table eligtas.alerts add column if not exists target_label text not null default '';

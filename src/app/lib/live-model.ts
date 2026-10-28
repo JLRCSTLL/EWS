@@ -1,6 +1,7 @@
 import type { Resident } from './residents.ts';
 import type { AlertGeofence } from './geofencing.ts';
 import type { TeamGroup, GroupMember, Project, ProjectTask, ContactRequest } from './organization.ts';
+import type { EmergencyProfile, EmergencyContact } from './emergency-profile.ts';
 
 export interface LiveUser {
   id: string; username: string; name: string; role: 'resident' | 'operator' | 'admin';
@@ -9,6 +10,7 @@ export interface LiveUser {
   safeAt: string | null; createdAt: string;
   onDuty: boolean; dutyAt: string | null; dutyProjectId: string | null;
   email: string; phone: string; contactVisible: string[];
+  province?: string; barangay?: string; emergencyProfile?: Partial<EmergencyProfile> | null; emergencyContact?: EmergencyContact | null;
 }
 export interface LiveAlert {
   id: string; content: string; priority: 'normal' | 'high' | 'critical'; area: AlertGeofence | null;

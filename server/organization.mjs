@@ -406,8 +406,8 @@ export function organizationRoutes(app, db, changed) {
       userId === req.user.id ||
       !Array.isArray(fields) ||
       !fields.length ||
-      fields.length > 2 ||
-      fields.some((f) => !["email", "phone"].includes(f))
+      fields.length > 3 ||
+      fields.some((f) => !["email", "phone", "emergencyContact"].includes(f))
     )
       fail(400, "Choose a person and the contact fields needed.");
     await exists(db, "users", userId);
