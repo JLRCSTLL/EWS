@@ -4,7 +4,9 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { PRODUCTION_URL, SHELL_URL, TOOLBAR_HEIGHT, commandUrl, isCommandUrl, isExternalUrl, shellAsset, canNotify, canSaveActivityLog, windowBounds } = require('./policy.cjs');
 
-app.setName('TANOVIQ Command Center');
+// Keep the existing account/session directory while the display name is temporary.
+app.setPath('userData', path.join(app.getPath('appData'), 'TANOVIQ Command Center'));
+app.setName('Command Center Platform');
 app.setAppUserModelId('ph.tanoviq.commandcenter');
 app.enableSandbox();
 protocol.registerSchemesAsPrivileged([{ scheme: 'tanoviq', privileges: { standard: true, secure: true, supportFetchAPI: true } }]);
@@ -41,13 +43,13 @@ function toggleFullScreen() {
   win.setFullScreen(!win.isFullScreen());
 }
 function about() {
-  return dialog.showMessageBox(win, { type: 'info', title: 'About TANOVIQ', message: 'TANOVIQ Command Center', detail: `See Risk Before It Strikes.\nWindows desktop ${app.getVersion()}\n\nConnected to ${new URL(base).hostname}\nUse Personnel to sign in with your existing account. Approved operator or administrator access is required for live locations and broadcasts.\n\nF11: Full screen • Ctrl+R: Reload • Ctrl+0: Reset zoom\nInternet is required. Web updates appear when you reload. Desktop runtime updates require a new installer.` });
+  return dialog.showMessageBox(win, { type: 'info', title: 'About Command Center Platform', message: 'Command Center Platform', detail: `Situational awareness & response.\nWindows desktop ${app.getVersion()}\n\nConnected to ${new URL(base).hostname}\nUse Personnel to sign in with your existing account. Approved operator or administrator access is required for live locations and broadcasts.\n\nF11: Full screen • Ctrl+R: Reload • Ctrl+0: Reset zoom\nInternet is required. Web updates appear when you reload. Desktop runtime updates require a new installer.` });
 }
 async function openExternal(url) {
   if (!isExternalUrl(url) || externalPrompt || closing) return;
   externalPrompt = true;
   try {
-    const choice = await dialog.showMessageBox(win, { type: 'question', title: 'Open in your browser?', message: 'This link opens outside TANOVIQ.', detail: url.slice(0, 600), buttons: ['Cancel', 'Open browser'], defaultId: 0, cancelId: 0, noLink: true });
+    const choice = await dialog.showMessageBox(win, { type: 'question', title: 'Open in your browser?', message: 'This link opens outside Command Center Platform.', detail: url.slice(0, 600), buttons: ['Cancel', 'Open browser'], defaultId: 0, cancelId: 0, noLink: true });
     if (choice.response === 1) await shell.openExternal(url);
   } finally { externalPrompt = false; }
 }
@@ -127,7 +129,7 @@ function buildMenu() {
       { label: 'Actual size', accelerator: 'CmdOrCtrl+0', click: () => view.webContents.setZoomFactor(1) },
       { type: 'separator' }, { label: 'Keep display awake', type: 'checkbox', click: item => setAwake(item.checked) },
     ] },
-    { label: 'Help', submenu: [{ label: 'About TANOVIQ', click: () => void about() }] },
+    { label: 'Help', submenu: [{ label: 'About Command Center Platform', click: () => void about() }] },
   ]));
 }
 function guardContents(contents) {
@@ -170,14 +172,14 @@ async function createWindow() {
       event.preventDefault(); return;
     }
     // The operator chooses the destination; no automatic writes or file opening.
-    item.setSaveDialogOptions({ title: 'Export TANOVIQ activity logs', defaultPath: path.join(app.getPath('downloads'), item.getFilename()), filters: [{ name: 'CSV activity log', extensions: ['csv'] }], buttonLabel: 'Save log' });
+    item.setSaveDialogOptions({ title: 'Export command-center activity logs', defaultPath: path.join(app.getPath('downloads'), item.getFilename()), filters: [{ name: 'CSV activity log', extensions: ['csv'] }], buttonLabel: 'Save log' });
   });
   remoteSession.webRequest.onHeadersReceived({ urls: [`${new URL(base).origin}/*`] }, (details, callback) => {
     const headers = { ...details.responseHeaders };
     if (details.resourceType === 'mainFrame' && base === PRODUCTION_URL) headers['Content-Security-Policy'] = ["default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' https: data: blob:; media-src 'self' https: blob:; connect-src 'self' https:; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'"];
     callback({ responseHeaders: headers });
   });
-  win = new BrowserWindow({ ...saved.bounds, minWidth: 960, minHeight: 640, show: false, backgroundColor: '#181b1f', title: 'TANOVIQ Command Center', icon: path.join(__dirname, 'assets/tanoviq.ico'), autoHideMenuBar: true,
+  win = new BrowserWindow({ ...saved.bounds, minWidth: 960, minHeight: 640, show: false, backgroundColor: '#181b1f', title: 'Command Center Platform', icon: path.join(__dirname, 'assets/tanoviq.ico'), autoHideMenuBar: true,
     webPreferences: { preload: path.join(__dirname, 'preload.cjs'), nodeIntegration: false, contextIsolation: true, sandbox: true, webSecurity: true, devTools: !app.isPackaged } });
   win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   win.webContents.on('will-navigate', event => event.preventDefault());
@@ -214,6 +216,6 @@ ipcMain.handle('desktop:command', async (event, action) => {
 if (!app.requestSingleInstanceLock()) app.quit();
 else {
   app.on('second-instance', () => { if (win) { if (win.isMinimized()) win.restore(); win.show(); win.focus(); } });
-  app.whenReady().then(createWindow).catch(error => { dialog.showErrorBox('TANOVIQ could not start', error.message); app.quit(); });
+  app.whenReady().then(createWindow).catch(error => { dialog.showErrorBox('Command Center Platform could not start', error.message); app.quit(); });
 }
 app.on('window-all-closed', () => app.quit());

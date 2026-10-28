@@ -1,3 +1,5 @@
+@import './command-theme.css';
+
 /* The map-led operations view is scoped separately from the configurable workspace. */
 .ops-app, .ops-dialog, .ops-popover {
   --ops-text: #f0f0f0;
@@ -6,12 +8,12 @@
   --ops-line: rgba(255, 255, 255, .2);
   --ops-accent: #dedede;
   /* One glass material for the search field and floating map widgets. */
-  --ops-glass: linear-gradient(105deg, #edf5ed14, #edf5ed05), #3039349e;
-  --ops-glass-hover: linear-gradient(105deg, #edf5ed20, #edf5ed0a), #303934b8;
-  --ops-glass-border: #e5f8ef45;
-  --ops-glass-filter: blur(22px) saturate(.75);
-  --ops-glass-shadow: inset 0 1px 0 #ffffff20, 0 4px 16px #0002;
-  font-family: 'Inter', 'Segoe UI', sans-serif;
+  --ops-glass: var(--tan-glass);
+  --ops-glass-hover: var(--tan-glass-hover);
+  --ops-glass-border: var(--tan-line);
+  --ops-glass-filter: var(--tan-glass-filter);
+  --ops-glass-shadow: var(--tan-glass-shadow);
+  font-family: var(--tan-font);
   color: var(--ops-text);
   font-size: 12px;
   font-weight: 400;

@@ -1,0 +1,61 @@
+@import './command-theme.css';
+
+/* One registration surface in both the desktop dialog and the personnel app. */
+:is(.el-app, .el-connected) .el-auth.el-card {
+  --el-muted: var(--tan-muted); color-scheme: dark; color: var(--tan-text);
+  font-family: var(--tan-font); padding: 30px; margin: 28px auto;
+  border: 1px solid var(--tan-line); border-radius: 18px;
+  background: var(--tan-glass); box-shadow: var(--tan-glass-shadow);
+  backdrop-filter: var(--tan-glass-filter); -webkit-backdrop-filter: var(--tan-glass-filter);
+}
+:is(.el-app, .el-connected) .el-auth h2 { font-size: 30px; font-weight: 450; letter-spacing: -.9px; color: var(--tan-text); }
+:is(.el-app, .el-connected) .el-auth p { font-size: 13px; color: var(--tan-muted); }
+:is(.el-app, .el-connected) .el-auth .el-eyebrow { color: var(--tan-faint); }
+:is(.el-app, .el-connected) .el-auth label { color: var(--tan-muted); font-size: 13px; }
+:is(.el-app, .el-connected) .el-auth :is(input:not([type=checkbox]),select) { border: 1px solid #ffffff30; background: #161d1880; color: var(--tan-text); border-radius: 12px; min-height: 52px; padding: 13px 14px; font: inherit; font-size: 16px; }
+:is(.el-app, .el-connected) .el-auth input::placeholder { color: var(--tan-faint); opacity: 1; }
+:is(.el-app, .el-connected) .el-auth select option { background: var(--tan-surface); }
+:is(.el-app, .el-connected) .el-auth .el-primary { min-height: 50px; border: 1px solid #d1e9de; background: var(--tan-primary); color: var(--tan-primary-ink); border-radius: 12px; padding: 12px 18px; font-size: 14px; font-weight: 600; }
+:is(.el-app, .el-connected) .el-auth .el-secondary { min-height: 50px; border: 1px solid var(--tan-line); background: var(--tan-control); color: var(--tan-text); border-radius: 12px; padding: 12px 18px; font-size: 14px; }
+:is(.el-app, .el-connected) .el-auth .el-auth-links button { color: var(--tan-accent); font-size: 12px; }
+:is(.el-app, .el-connected) .el-auth .el-error { color: var(--tan-danger)!important; background: #ffb9b410; border: 1px solid #ffb9b435; }
+:is(.el-app, .el-connected) .el-auth .el-recovery { color: var(--tan-text); background: #161d1880; border-color: var(--tan-line); }
+:is(.el-app, .el-connected) .el-auth .el-brand-intro { color: var(--tan-accent); }
+:is(.el-app, .el-connected) .el-auth .el-brand-intro small { color: var(--tan-faint); }
+:is(.el-app, .el-connected) .el-auth :focus-visible { outline: 2px solid var(--tan-accent); outline-offset: 4px; }
+.el-welcome-icon { display: grid; place-items: center; width: 56px; height: 56px; border: 1px solid var(--tan-line); border-radius: 15px; color: var(--tan-accent); background: #b4daca0d; margin-bottom: 24px; }
+.el-auth:has(.el-registration) { max-width: 620px; }
+.el-registration h3,.el-profile-section-heading { color: var(--tan-text); font-size: 17px; font-weight: 550; margin: 24px 0 12px; letter-spacing: -.3px; }
+.el-registration-steps { display: flex; gap: 10px; list-style: none; padding: 0; margin: 24px 0; }
+.el-registration-steps li { display: flex; align-items: center; gap: 7px; flex: 1; min-width: 0; color: var(--tan-faint); font-size: 11px; line-height: 1.4; }
+.el-registration-steps li > span { display: grid; place-items: center; flex-shrink: 0; width: 26px; height: 26px; border: 1px solid var(--tan-line); border-radius: 50%; }
+.el-registration-steps li[aria-current=step] { color: var(--tan-text); font-weight: 600; }
+.el-registration-steps li[aria-current=step] > span,.el-registration-steps li.is-complete > span { color: var(--tan-primary-ink); background: var(--tan-primary); border-color: var(--tan-primary); }
+.el-registration-content { min-width: 0; border: 0; padding: 0; margin: 0; }
+.el-profile-details { min-width: 0; }
+.el-profile-details .el-field-note,.el-registration .el-field-note { font-size: 12px; line-height: 1.65; margin: 8px 0 16px; color: var(--tan-faint); }
+.el-profile-form .el-profile-details fieldset,.el-profile-details fieldset { border: 0; border-top: 1px solid #ffffff20; padding: 18px 0 0; margin: 24px 0 0; min-width: 0; }
+.el-profile-details legend { padding: 0 8px 0 0; font-size: 15px; font-weight: 550; color: var(--tan-text); }
+.el-profile-details label small,.el-profile-details legend small { font-weight: 400; color: var(--tan-faint); font-size: 11px; }
+.el-profile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; min-width: 0; }
+.el-profile-grid > * { min-width: 0; }
+.el-profile-details label.el-profile-check { display: flex; flex-direction: row; align-items: flex-start; gap: 11px; margin: 0; padding: 12px 0; line-height: 1.6; color: var(--tan-muted); cursor: pointer; }
+.el-profile-details label.el-profile-check input { width: 18px!important; height: 18px; min-height: 18px!important; margin: 3px 0 0; flex: 0 0 18px; accent-color: var(--tan-primary); padding: 0; }
+.el-profile-details .el-profile-check small { display: block; margin-top: 4px; line-height: 1.6; }
+.el-profile-details .el-sharing-choice { padding: 15px!important; border: 1px solid #b4daca55; border-radius: 12px; background: #b4daca0d; margin-top: 16px!important; }
+.el-assistance-options { display: grid; gap: 0; }
+.el-registration-actions { display: flex; gap: 12px; align-items: center; margin-top: 24px; }
+.el-registration-actions .el-primary { flex: 1; margin: 0!important; }
+.el-registration-actions .el-secondary { flex: 0 0 auto; }
+.el-registration-privacy { display: flex; align-items: flex-start; gap: 8px; font-size: 11px!important; line-height: 1.7; margin-top: 18px; }
+.el-registration-privacy svg { flex-shrink: 0; margin-top: 3px; }
+.el-profile-clear,.el-connected .el-auth button.el-profile-clear { border: 0; background: none; padding: 8px 0; min-height: 44px; color: var(--tan-danger); font-size: 12px; text-decoration: underline; }
+.gsam-person-emergency { padding: 12px; border: 1px solid #ffffff20; border-radius: 10px; margin: 12px 0; }
+.gsam-person-emergency strong { font-size: 12px; }.gsam-person-emergency p { font-size: 12px; margin: 6px 0; }
+@media(max-width: 480px) {
+  .el-profile-grid { grid-template-columns: 1fr; gap: 0; }
+  .el-registration-steps { gap: 6px; }
+  .el-registration-steps li { font-size: 10px; gap: 5px; align-items: flex-start; }
+  .el-registration-steps li > span { width: 23px; height: 23px; }
+  :is(.el-app, .el-connected) .el-auth.el-card { padding: 24px 20px; }
+}

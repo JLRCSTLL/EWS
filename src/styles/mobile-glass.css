@@ -1,139 +1,143 @@
-/* Mobile navigation floats above a calm, readable content layer. */
+@import './command-theme.css';
+
+/* Command-center glass with phone-sized controls and solid message surfaces. */
 .el-app {
-  --el-blue: #087e71;
-  --el-ink: #172d2b;
-  --el-muted: #576d68;
-  --el-glass-alpha: .85;
-  --el-bottom-inset: env(safe-area-inset-bottom, 0px);
-  --el-nav-gap: 8px;
-  --el-nav-item-height: 52px;
-  --el-nav-padding: 6px;
+  --el-blue: var(--tan-accent); --el-ink: var(--tan-text); --el-muted: var(--tan-muted);
+  --el-glass-alpha: .85; --el-bottom-inset: env(safe-area-inset-bottom, 0px);
+  --el-nav-gap: 8px; --el-nav-item-height: 52px; --el-nav-padding: 6px;
   --el-nav-height: calc(var(--el-nav-item-height) + var(--el-nav-padding) * 2 + 2px);
-  --el-control-glass: linear-gradient(145deg, #fff9, #fff2 52%, #cce9df36), rgb(244 250 247 / var(--el-glass-alpha));
-  --el-control-shadow: inset 0 1px 0 #fff, inset 0 -1px 0 #d7e8e480, 0 8px 28px #1a493416;
-  color-scheme: light;
-  background: radial-gradient(ellipse at 100% 0, #d5eae3 0, transparent 38%), radial-gradient(ellipse at 0 28%, #e3edf7 0, transparent 36%), #f1f5f4;
-  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+  --el-control-glass: linear-gradient(105deg, #edf5ed14, #edf5ed05), rgb(48 57 52 / var(--el-glass-alpha));
+  color-scheme: dark; color: var(--tan-text); font-family: var(--tan-font);
+  background: radial-gradient(ellipse at 100% 0, #45594b60, transparent 40%), radial-gradient(ellipse at 0 45%, #40494340, transparent 45%), var(--tan-background);
   padding-bottom: calc(var(--el-nav-height) + var(--el-nav-gap) + var(--el-bottom-inset) + 16px);
 }
-/* The Android host already pads the WebView above its system navigation bar. */
+/* The native host already applies the Android system navigation inset. */
 .el-app[data-native-android="true"] { --el-bottom-inset: 0px; --el-nav-gap: 6px; }
-html:has(.el-app) { background: #f1f5f4; scroll-padding-top: 100px; scroll-padding-bottom: 110px; }
+html:has(.el-app) { background: #1b211e; scroll-padding-top: 100px; scroll-padding-bottom: 110px; }
 .el-app :is(button, a, input, select, textarea) { touch-action: manipulation; }
-.el-app :focus-visible { outline-color: #087e71; }
-.el-app .el-header {
-  position: sticky; top: 0; z-index: 1050; min-height: 76px;
-  max-width: none; padding: max(16px, env(safe-area-inset-top)) max(24px, calc((100vw - 992px) / 2)) 16px;
-  border-bottom: 1px solid #fff9; background: var(--el-control-glass);
-  backdrop-filter: blur(22px) saturate(1.3); -webkit-backdrop-filter: blur(22px) saturate(1.3);
-  box-shadow: 0 1px 14px #24433605;
-}
-.el-app .el-brand { font-size: 22px; letter-spacing: -.5px; }
-.el-app .el-brand small { font-size: 9px; font-weight: 450; color: #56726b; }
-.el-app .el-connection { padding: 6px 10px; background: #fff8; border: 1px solid #ffffffc9; border-radius: 24px; color: #8a581d; }
-.el-app .el-connection.is-connected { color: #126b55; }
-.el-app .el-avatar { width: 44px; height: 44px; background: linear-gradient(145deg, #fff, #d5e9e1); border: 1px solid #fff; box-shadow: var(--el-control-shadow); color: #176451!important; }
+.el-app :focus-visible { outline: 2px solid var(--tan-accent); outline-offset: 4px; }
+.el-app .el-skip { background: var(--tan-primary); color: var(--tan-primary-ink); }
+.el-app .el-header { position: sticky; top: 0; z-index: 1050; min-height: 80px; max-width: none; padding: max(18px, env(safe-area-inset-top)) max(24px, calc((100vw - 992px) / 2)) 18px; background: #1b211eed; border: 0; backdrop-filter: var(--tan-glass-filter); -webkit-backdrop-filter: var(--tan-glass-filter); }
+.el-app .el-brand { font-size: 19px; font-weight: 600; letter-spacing: .16em; }
+.el-app .el-brand small { font-size: 8px; letter-spacing: .06em; font-weight: 400; color: var(--tan-faint); margin-top: 5px; }
+.el-app .el-connection { padding: 7px 10px; background: var(--tan-control); border: 1px solid var(--tan-line); border-radius: 24px; color: var(--tan-warning); font-size: 10px; font-weight: 500; }
+.el-app .el-connection.is-connected { color: var(--tan-success); }
+.el-app .el-avatar { width: 40px; height: 40px; background: var(--el-control-glass); border: 1px solid var(--tan-line); box-shadow: var(--tan-glass-shadow); color: var(--tan-text)!important; font-weight: 500; }
 .el-app .el-main { padding-top: 14px; }
-.el-app :is(.el-greeting h1, .el-page-heading h1) { font-size: clamp(32px, 5vw, 42px); font-weight: 740; letter-spacing: -1.4px; line-height: 1.12; }
-.el-app .el-eyebrow { color: #53716a; font-size: 10px; letter-spacing: 1.5px; }
-.el-app :is(.el-greeting p, .el-page-heading p) { font-size: 14px; color: var(--el-muted); }
-.el-app .el-greeting { padding: 20px 0 26px; }
-.el-app .el-greeting p { background: #ffffff80; border: 1px solid #fff; width: fit-content; padding: 6px 11px; border-radius: 30px; font-size: 12px; }
-.el-app .el-card { background: #fff; border: 1px solid #dce8e2; border-radius: 26px; box-shadow: 0 5px 22px #143f2606; }
-.el-app .el-card h2 { color: var(--el-ink); font-weight: 680; }
-.el-app .el-section-heading p { font-size: 12px; }
-.el-app :is(.el-caption, .el-pilot-note) { font-size: 12px; color: #5c736c; }
-.el-app .el-hero { background: linear-gradient(130deg, #123f3b, #166d61 75%, #328b74); border-radius: 28px; padding: 30px; min-height: 230px; box-shadow: 0 12px 32px #144b3e1c; }
-.el-app .el-hero .el-eyebrow { color: #bce6d8; }
-.el-app .el-hero h2 { font-size: 29px; font-weight: 680; }
-.el-app .el-hero p { color: #dcf3eb; font-size: 14px; line-height: 1.65; }
-.el-app .el-hero a { border-radius: 30px; min-height: 48px; color: #135b4d; padding: 12px 18px; font-size: 14px; border: 1px solid #ffffffc4; background: linear-gradient(145deg, #fff, #e7f3ed); box-shadow: 0 2px 8px #08231e20; }
-.el-app .el-hero > svg { right: -12px; bottom: 14px; opacity: .09; }
-.el-app :is(.el-primary, .el-secondary) { border-radius: 28px; min-height: 50px; font-size: 14px!important; padding: 12px 20px; transition: transform 160ms ease, background-color 160ms ease; }
-.el-app .el-primary { background: #087e71; border-color: #087266; box-shadow: inset 0 1px 0 #ffffff30, 0 4px 10px #087e711a; }
-.el-app .el-primary:hover:not(:disabled) { background: #086b60; }
-.el-app .el-secondary { color: #225f52; border-color: #c8dcd3; background: #f0f7f3; }
-.el-app :is(.el-primary, .el-secondary, .el-quick-actions > *, .el-hero a):active:not(:disabled) { transform: scale(.975); }
-.el-app .el-icon-soft { width: 46px; height: 46px; border-radius: 16px; color: #13725f; background: #eaf5ef; }
-.el-app .el-location-status { color: #225e52!important; }
+.el-app :is(.el-greeting h1, .el-page-heading h1) { font-size: clamp(30px, 5vw, 40px); font-weight: 450; letter-spacing: -1.2px; line-height: 1.16; }
+.el-app .el-eyebrow { color: var(--tan-faint); font-size: 10px; letter-spacing: .15em; font-weight: 500; }
+.el-app :is(.el-greeting p, .el-page-heading p) { font-size: 13px; color: var(--tan-muted); }
+.el-app .el-greeting { padding: 18px 0 26px; }
+.el-app .el-greeting p { background: var(--tan-control); border: 1px solid #ffffff20; width: fit-content; padding: 6px 11px; border-radius: 24px; font-size: 12px; }
+.el-app :is(.el-card, .el-hero, .el-quick-actions > *, .el-empty, .el-install) { background: var(--el-control-glass); border: 1px solid var(--tan-line); border-radius: 18px; box-shadow: var(--tan-glass-shadow); backdrop-filter: var(--tan-glass-filter); -webkit-backdrop-filter: var(--tan-glass-filter); }
+.el-app .el-card h2 { color: var(--tan-text); font-weight: 550; font-size: 18px; }
+.el-app .el-section-heading p { font-size: 12px; color: var(--tan-muted); }
+.el-app :is(.el-caption, .el-pilot-note) { font-size: 12px; color: var(--tan-faint); }
+.el-app .el-hero { padding: 28px; min-height: 220px; }
+.el-app .el-hero .el-eyebrow { color: var(--tan-accent); }
+.el-app .el-hero h2 { font-size: 29px; font-weight: 450; }
+.el-app .el-hero p { color: var(--tan-muted); font-size: 14px; line-height: 1.65; }
+.el-app .el-hero a { border-radius: 12px; min-height: 48px; color: var(--tan-primary-ink); padding: 12px 18px; font-size: 14px; font-weight: 600; border: 1px solid #e5f8ef65; background: var(--tan-primary); box-shadow: inset 0 1px 0 #ffffff40; }
+.el-app .el-hero > svg { right: -12px; bottom: 14px; opacity: .07; }
+.el-app :is(.el-primary, .el-secondary) { border-radius: 12px; min-height: 50px; font-size: 14px!important; padding: 12px 18px; font-weight: 600; transition: background-color 160ms ease, border-color 160ms ease; }
+.el-app .el-primary { background: var(--tan-primary); color: var(--tan-primary-ink); border-color: #d1e9de; box-shadow: inset 0 1px 0 #ffffff40; }
+.el-app .el-primary:hover:not(:disabled) { background: #d9ece2; }
+.el-app .el-secondary { color: var(--tan-text); border-color: var(--tan-line); background: var(--tan-control); }
+.el-app .el-secondary:hover:not(:disabled) { background: #ffffff14; }
+.el-app .el-icon-soft { width: 44px; height: 44px; border-radius: 12px; color: var(--tan-accent); background: #b4daca10; border: 1px solid #b4daca25; }
+.el-app .el-location-status { color: var(--tan-success)!important; }
 .el-app .el-quick-actions { gap: 12px; margin: 20px 0 28px; }
-.el-app .el-quick-actions > * { border-radius: 23px; padding: 18px 8px; background: #fff; border-color: #dce8e2; transition: transform 160ms ease; }
-.el-app .el-quick-icon { width: 48px; height: 48px; border-radius: 17px; }
-.el-app .el-quick-icon.map { color: #255f95; background: #edf3fa; }
-.el-app .el-quick-actions strong { font-size: 14px; color: #233e37; }
-.el-app .el-quick-actions small { font-size: 11px; color: #61756d; text-align: center; }
-.el-app .el-section-title h2 { font-size: 20px; font-weight: 720; }
-.el-app .el-section-title a { min-height: 44px; color: #08796b; font-size: 13px; }
-.el-app .el-alert-card { border-radius: 24px; padding: 20px; border-color: #dce8e2; background: #fff; min-height: 108px; }
-.el-app .el-alert-card:active { background: #f2f7f4; }
-.el-app .el-alert-card.priority-critical { border-left: 4px solid #c4443d; }
-.el-app .el-alert-card.priority-high { border-left: 4px solid #b87a24; }
-.el-app .el-alert-icon { border-radius: 16px; width: 46px; height: 46px; color: #197761; background: #eaf5ef; }
-.el-app .el-alert-meta { font-size: 11px; color: #64746d; flex-wrap: wrap; }
-.el-app .el-alert-meta i { background: #087e71; width: 8px; height: 8px; }
-.el-app .el-alert-card strong { font-size: 16px; line-height: 1.4; }
-.el-app .el-alert-card p { font-size: 14px; color: #566b65; line-height: 1.65; }
-.el-app .el-alert-detail .el-message-body { color: #243e36; font-size: 18px; line-height: 1.75; }
-.el-app .el-alert-detail time { color: #61756d; font-size: 12px; }
-.el-app .el-empty { border-radius: 25px; background: #fff; border: 1px solid #dde8e2; color: #3e8c76; padding: 32px 24px; }
-.el-app .el-empty strong { font-size: 16px; color: #34574a; }
-.el-app .el-empty p { color: #5d7169; font-size: 13px; }
-.el-app .el-install { background: #e4f0e9; border-radius: 22px; padding: 19px; color: #266450; }
-.el-app .el-install span { font-size: 14px; }.el-app .el-install small { color: #547266; font-size: 12px; }
-.el-app .el-notice { border-radius: 18px; font-size: 13px; }
+.el-app .el-quick-actions > * { padding: 17px 8px; }
+.el-app .el-quick-icon { width: 42px; height: 42px; border-radius: 12px; }
+.el-app .el-quick-icon.safe { color: var(--tan-success); background: #ade1c615; }
+.el-app .el-quick-icon.help { color: var(--tan-warning); background: #f4c58e15; }
+.el-app .el-quick-icon.map { color: #bdd7eb; background: #bdd7eb15; }
+.el-app .el-quick-actions strong { font-size: 13px; color: var(--tan-text); font-weight: 500; }
+.el-app .el-quick-actions small { font-size: 11px; color: var(--tan-faint); text-align: center; }
+.el-app .el-section-title h2 { font-size: 18px; font-weight: 550; }
+.el-app .el-section-title a { min-height: 44px; color: var(--tan-accent); font-size: 13px; }
+.el-app .el-alert-card { color: var(--tan-text); border-radius: 16px; padding: 20px; border-color: var(--tan-line); background: var(--tan-surface); min-height: 108px; box-shadow: var(--tan-glass-shadow); }
+.el-app .el-alert-card:hover { background: #343f38; }
+.el-app .el-alert-card.priority-critical { border-left: 3px solid var(--tan-danger); }
+.el-app .el-alert-card.priority-high { border-left: 3px solid var(--tan-warning); }
+.el-app .el-alert-icon { border-radius: 12px; width: 42px; height: 42px; color: var(--tan-accent); background: #b4daca15; }
+.el-app .el-alert-card.priority-critical .el-alert-icon { color: var(--tan-danger); background: #ffb9b415; }
+.el-app .el-alert-card.priority-high .el-alert-icon { color: var(--tan-warning); background: #f4c58e15; }
+.el-app .el-alert-meta { font-size: 11px; color: var(--tan-faint); flex-wrap: wrap; }
+.el-app .el-alert-meta i { background: var(--tan-accent); width: 7px; height: 7px; }
+.el-app .el-alert-card strong { font-size: 16px; line-height: 1.4; font-weight: 550; }
+.el-app .el-alert-card p { font-size: 14px; color: var(--tan-muted); line-height: 1.65; }
+.el-app .el-alert-detail { background: var(--tan-surface); }
+.el-app .el-alert-detail .el-message-body { color: var(--tan-text); font-size: 18px; line-height: 1.75; }
+.el-app .el-alert-detail time { color: var(--tan-faint); font-size: 12px; }
+.el-app .el-empty { color: var(--tan-accent); padding: 30px 24px; }
+.el-app .el-empty strong { font-size: 15px; color: var(--tan-text); font-weight: 500; }
+.el-app .el-empty p { color: var(--tan-muted); font-size: 13px; }
+.el-app .el-install { padding: 18px; color: var(--tan-text); }
+.el-app .el-install > svg { color: var(--tan-accent); }
+.el-app .el-install span { font-size: 14px; font-weight: 500; }
+.el-app .el-install small { color: var(--tan-faint); font-size: 12px; }
+.el-app .el-notice { border-radius: 12px; font-size: 13px; border-color: #b4daca35; background: #b4daca0d; color: var(--tan-muted)!important; }
 .el-app .el-notice > button { min-width: 44px; min-height: 44px; }
-.el-app label { font-size: 14px; color: #3a564b; }
-.el-app :is(input:not([type=checkbox]):not([type=range]), select, textarea) { min-height: 52px; border-radius: 17px; border: 1px solid #d3e0d9; background: #f6f9f7; color: #203e32; font-size: 16px; padding: 13px 16px; }
-.el-app input[type=checkbox] { accent-color: #087e71; }
+.el-app .el-connection-error { color: var(--tan-warning)!important; background: #f4c58e10; border-color: #f4c58e40; }
+.el-app .el-error { color: var(--tan-danger)!important; background: #ffb9b410; border: 1px solid #ffb9b435; }
+.el-app label { font-size: 13px; color: var(--tan-muted); font-weight: 500; }
+.el-app :is(input:not([type=checkbox]):not([type=range]), select, textarea) { min-height: 52px; border-radius: 12px; border: 1px solid #ffffff30; background: #161d1880; color: var(--tan-text); font-size: 16px; padding: 13px 14px; }
+.el-app :is(input, textarea)::placeholder { color: var(--tan-faint); opacity: 1; }
+.el-app select option { background: var(--tan-surface); color: var(--tan-text); }
+.el-app input[type=checkbox] { accent-color: var(--tan-primary); }
 .el-app .el-search { position: relative; margin: 10px 0 24px; }
-.el-app .el-search input { border-radius: 30px; background: var(--el-control-glass); border-color: #cedfd6; box-shadow: var(--el-control-shadow); }
-.el-app .el-priority { border-radius: 24px; font-size: 12px; padding: 6px 12px; }
-.el-app .el-text-button { color: #127d68; font-size: 14px!important; min-height: 44px; }
-.el-app .el-location-map { border-radius: 26px; border: 1px solid #cadfd4; }
-.el-app .el-request-summary { border-radius: 22px; }
-.el-app .el-request-steps li { font-size: 14px; padding: 14px 8px; }
-.el-app .el-setting small { font-size: 12px; }.el-app .el-setting strong { font-size: 15px; }
-.el-app .el-signout { min-height: 50px; border-radius: 28px; font-weight: 600; }
-.el-app .el-auth { font-family: inherit; color: var(--el-ink); padding: 30px; margin: 28px auto; }
-.el-app .el-auth h2 { font-size: 31px; font-weight: 730; letter-spacing: -1px; }
-.el-app .el-auth p { font-size: 14px; color: #5b7167; }
-.el-app .el-auth .el-brand-intro { color: #276b58; }
-.el-app .el-auth .el-brand-intro small { font-size: 11px; color: #71857c; }
-.el-app .el-auth-links { gap: 12px; }.el-app .el-auth-links button { font-size: 12px; color: #126b55; }
-.el-app .el-welcome-icon { display: grid; place-items: center; width: 66px; height: 66px; border-radius: 23px; background: linear-gradient(145deg, #f5fff9, #c7e6d9); border: 1px solid #fff; color: #11725d; box-shadow: 0 6px 16px #1c604b13, inset 0 1px 0 #fff; margin-bottom: 24px; }
-.el-app .el-bottom-nav {
-  display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 3px;
-  width: min(620px, calc(100% - 24px)); bottom: calc(var(--el-nav-gap) + var(--el-bottom-inset));
-  padding: var(--el-nav-padding); border: 1px solid #fff; border-radius: 36px;
-  background: var(--el-control-glass); box-shadow: var(--el-control-shadow), 0 8px 28px #153c341a;
-  backdrop-filter: blur(24px) saturate(1.3); -webkit-backdrop-filter: blur(24px) saturate(1.3);
-}
-.el-app .el-bottom-nav a { min-width: 0; min-height: var(--el-nav-item-height); border-radius: 28px; gap: 3px; color: #526a60; font-size: 11px; line-height: 1.3; padding: 6px 3px; transition: background-color 160ms ease, transform 160ms ease; }
-.el-app .el-bottom-nav a.is-active { color: #075d4d; background: linear-gradient(150deg, #d8ede4, #e8f4ed); box-shadow: inset 0 1px 0 #fff, 0 1px 4px #163d2b0d; font-weight: 700; }
-.el-app .el-bottom-nav a:active { transform: scale(.95); }
-.el-app .el-bottom-nav a i { right: 12%; top: 2px; min-width: 18px; height: 18px; line-height: 18px; font-size: 10px; background: #bd3c38; border: 1px solid #fff; }
+.el-app .el-search input { border-radius: 30px; background: var(--el-control-glass); border-color: var(--tan-line); box-shadow: var(--tan-glass-shadow); backdrop-filter: var(--tan-glass-filter); }
+.el-app .el-priority { border-radius: 24px; font-size: 12px; padding: 6px 12px; color: var(--tan-accent); background: #b4daca15; }
+.el-app .el-priority.priority-high { color: var(--tan-warning); background: #f4c58e15; }
+.el-app .el-priority.priority-critical { color: var(--tan-danger); background: #ffb9b415; }
+.el-app .el-text-button { color: var(--tan-accent); font-size: 14px!important; min-height: 44px; }
+.el-app .el-location-map { border-radius: 18px; border: 1px solid var(--tan-line); }
+.el-app .el-request-summary { border-radius: 14px; background: var(--tan-surface); color: var(--tan-accent)!important; border-color: var(--tan-line); }
+.el-app .el-request-steps li { font-size: 14px; padding: 14px 8px; color: var(--tan-faint); border-color: #ffffff18; }
+.el-app .el-request-steps .is-done { color: var(--tan-success); }
+.el-app .el-history-row { border-color: #ffffff18; }
+.el-app .el-history-row :is(small, span) { color: var(--tan-faint); }
+.el-app .el-setting small { font-size: 12px; color: var(--tan-faint); }
+.el-app .el-setting strong { font-size: 15px; font-weight: 550; }
+.el-app .el-signout { min-height: 50px; border-radius: 12px; font-weight: 500; color: var(--tan-danger); background: #ffb9b408; border-color: #ffb9b430; }
+.el-app .el-loading { color: var(--tan-muted); }
+.el-app .el-bottom-nav { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 3px; width: min(620px, calc(100% - 24px)); bottom: calc(var(--el-nav-gap) + var(--el-bottom-inset)); padding: var(--el-nav-padding); border: 1px solid var(--tan-line); border-radius: 36px; background: var(--el-control-glass); box-shadow: var(--tan-glass-shadow), 0 8px 28px #0004; backdrop-filter: var(--tan-glass-filter); -webkit-backdrop-filter: var(--tan-glass-filter); }
+.el-app .el-bottom-nav a { min-width: 0; min-height: var(--el-nav-item-height); border: 1px solid transparent; border-radius: 28px; gap: 3px; color: var(--tan-faint); font-size: 11px; line-height: 1.3; padding: 6px 3px; transition: background-color 160ms ease; }
+.el-app .el-bottom-nav a.is-active { color: var(--tan-text); background: #ffffff12; border-color: #ffffff20; box-shadow: inset 0 1px 0 #ffffff14; font-weight: 600; }
+.el-app .el-bottom-nav a i { right: 12%; top: 2px; min-width: 18px; height: 18px; line-height: 18px; font-size: 10px; background: #a63e3b; border: 1px solid #e5f8ef55; }
 .el-app .el-appearance label { flex-direction: row; justify-content: space-between; align-items: center; margin-bottom: 0; }
-.el-app .el-appearance output { font-variant-numeric: tabular-nums; color: #24755e; }
-.el-app .el-appearance input[type=range] { width: 100%; height: 44px; padding: 0; border: 0; background: transparent; accent-color: #087e71; cursor: pointer; }
-.el-app .el-tint-labels { display: flex; justify-content: space-between; color: #5f776d; font-size: 12px; }
-.el-app .el-alarm-compact { background: #edf5ef; border-color: #cddfd3; border-radius: 24px; }
-.el-app .el-alarm-settings { color: #224b3d; }.el-app .el-alarm-heading p { color: #537466; }
-.el-app .el-alarm-checks { border-radius: 18px; border-color: #d8e4db; }.el-app .el-alarm-checks li { background: #f7faf8; font-size: 13px; }
-.el-alarm-dialog { border-radius: 30px; font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif; }
-.el-alarm-dialog .el-primary { background: #087e71; border-color: #087266; border-radius: 28px; min-height: 50px; }
-.el-alarm-dialog .el-secondary { border-radius: 28px; min-height: 50px; }
+.el-app .el-appearance output { font-variant-numeric: tabular-nums; color: var(--tan-accent); }
+.el-app .el-appearance input[type=range] { width: 100%; height: 44px; padding: 0; border: 0; background: transparent; accent-color: var(--tan-accent); cursor: pointer; }
+.el-app .el-tint-labels { display: flex; justify-content: space-between; color: var(--tan-faint); font-size: 12px; }
+.el-app .el-alarm-compact { background: #303934c9; border-color: var(--tan-line); border-radius: 18px; }
+.el-app .el-alarm-settings { color: var(--tan-text); }
+.el-app .el-alarm-heading p { color: var(--tan-muted); }
+.el-app .el-alarm-checks { border-radius: 12px; border-color: var(--tan-line); }
+.el-app .el-alarm-checks li { background: #ffffff05; font-size: 13px; }
+.el-app .el-alarm-checks li + li, .el-app .el-native-settings { border-color: #ffffff20; }
+.el-app .el-alarm-checks span { color: var(--tan-muted); }
+.el-app :is(.gsam-mobile-assignments article, .gsam-privacy-request) { background: #ffffff04; border-color: #ffffff25; }
+.el-app :is(.gsam-mobile-assignments small, .gsam-privacy-request small) { color: var(--tan-faint); }
+.el-alarm-dialog { border: 1px solid var(--tan-line); border-radius: 20px; font-family: var(--tan-font); background: var(--tan-surface); color: var(--tan-text); color-scheme: dark; }
+.el-alarm-dialog [id="alarm-description"] { color: var(--tan-text); }
+.el-alarm-dialog .el-eyebrow { color: var(--tan-danger); }
+.el-alarm-dialog .el-caption { color: var(--tan-muted); }
+.el-alarm-dialog .el-alarm-close { background: #ffffff0a; color: var(--tan-muted); }
+.el-alarm-dialog .el-alarm-symbol { border-radius: 14px; background: #ffb9b415; color: var(--tan-danger); }
+.el-alarm-dialog .el-primary { background: var(--tan-primary); border-color: #d1e9de; color: var(--tan-primary-ink); border-radius: 12px; min-height: 50px; }
+.el-alarm-dialog .el-secondary { background: #ffffff08; color: var(--tan-text); border-color: var(--tan-line); border-radius: 12px; min-height: 50px; }
+.el-alarm-dialog button:focus-visible { outline-color: var(--tan-accent); }
 @media (max-width: 700px) {
   .el-app .el-header { padding-left: 20px; padding-right: 20px; gap: 10px; min-height: 76px; }
-  .el-app .el-brand { font-size: 20px; }.el-app .el-brand small { font-size: 8px; }
+  .el-app .el-brand { font-size: 17px; }.el-app .el-brand small { font-size: 7px; }
   .el-app .el-connection { font-size: 10px; padding: 6px 8px; }
   .el-app .el-main { padding: 8px 20px 28px; }
-  .el-app .el-home-grid { gap: 16px; }.el-app .el-hero { padding: 25px; }
-  .el-app .el-card { padding: 22px; }.el-app .el-home-grid .el-location-card { padding: 22px; }
+  .el-app .el-home-grid { gap: 16px; }.el-app .el-hero { padding: 24px; }
+  .el-app .el-card, .el-app .el-home-grid .el-location-card { padding: 22px; }
   .el-app .el-location-card .el-caption { font-size: 12px; }
-  .el-app .el-alert-card { gap: 12px; padding: 18px 15px; }
-  .el-app .el-alert-card strong { font-size: 15px; }
-  .el-app .el-quick-actions { gap: 9px; }.el-app .el-quick-actions strong { font-size: 13px; }.el-app .el-quick-actions small { font-size: 10px; }
-  .el-app .el-auth { padding: 26px 23px; margin-top: 22px; }
+  .el-app .el-alert-card { gap: 12px; padding: 18px 15px; }.el-app .el-alert-card strong { font-size: 15px; }
+  .el-app .el-quick-actions { gap: 9px; }.el-app .el-quick-actions strong { font-size: 12px; }.el-app .el-quick-actions small { font-size: 10px; }
 }
 @media (max-width: 370px) {
   .el-app .el-main { padding-left: 16px; padding-right: 16px; }
@@ -142,11 +146,6 @@ html:has(.el-app) { background: #f1f5f4; scroll-padding-top: 100px; scroll-paddi
   .el-app .el-hero { padding: 22px; }.el-app .el-hero h2 { font-size: 26px; }
   .el-app .el-bottom-nav { width: calc(100% - 16px); gap: 0; }.el-app .el-bottom-nav a { font-size: 10px; }
 }
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .el-app { --el-control-glass: #f4faf7; }
-}
-@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
-  .el-app { --el-control-glass: #f4faf7; --el-control-shadow: 0 2px 6px #14342c15; }
-  .el-app :is(.el-header, .el-bottom-nav) { backdrop-filter: none; -webkit-backdrop-filter: none; border-color: #8da99c; }
-}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .el-app { --el-control-glass: var(--tan-surface); } }
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) { .el-app { --el-control-glass: var(--tan-surface); }.el-app .el-header { background: var(--tan-background); } }
 @media (prefers-reduced-motion: reduce) { .el-app *, .el-alarm-dialog { animation: none!important; transition: none!important; } }

@@ -158,6 +158,10 @@ physical phone rang, received GPS indoors or handled manufacturer battery limits
 1. Register with a preferred name, username and a password of at least 12
    characters. Keep the one-time recovery code securely; recovery revokes old
    sessions.
+   Registration on Android and the web includes optional phone/email, home
+   province/city/barangay, age range, PWD status, assistance needs, and a trusted
+   emergency contact. Only the account fields are required. Contacts are not
+   verified and cannot be used for account recovery.
 2. Grant the relevant OS location and notification permissions, then **Start
    duty** to share location. Permission alone never starts tracking. **End duty**
    stops uploads, revokes the location token and removes the map point.
@@ -174,6 +178,27 @@ Location events use a live stream with refresh/reconnection fallback. Position
 frequency depends on the device, OS, permission, network and available GPS.
 Browser location sharing requires the page to remain active; Android uses an
 ongoing foreground service while on duty.
+
+### Emergency-profile privacy
+
+- Edit or remove optional details from **Account → Your profile**. Existing
+  accounts and older clients continue to work without a profile migration form.
+- Age range, PWD status, and assistance needs remain private unless the person
+  explicitly enables sharing with approved command-center operators. Shared
+  demographic selections also update geofence population and alert targeting.
+  Disabling profile sharing removes that demographic targeting.
+- Home area is profile information, not GPS. It does not start duty tracking or
+  add a map marker, and is not returned in other users’ directory records.
+- Emergency contacts require confirmation that the trusted person agreed to be
+  listed. Their name/relationship and complete phone number are available only
+  to the account holder or a specific admin with a current, user-approved
+  `emergencyContact` visibility request. Approval expires after 24 hours.
+- Changing contacts revokes pending and approved visibility requests. Audit
+  logs contain no contact details, emergency-profile values, or exact locations.
+- The backend applies additive user columns and an expanded contact-request
+  constraint on startup. Deploy the backend with `registrationProfileReady`
+  before accepting submissions from the new forms; they check this capability
+  to avoid silently losing fields during rollout.
 
 On Android, high/critical alerts request the native emergency alarm. The expanded
 notification includes message text, **Read message** and **Silence alarm**; the
@@ -261,3 +286,9 @@ accounts and the shared backend.
 | `docs/` | Operator guide and scoped security review |
 
 The original interface attribution is retained in [ATTRIBUTIONS.md](ATTRIBUTIONS.md).
+
+### Shared interface and presentation
+
+The desktop interface is temporarily named **Command Center Platform**; the personnel app retains **TANOVIQ**. Both use the charcoal glass material and typography in `src/styles/command-theme.css`. Mobile navigation remains sized for touch, and alert text uses a solid surface for readability. The emergency-profile registration form is shared by mobile and command-center account creation.
+
+Select **Demo** in the command center to start the automatic cursor walkthrough. Its 13 chapters cover emergency-profile sharing, group creation and leaders, a named-group announcement, map views, geofences, population and exposure, a geographic alert, responder routes, CCTV, and Logs. Pause/resume, chapter selection, and 1×/1.5×/2× playback are available but not required. Groups, profiles, and delivery previews are in-memory fixtures; the demo does not send alerts or modify registered users. It restores the previous workspace on exit.

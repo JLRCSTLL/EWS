@@ -1,4 +1,4 @@
-# TANOVIQ Command Center for Windows
+# Command Center Platform for Windows
 
 An installable Windows 10/11 x64 command-center client. It opens the existing
 TANOVIQ web application at `https://ews-kappa.vercel.app/` in a dedicated,
@@ -6,11 +6,13 @@ sandboxed desktop window. The website uses the same shared API and database as
 the Android app. This is an online client; it does not install a second server or
 database and does not provide offline broadcasts.
 
+The desktop display name is temporarily **Command Center Platform**. The mobile app keeps TANOVIQ. The application ID, protocol, and existing Windows session directory remain unchanged so the rename preserves saved sign-ins and window preferences.
+
 ## Install and use
 
-1. Run `TANOVIQ-Command-Center-Setup-1.1.1-x64.exe`. The assisted installer installs
+1. Run `Command-Center-Platform-Setup-1.1.2-x64.exe`. The assisted installer installs
    for your Windows user and offers Start menu and desktop shortcuts.
-2. Open **TANOVIQ Command Center**. The logo screen remains visible while the
+2. Open **Command Center Platform**. The loading screen remains visible while the
    command interface loads. A connection failure shows a retry screen and retries
    every 15 seconds.
 3. Select **Personnel**, then sign in with your existing TANOVIQ account.
@@ -119,6 +121,8 @@ and the [NSIS installer documentation](https://www.electron.build/nsis/).
 The source upload is unchanged. The final prompt asked for the same logo geometry
 and TANOVIQ wordmark, a charcoal background, silver outlines and letters, and
 preserved teal/orange accents, with clean edges and no extra symbols or text.
-The Windows ICO contains scaled copies of this artwork. The splash animation is
-CSS, supports reduced-motion preferences, and never shows an invented loading
-percentage. It appears on startup, reload, and connection recovery.
+The Windows ICO contains scaled copies of this artwork. During the temporary
+Command Center Platform rename, the splash uses a simple radar mark and the
+temporary name instead of the TANOVIQ wordmark. Its CSS animation supports
+reduced-motion preferences and never shows an invented loading percentage.
+It appears on startup, reload, and connection recovery.

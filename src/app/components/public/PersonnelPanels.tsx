@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { LocateFixed, ShieldCheck } from "lucide-react";
 import { useLive } from "../../lib/live-service";
+import { contactFieldLabel } from "../../lib/emergency-profile";
 import { android, isAndroidApp } from "../../lib/android";
 import "../../../styles/gsam.css";
 
@@ -159,7 +160,7 @@ export function ContactPrivacy() {
         <h2>Contact privacy</h2>
       </div>
       <p className="el-caption">
-        Email and phone are optional and masked in the command center. An admin
+        Your email, phone, and emergency contact are optional and masked in the command center. An admin
         must request your approval to see specific fields. Approval lasts 24
         hours and applies only to that admin.
       </p>
@@ -171,7 +172,7 @@ export function ContactPrivacy() {
         return (
           <article className="gsam-privacy-request" key={r.id}>
             <strong>
-              {r.requester_name} requests {r.fields.join(" and ")}
+              {r.requester_name} requests {r.fields.map(contactFieldLabel).join(" and ")}
             </strong>
             <p>{r.reason}</p>
             <small>

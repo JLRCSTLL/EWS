@@ -1,8 +1,8 @@
 {
   "name": "tanoviq-command-center",
-  "productName": "TANOVIQ Command Center",
-  "version": "1.1.1",
-  "description": "TANOVIQ Windows command center. See Risk Before It Strikes.",
+  "productName": "Command Center Platform",
+  "version": "1.1.2",
+  "description": "Windows command center for situational awareness and response.",
   "author": "TANOVIQ",
   "private": true,
   "main": "main.cjs",
@@ -19,29 +19,44 @@
   },
   "build": {
     "appId": "ph.tanoviq.commandcenter",
-    "productName": "TANOVIQ Command Center",
+    "productName": "Command Center Platform",
     "copyright": "Copyright © 2026 TANOVIQ",
     "asar": true,
-    "directories": { "output": "release", "buildResources": "assets" },
-    "files": ["main.cjs", "policy.cjs", "preload.cjs", "shell/**", "assets/**", "package.json"],
+    "directories": {
+      "output": "release",
+      "buildResources": "assets"
+    },
+    "files": [
+      "main.cjs",
+      "policy.cjs",
+      "preload.cjs",
+      "shell/**",
+      "assets/**",
+      "package.json"
+    ],
     "win": {
-      "target": ["nsis", "portable"],
+      "target": [
+        "nsis",
+        "portable"
+      ],
       "icon": "assets/tanoviq.ico",
-      "executableName": "TANOVIQ Command Center",
+      "executableName": "Command Center Platform",
       "requestedExecutionLevel": "asInvoker"
     },
     "nsis": {
-      "artifactName": "TANOVIQ-Command-Center-Setup-${version}-${arch}.${ext}",
+      "artifactName": "Command-Center-Platform-Setup-${version}-${arch}.${ext}",
       "oneClick": false,
       "perMachine": false,
       "allowElevation": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "TANOVIQ Command Center",
+      "shortcutName": "Command Center Platform",
       "deleteAppDataOnUninstall": false,
       "runAfterFinish": true
     },
-    "portable": { "artifactName": "TANOVIQ-Command-Center-Portable-${version}-${arch}.${ext}" }
+    "portable": {
+      "artifactName": "Command-Center-Platform-Portable-${version}-${arch}.${ext}"
+    }
   }
 }

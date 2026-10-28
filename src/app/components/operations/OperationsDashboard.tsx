@@ -31,6 +31,8 @@ import { CommandSidebar } from './CommandSidebar';
 import { ResponderRouteCard } from './ResponderRouteCard';
 import { CctvMonitoring } from './CctvMonitoring';
 import { PresentationTour } from './PresentationTour';
+import { PresentationGroups, PresentationPersonnel, PresentationGroupBroadcast } from './PresentationWorkspace';
+import { presentationLogs, type PresentationTeam } from '../../lib/presentation-data';
 import { PublicActivityPanel } from './PublicActivityPanel';
 import { ConnectedOperations, ConnectedSidebar } from './ConnectedOperations';
 import { GroupsWorkspace } from './GroupsWorkspace';
@@ -151,6 +153,7 @@ export function OperationsDashboard({ auditLogs, messages, onSendMessage, onOpen
   const realUsers = useMemo(() => approved ? live.state!.users.map(asResident) : [], [approved,live.state?.users]);
   const [tourRun, setTourRun] = useState(0);
   const [tourPlaying, setTourPlaying] = useState(true);
+  const [presentationTeam, setPresentationTeam] = useState<PresentationTeam | null>(null);
   const [presentationAreas, setPresentationAreas] = useState<AlertGeofence[]>(demoGeofences);
   const [region, setRegion] = useState<Region>('metro-manila');
   const [filter, setFilter] = useState<IncidentFilter>('all');
@@ -217,6 +220,7 @@ export function OperationsDashboard({ auditLogs, messages, onSendMessage, onOpen
   useEffect(() => {
     if (tourIndex === null) return;
     const step = presentationSteps[tourIndex];
+    setPresentationTeam(null);
     const composing = step.id === 'exposure' || step.id === 'message';
     setActiveView('map'); setRegion('metro-manila'); setFilter('all');
     setPresentationAreas(step.id === 'geofence' ? demoGeofences.filter(area => area.id !== presentationArea.id) : demoGeofences);
@@ -229,7 +233,7 @@ export function OperationsDashboard({ auditLogs, messages, onSendMessage, onOpen
     if (step.id === 'welcome' || step.id === 'map') setBasemap('satellite');
     if (step.id === 'responders') { setSimulationElapsed(0); setSimulationReplay(value => value + 1); }
     const frame = requestAnimationFrame(() => {
-      if (step.id === 'geofence' || step.id === 'population' || step.id === 'groups') mapRef.current?.frameDemoArea(presentationArea);
+      if (step.id === 'geofence' || step.id === 'population' || step.id === 'audience') mapRef.current?.frameDemoArea(presentationArea);
       else if (step.id === 'welcome' || step.id === 'map' || step.id === 'complete') mapRef.current?.reset();
     });
     return () => cancelAnimationFrame(frame);
@@ -241,7 +245,7 @@ export function OperationsDashboard({ auditLogs, messages, onSendMessage, onOpen
     window.addEventListener('hashchange', syncView);
     return () => { window.removeEventListener('popstate', syncView); window.removeEventListener('hashchange', syncView); };
   }, []);
-  useEffect(() => { document.title = activeView === 'cctv' ? 'CCTV Monitoring — TANOVIQ' : 'TANOVIQ — Emergency Operations'; }, [activeView]);
+  useEffect(() => { document.title = activeView === 'cctv' ? 'CCTV Monitoring — Command Center Platform' : 'Command Center Platform — Emergency Operations'; }, [activeView]);
   const openView = (view: 'map' | 'cctv') => {
     const hash = view === 'cctv' ? '#/cctv' : '';
     if (tourIndex === null && window.location.hash !== hash) window.history.pushState(null, '', `${window.location.pathname}${window.location.search}${hash}`);
@@ -347,16 +351,16 @@ export function OperationsDashboard({ auditLogs, messages, onSendMessage, onOpen
       simulationPaused={simulationPaused || activeView === 'cctv' || (tourIndex !== null && !tourPlaying)} simulationReplay={simulationReplay} onSimulationTick={setSimulationElapsed}
       onGeofenceMove={(index, point) => setFenceDraft((current) => current ? { ...current, points: current.points.map((previous, i) => i === index ? point : previous) } : current)} />
     <header className="ops-header">
-      <button className="ops-brand gsam-brand" onClick={() => { openView('map'); setSelection(null); mapRef.current?.reset(); }} aria-label="TANOVIQ home">
+      <button className="ops-brand gsam-brand" onClick={() => { openView('map'); setSelection(null); mapRef.current?.reset(); }} aria-label="Command Center Platform home">
 
-        <span>TANOVIQ<span className="ops-brand-caption">See Risk Before It Strikes.</span></span>
+        <span>Command Center Platform<span className="ops-brand-caption">Situational awareness & response</span></span>
       </button>
       <nav className="ops-nav" aria-label="Main navigation">
         <button data-demo="nav-map" className={activeView === 'map' && !section ? 'is-active' : ''} aria-current={activeView === 'map' && !section ? 'page' : undefined} onClick={() => openView('map')}>Live overview<span className="ops-live-dot" /></button>
         {!liveView && <button data-demo="nav-cctv" className={activeView === 'cctv' && !section ? 'is-active' : ''} aria-current={activeView === 'cctv' && !section ? 'page' : undefined} onClick={() => openView('cctv')}><Video size={12} />CCTV</button>}
-        <button className={section === 'connected' ? 'is-active' : ''} onClick={() => setSection('connected')}><Smartphone size={12} />Personnel</button>
-        {liveView && <button className={section === 'groups' ? 'is-active' : ''} onClick={() => setSection('groups')}><Users size={13} />Groups</button>}
-        {navigation.filter(([id]) => !liveView || id === 'public' || id === 'activity').map(([id, label]) => <button key={id} className={section === id ? 'is-active' : ''} onClick={() => setSection(id)}>{label}{id === 'incidents' && <span className="ops-nav-count">{regionalIncidents.length}</span>}{id === 'public' && (liveView ? live.state?.requests.filter(openRequest).length || 0 : publicPending) > 0 && <span className="ops-nav-count">{liveView ? live.state?.requests.filter(openRequest).length : publicPending}</span>}</button>)}
+        <button data-demo="nav-personnel" className={section === 'connected' ? 'is-active' : ''} onClick={() => setSection('connected')}><Smartphone size={12} />Personnel</button>
+        {(liveView || tourIndex !== null) && <button data-demo="nav-groups" className={section === 'groups' ? 'is-active' : ''} onClick={() => setSection('groups')}><Users size={13} />Groups</button>}
+        {navigation.filter(([id]) => !liveView || id === 'public' || id === 'activity').map(([id, label]) => <button key={id} data-demo={`nav-${id}`} className={section === id ? 'is-active' : ''} onClick={() => setSection(id)}>{label}{id === 'incidents' && <span className="ops-nav-count">{regionalIncidents.length}</span>}{id === 'public' && (liveView ? live.state?.requests.filter(openRequest).length || 0 : publicPending) > 0 && <span className="ops-nav-count">{liveView ? live.state?.requests.filter(openRequest).length : publicPending}</span>}</button>)}
         <button onClick={onOpenWorkspace}>Workspace<ArrowUpRight size={12} /></button>
       </nav>
       <div className="ops-header-actions">
@@ -461,26 +465,26 @@ export function OperationsDashboard({ auditLogs, messages, onSendMessage, onOpen
       onOpenArea={id => { openView('map'); setSelectedFenceId(id); setFenceDraft(null); setFenceEditor(true); setSelection(null); requestAnimationFrame(() => mapRef.current?.focusGeofence()); }}
       onPreviewAlert={id => { setSelectedFenceId(id); reviewRecipients(); }} />}
 
-    <footer className="ops-footer"><div><ShieldCheck size={12} /><span>TANOVIQ command center</span><span className="ops-footer-separator">/</span><span>{liveView ? 'Connected pilot' : 'Demo workspace'}</span></div><div className="ops-map-legend">{liveView ? <><span><i className="ops-legend-team" />Shared device locations</span><span>Boundaries are alert areas</span></> : <><span><i className="ops-legend-incident" />Incidents</span><span><i className="ops-legend-team" />Responders</span><span><i className="ops-legend-site" />Facilities</span></>}</div><div><OperationsClock /><button className="ops-small-icon" aria-label="Help and keyboard shortcuts" onClick={() => setSection('help')}><CircleHelp size={14} /></button></div></footer>
+    <footer className="ops-footer"><div><ShieldCheck size={12} /><span>Command Center Platform</span><span className="ops-footer-separator">/</span><span>{liveView ? 'Connected pilot' : 'Demo workspace'}</span></div><div className="ops-map-legend">{liveView ? <><span><i className="ops-legend-team" />Shared device locations</span><span>Boundaries are alert areas</span></> : <><span><i className="ops-legend-incident" />Incidents</span><span><i className="ops-legend-team" />Responders</span><span><i className="ops-legend-site" />Facilities</span></>}</div><div><OperationsClock /><button className="ops-small-icon" aria-label="Help and keyboard shortcuts" onClick={() => setSection('help')}><CircleHelp size={14} /></button></div></footer>
 
     <Dialog open={section !== null} modal={tourIndex === null} onOpenChange={(open) => { if (!open && tourIndex === null) setSection(null); }}><DialogContent className={`ops-dialog${section === 'help' ? ' ops-dialog--compact' : ''}${section === 'broadcast' ? ' ops-dialog--broadcast' : ''}${section === 'groups' ? ' ops-dialog--groups' : ''}`}
       onInteractOutside={event => { if (tourIndex !== null) event.preventDefault(); }}
       onOpenAutoFocus={event => { if (tourIndex !== null) event.preventDefault(); }}
       onCloseAutoFocus={(event) => { event.preventDefault(); if (tourIndex === null) document.getElementById('operations-place-search')?.focus({ preventScroll: true }); }}>
-      <DialogHeader><div className="ops-eyebrow">TANOVIQ / {liveView ? 'CONNECTED OPERATIONS' : 'DEMO OPERATIONS'}</div><DialogTitle>{section ? sectionTitles[section] : ''}</DialogTitle><DialogDescription>{liveView && (section === 'public' || section === 'broadcast') ? 'Live updates from registered accounts. Actual receipts appear when personnel open or read their messages.' : section ? sectionDescriptions[section] : ''}</DialogDescription></DialogHeader>
-      {section === 'groups' && <GroupsWorkspace onBroadcast={groupBroadcast} />}
-      {section === 'connected' && <ConnectedOperations onLocate={locatePhone} onShowLocations={() => locatePhone()} locationsVisible={liveView && showResidents} />}
+      <DialogHeader><div className="ops-eyebrow">Command Center Platform / {liveView ? 'CONNECTED OPERATIONS' : 'DEMO OPERATIONS'}</div><DialogTitle>{section ? sectionTitles[section] : ''}</DialogTitle><DialogDescription>{liveView && (section === 'public' || section === 'broadcast') ? 'Live updates from registered accounts. Actual receipts appear when personnel open or read their messages.' : section ? sectionDescriptions[section] : ''}</DialogDescription></DialogHeader>
+      {section === 'groups' && (tourIndex !== null ? <PresentationGroups key={`${tourRun}-${tourIndex}`} onBroadcast={team => { setPresentationTeam(team); setSection('broadcast'); }} /> : <GroupsWorkspace onBroadcast={groupBroadcast} />)}
+      {section === 'connected' && (tourIndex !== null ? <PresentationPersonnel key={`${tourRun}-${tourIndex}`} /> : <ConnectedOperations onLocate={locatePhone} onShowLocations={() => locatePhone()} locationsVisible={liveView && showResidents} />)}
       {section === 'incidents' && <><div className="ops-incident-toolbar"><div className="ops-dialog-search"><Search size={16} /><input aria-label="Filter incidents" placeholder="Search incidents…" value={incidentQuery} onChange={(event) => setIncidentQuery(event.target.value)} /></div><select aria-label="Incident category" value={filter} onChange={(event) => changeFilter(event.target.value as IncidentFilter)}><option value="all">All events</option><option value="priority">Critical &amp; high priority</option><option value="critical">Critical priority</option><option value="flood">Flood</option><option value="typhoon">Typhoon</option></select></div><div className="ops-incident-list">{getIncidents(region, filter, incidentQuery).map((event) => <button key={event.id} onClick={() => locate({ kind: 'incident', id: event.id })}><IncidentIcon event={event} /><span><strong>{event.title}</strong><small>{event.location} · {formatRelativeTime(event.createdAt)}</small><p>{event.description}</p></span><span className={`ops-severity-pill severity-${event.severity}`}>{event.severity}</span><ArrowUpRight size={15} /></button>)}{!getIncidents(region, filter, incidentQuery).length && <p className="ops-empty">No matching incidents. Adjust your search or event filter.</p>}</div></>}
       {section === 'responders' && <><div className="ops-dialog-summary"><span><strong>{totalPersonnel}</strong> total personnel</span><span><strong>{activeTeams.length}</strong> active teams</span><span><strong>{fieldPersonnel}</strong> in the field</span></div><div className="ops-dialog-team-grid">{responderTeams.map((team) => <TeamCard key={team.id} team={team} onSelect={() => locate({ kind: 'responder', id: team.id })} />)}</div></>}
       {section === 'analytics' && <div className="ops-legacy-panels ops-analytics-grid"><RiskMonitoring /><SystemHealth /></div>}
-      {section === 'activity' && <ActivityLog key={`${liveView}-${live.state?.user.id || 'guest'}`} demoLogs={auditLogs} liveMode={liveView} onSignIn={() => setSection('connected')} />}
+      {section === 'activity' && <ActivityLog key={`${liveView}-${live.state?.user.id || 'guest'}`} demoLogs={tourIndex !== null ? presentationLogs : auditLogs} liveMode={liveView} onSignIn={() => setSection('connected')} />}
       {section === 'users' && <div className="ops-legacy-panels"><UserManagement /></div>}
       {section === 'public' && (liveView ? <ConnectedOperations tab="inbox" onLocate={locatePhone} /> : <PublicActivityPanel state={publicState} onLocate={point => { openView('map'); setSelection(null); setFenceEditor(false); setAlertsVisible(false); requestAnimationFrame(() => mapRef.current?.focusPoint(point)); }} />)}
-      {section === 'broadcast' && <><div className="ops-dialog-tabs" role="group" aria-label="Broadcast view"><button className={broadcastTab === 'compose' ? 'is-active' : ''} aria-pressed={broadcastTab === 'compose'} onClick={() => setBroadcastTab('compose')}><Send size={14} />Compose broadcast</button><button className={broadcastTab === 'history' ? 'is-active' : ''} aria-pressed={broadcastTab === 'history'} onClick={() => setBroadcastTab('history')}>Delivery history<span>{liveView ? live.state?.alerts.length || 0 : messages.length}</span></button></div>{liveView ? <ConnectedOperations key={`${broadcastTab}-${broadcastGroup}-${teamGroupId||''}`} initialTeamGroupId={teamGroupId} tab={broadcastTab} areas={visibleGeofences} selectedId={selectedFenceId} initialGroup={broadcastGroup} initialActiveOnly={broadcastActiveOnly} onSelectArea={setSelectedFenceId} onLocate={locatePhone} /> : broadcastTab === 'compose' ? <AudienceBroadcastPanel key={tourIndex === null ? 'operator' : 'presentation'} presentationMode={tourIndex !== null} areas={visibleGeofences} selectedId={selectedFenceId} initialGroup={broadcastGroup} initialActiveOnly={broadcastActiveOnly} onSelectArea={setSelectedFenceId} onSendMessage={onSendMessage} onHistory={() => setBroadcastTab('history')} /> : <div className="ops-legacy-panels"><MessageHistory messages={messages} /></div>}</>}
+      {section === 'broadcast' && presentationTeam && tourIndex !== null ? <PresentationGroupBroadcast team={presentationTeam} /> : section === 'broadcast' && <><div className="ops-dialog-tabs" role="group" aria-label="Broadcast view"><button className={broadcastTab === 'compose' ? 'is-active' : ''} aria-pressed={broadcastTab === 'compose'} onClick={() => setBroadcastTab('compose')}><Send size={14} />Compose broadcast</button><button className={broadcastTab === 'history' ? 'is-active' : ''} aria-pressed={broadcastTab === 'history'} onClick={() => setBroadcastTab('history')}>Delivery history<span>{liveView ? live.state?.alerts.length || 0 : messages.length}</span></button></div>{liveView ? <ConnectedOperations key={`${broadcastTab}-${broadcastGroup}-${teamGroupId||''}`} initialTeamGroupId={teamGroupId} tab={broadcastTab} areas={visibleGeofences} selectedId={selectedFenceId} initialGroup={broadcastGroup} initialActiveOnly={broadcastActiveOnly} onSelectArea={setSelectedFenceId} onLocate={locatePhone} /> : broadcastTab === 'compose' ? <AudienceBroadcastPanel key={tourIndex === null ? 'operator' : 'presentation'} presentationMode={tourIndex !== null} areas={visibleGeofences} selectedId={selectedFenceId} initialGroup={broadcastGroup} initialActiveOnly={broadcastActiveOnly} onSelectArea={setSelectedFenceId} onSendMessage={onSendMessage} onHistory={() => setBroadcastTab('history')} /> : <div className="ops-legacy-panels"><MessageHistory messages={messages} /></div>}</>}
       {section === 'help' && <div className="ops-help"><p>Select any incident or team to see its location and details. Use <strong>Layers</strong> to adjust the map, or switch between satellite and street views. Select <strong>Geofence</strong> to draw a polygon, rectangle, or circle, save the area, and send an alert to it. Undo removes the last point; drag handles to edit. Keyboard users can pan the focused map with arrow keys and use <strong>Add center point</strong>.</p><p><kbd>Ctrl / ⌘ K</kbd> focuses place search. Search any Philippine barangay, city, municipality, or province, then save its mapped boundary. Map controls support keyboard navigation. Press <kbd>Esc</kbd> to dismiss details.</p><p><strong>Workspace</strong> opens your customizable dashboard, including the original geofence tools, widget library, layout presets, and light mode.</p><p className="ops-help-note">This project currently uses sample operational data. Broadcasts and audit changes stay in this browser. Connect production data and delivery services before operational use.</p><button className="ops-secondary-button" onClick={onOpenWorkspace}><LayoutGrid size={15} />Open workspace<ArrowUpRight size={14} /></button></div>}
     </DialogContent></Dialog>
     {tourIndex !== null && <PresentationTour key={tourRun} index={tourIndex} onNext={() => { if (tourIndex === presentationSteps.length - 1) exitTour(); else setTourIndex(tourStepIndex(tourIndex, 'next')); }} onBack={() => setTourIndex(tourStepIndex(tourIndex, 'back'))} onRestart={() => { setTourIndex(0); setTourRun(value => value + 1); }} onExit={exitTour}
-      onPlayingChange={setTourPlaying} projectPoint={point => mapRef.current?.projectPoint(point) || null} onMapPoint={addFencePoint} />}
+      onJump={setTourIndex} onPlayingChange={setTourPlaying} projectPoint={point => mapRef.current?.projectPoint(point) || null} onMapPoint={addFencePoint} />}
     <Toaster position="bottom-right" theme="dark" richColors closeButton />
   </div>;
 }

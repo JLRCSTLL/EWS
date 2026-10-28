@@ -4,7 +4,11 @@ import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 
 export default defineConfig({
-  server: { proxy: { '/api': 'http://127.0.0.1:3001' } },
+  server: {
+    proxy: { '/api': 'http://127.0.0.1:3001' },
+    // Native packaging locks large binaries; they are not part of the web preview.
+    watch: { ignored: ['**/desktop/release/**', '**/android/**/build/**', '**/.local-data/**'] },
+  },
   preview: { proxy: { '/api': 'http://127.0.0.1:3001' } },
   plugins: [
     // The React and Tailwind plugins are both required for Make, even if

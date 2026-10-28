@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { ageRanges, pwdStatuses, assistanceOptions, contactRelationships } from "../../lib/emergency-profile";
 import {
   ArrowUpRight,
   FolderKanban,
@@ -883,6 +884,12 @@ export function PersonnelDirectory({
                 after 24 hours and can be revoked.
               </p>
             )}
+            {user.emergencyProfile?.shareWithOperators && <section className="gsam-person-emergency" aria-label={`Emergency profile for ${user.name}`}>
+              <strong>Shared emergency profile</strong>
+              <p>Age: {ageRanges[user.emergencyProfile.ageRange || '']} · PWD: {pwdStatuses[user.emergencyProfile.pwdStatus || '']}</p>
+              <p>{user.emergencyProfile.assistanceNeeds?.map(need=>assistanceOptions[need]).join(' · ') || 'No assistance needs specified'}</p>
+            </section>}
+            {user.emergencyContact && <p className="el-connected-caption">Emergency contact: {user.emergencyContact.name ? `${user.emergencyContact.name} · ${contactRelationships[user.emergencyContact.relationship]} · ` : ''}{user.emergencyContact.phone}{!user.contactVisible?.includes('emergencyContact') && ' · approval required'}</p>}
             {admin && (
               <div className="gsam-person-actions">
                 {user.role === "admin" ? (
@@ -933,6 +940,7 @@ export function PersonnelDirectory({
                       fields: [
                         ...(f.email ? ["email"] : []),
                         ...(f.phone ? ["phone"] : []),
+                        ...(f.emergencyContact ? ["emergencyContact"] : []),
                       ],
                     },
                     "POST",
@@ -958,6 +966,7 @@ export function PersonnelDirectory({
                     <input type="checkbox" name="phone" defaultChecked />
                     Phone
                   </label>
+                  <label><input type="checkbox" name="emergencyContact" />Emergency contact</label>
                 </div>
                 <p className="el-connected-caption">
                   The person must approve in their mobile app. Access is limited

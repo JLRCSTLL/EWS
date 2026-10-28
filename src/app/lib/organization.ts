@@ -39,7 +39,7 @@ export interface ContactRequest {
   requester_id: string;
   requester_name: string;
   reason: string;
-  fields: ("email" | "phone")[];
+  fields: ("email" | "phone" | "emergencyContact")[];
   status: "pending" | "approved" | "denied" | "revoked";
   expires_at: string | null;
   created_at: string;

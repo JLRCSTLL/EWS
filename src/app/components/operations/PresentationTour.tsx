@@ -10,6 +10,7 @@ interface Props {
   onBack: () => void;
   onRestart: () => void;
   onExit: () => void;
+  onJump: (index: number) => void;
   onPlayingChange: (playing: boolean) => void;
   projectPoint: (point: { lat: number; lng: number }) => { x: number; y: number } | null;
   onMapPoint: (point: { lat: number; lng: number }) => void;
@@ -35,6 +36,7 @@ export function PresentationTour(props: Props) {
   const clock = useRef({ index, elapsed: 0, cueIndex: -1, acted: false, typed: -1, waiting: 0,
     element: null as HTMLElement | null, from: pointer.current, bounds: null as Rect | null });
   const [playing, setPlaying] = useState(true);
+  const [speed, setSpeed] = useState(1);
   const [problem, setProblem] = useState('');
   const [visual, setVisual] = useState({ ...pointer.current, pressed: false, typing: false, cue: 0, elapsed: 0, rect: null as Rect | null });
   const [position, setPosition] = useState({ left: 18, top: 90 });
@@ -64,6 +66,7 @@ export function PresentationTour(props: Props) {
         state.cueIndex = frame.index; state.acted = false; state.typed = -1; state.waiting = 0;
         state.element = null; state.bounds = null; state.from = { ...pointer.current };
       }
+      if (!state.acted && state.element && !state.element.isConnected) state.element = null;
       if (!state.element) {
         const element = document.querySelector<HTMLElement>(action.target);
         if (element && element.getClientRects().length) {
@@ -112,21 +115,21 @@ export function PresentationTour(props: Props) {
       const size = card.current?.getBoundingClientRect();
       const placed = tourCardPosition(rect, { width: window.innerWidth, height: window.innerHeight }, { width: size?.width || 310, height: size?.height || 240 });
       setPosition(current => current.left === placed.left && current.top === placed.top ? current : placed);
-      state.elapsed += delta;
+      state.elapsed += delta * speed;
       if (state.elapsed >= duration) { window.clearInterval(timer); callbacks.current.onNext(); }
     }, 33);
     return () => window.clearInterval(timer);
-  }, [index, playing, duration]);
+  }, [index, playing, duration, speed]);
 
   useEffect(() => {
     const keys = (event: KeyboardEvent) => {
       if (event.key === 'Escape') { event.preventDefault(); event.stopImmediatePropagation(); callbacks.current.onExit(); }
-      else if (event.key === 'ArrowRight') { event.preventDefault(); event.stopImmediatePropagation(); callbacks.current.onNext(); }
-      else if (event.key === 'ArrowLeft') { event.preventDefault(); event.stopImmediatePropagation(); callbacks.current.onBack(); }
+      else if (event.key === 'ArrowRight' && !(event.target instanceof HTMLSelectElement)) { event.preventDefault(); event.stopImmediatePropagation(); callbacks.current.onNext(); }
+      else if (event.key === 'ArrowLeft' && !(event.target instanceof HTMLSelectElement)) { event.preventDefault(); event.stopImmediatePropagation(); callbacks.current.onBack(); }
       else if (event.key === 'Tab') {
-        const buttons = Array.from(card.current?.querySelectorAll<HTMLButtonElement>('button:not(:disabled)') || []);
+        const buttons = Array.from(card.current?.querySelectorAll<HTMLElement>('button:not(:disabled), select:not(:disabled)') || []);
         if (!buttons.length) return;
-        const current = buttons.indexOf(document.activeElement as HTMLButtonElement);
+        const current = buttons.indexOf(document.activeElement as HTMLElement);
         const next = current < 0 ? event.shiftKey ? buttons.length - 1 : 0 : (current + (event.shiftKey ? -1 : 1) + buttons.length) % buttons.length;
         event.preventDefault(); event.stopImmediatePropagation(); buttons[next].focus();
       }
@@ -141,7 +144,7 @@ export function PresentationTour(props: Props) {
       <span className="ops-demo-click-ring" /><svg viewBox="0 0 32 38" width="29" height="35"><path d="M3 2L26 22L16 23L22 34L16 37L10 25L3 32Z" fill="#f4f8f5" stroke="#16271e" strokeWidth="2" strokeLinejoin="round" /></svg><span className="ops-demo-cursor-label">DEMO</span>
     </div>
     <div ref={card} className="ops-tour-card" role="dialog" aria-modal="true" aria-labelledby="ops-tour-title" aria-describedby="ops-tour-description" style={position}>
-      <div className="ops-tour-top"><span><MousePointer2 size={12} />LIVE WALKTHROUGH</span><button onClick={onExit} aria-label="Exit guided demo"><X size={16} /></button></div>
+      <div className="ops-tour-top"><span><MousePointer2 size={12} />AUTOMATIC PRESENTATION</span><button onClick={onExit} aria-label="Exit guided demo"><X size={16} /></button></div>
       <div className="ops-tour-progress" aria-label={`Step ${index + 1} of ${presentationSteps.length}`}>{presentationSteps.map((item, stepIndex) => <span key={item.id} className={stepIndex <= index ? 'is-complete' : ''} />)}</div>
       <div className="ops-tour-chapter">{String(index + 1).padStart(2, '0')} / {String(presentationSteps.length).padStart(2, '0')}<span>{step.label}</span></div>
       <h2 id="ops-tour-title" ref={heading} tabIndex={-1}>{step.title}</h2>
@@ -154,6 +157,7 @@ export function PresentationTour(props: Props) {
         <button onClick={last ? onExit : onNext} aria-label={last ? 'Finish guided demo' : 'Next demo step'}>{last ? <Check size={15} /> : <ArrowRight size={15} />}</button>
         <button onClick={onRestart} aria-label="Restart guided demo"><RotateCcw size={14} /></button>
       </div>
+      <div className="ops-tour-options"><label>Chapter<select aria-label="Demo chapter" value={index} onChange={event=>props.onJump(Number(event.target.value))}>{presentationSteps.map((item,i)=><option key={item.id} value={i}>{i+1}. {item.label}</option>)}</select></label><label>Speed<select aria-label="Demo playback speed" value={speed} onChange={event=>setSpeed(Number(event.target.value))}><option value={1}>1×</option><option value={1.5}>1.5×</option><option value={2}>2×</option></select></label></div>
       <div className="ops-tour-footer"><span>Automatic · Demo data · No real alerts</span><span>Esc to exit</span></div>
     </div>
   </div>, document.body);
