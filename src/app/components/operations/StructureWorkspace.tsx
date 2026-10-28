@@ -966,7 +966,7 @@ export function PersonnelDirectory({
                     <input type="checkbox" name="phone" defaultChecked />
                     Phone
                   </label>
-                  <label><input type="checkbox" name="emergencyContact" />Emergency contact</label>
+                  {user.emergencyContact && <label><input type="checkbox" name="emergencyContact" />Emergency contact</label>}
                 </div>
                 <p className="el-connected-caption">
                   The person must approve in their mobile app. Access is limited
