@@ -67,10 +67,11 @@ jobs:
           sleep 3
           xcrun simctl ui "$SIMULATOR_ID" appearance light
           sleep 1
-          xcrun simctl io "$SIMULATOR_ID" screenshot build/evidence/iphone-light.png
+          # Newer iPhone runtimes can expose more than one display.
+          xcrun simctl io "$SIMULATOR_ID" screenshot --display=1 build/evidence/iphone-light.png
           xcrun simctl ui "$SIMULATOR_ID" appearance dark
           sleep 1
-          xcrun simctl io "$SIMULATOR_ID" screenshot build/evidence/iphone-dark.png
+          xcrun simctl io "$SIMULATOR_ID" screenshot --display=1 build/evidence/iphone-dark.png
           ditto -c -k --sequesterRsrc --keepParent build/DerivedData/Build/Products/Debug-iphonesimulator/TANOVIQ.app build/TANOVIQ-iPhone-Simulator.zip
       - name: Compile unsigned iPhone device archive
         run: |
