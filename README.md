@@ -196,9 +196,12 @@ ongoing foreground service while on duty.
 - Changing contacts revokes pending and approved visibility requests. Audit
   logs contain no contact details, emergency-profile values, or exact locations.
 - The backend applies additive user columns and an expanded contact-request
-  constraint on startup. Deploy the backend with `registrationProfileReady`
-  before accepting submissions from the new forms; they check this capability
-  to avoid silently losing fields during rollout.
+  constraint on startup. The interface checks `registrationProfileReady` before
+  offering expanded registration. During a backend rollout, basic account
+  creation and existing contact editing remain available; unsupported fields
+  are not collected or submitted. Reload after deploying Render to see the
+  expanded forms. New-form submissions recheck support to prevent silent data
+  loss if the backend is rolled back.
 
 On Android, high/critical alerts request the native emergency alarm. The expanded
 notification includes message text, **Read message** and **Silence alarm**; the
