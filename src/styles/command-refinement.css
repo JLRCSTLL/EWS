@@ -173,3 +173,7 @@
 .ops-header .ops-brand > span:last-child { font-size: 16px; letter-spacing: -.25px; line-height: 1.3; }
 .ops-header .ops-brand-caption { font-size: 9px; letter-spacing: .08em; margin-top: 5px; }
 @media(max-width: 700px) { .ops-header .ops-brand { min-width: 0; }.ops-header .ops-brand > span:last-child { font-size: 15px; } }
+@media (min-width: 901px) and (max-width: 1450px) {
+  .ops-header:has(.gsam-brand) .ops-nav { flex: 0 0 100%; order: 3; overflow-x: auto; scrollbar-width: none; }
+  .ops-header:has(.gsam-brand) .ops-nav::-webkit-scrollbar { display: none; }
+}

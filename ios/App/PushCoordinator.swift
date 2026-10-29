@@ -35,7 +35,7 @@ import Combine
             // Only enable this key after Apple grants the restricted entitlement.
             if Bundle.main.object(forInfoDictionaryKey: "TANOVIQCriticalAlertsApproved") as? Bool == true { options.insert(.criticalAlert) }
             let granted = try await UNUserNotificationCenter.current().requestAuthorization(options: options)
-            guard granted else { status = "Notifications are blocked. Allow TANOVIQ notifications in Settings."; return }
+            guard granted else { status = "Notifications are blocked. Allow Mobile Phone notifications in Settings."; return }
             UIApplication.shared.registerForRemoteNotifications()
             await register()
         } catch { status = error.localizedDescription }
@@ -113,7 +113,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
                 do { try await API.shared.acknowledge(id, userID: user); await AlertActions.dismiss(id, userID: user) }
                 catch {
                     // Preserve the alert, never claim a failed acknowledgment was sent.
-                    let content = UNMutableNotificationContent(); content.title = "Acknowledgment not sent"; content.body = "Reconnect and acknowledge the TANOVIQ message again."; content.userInfo = payload; content.categoryIdentifier = "TANOVIQ_ALERT"
+                    let content = UNMutableNotificationContent(); content.title = "Acknowledgment not sent"; content.body = "Reconnect and acknowledge the Mobile Phone message again."; content.userInfo = payload; content.categoryIdentifier = "TANOVIQ_ALERT"
                     try? await center.add(UNNotificationRequest(identifier: "retry-" + id, content: content, trigger: nil))
                 }
             } else if response.actionIdentifier == "DISMISS_ALERT" || response.actionIdentifier == UNNotificationDismissActionIdentifier {

@@ -5,6 +5,7 @@ import { getGeofenceError } from "../src/app/lib/geofencing.ts";
 import { getAudience } from "../src/app/lib/residents.ts";
 import { asResident } from "../src/app/lib/live-model.ts";
 import { groupTags, memberIds } from "../src/app/lib/organization.ts";
+import { ownedAudio } from './alert-audio.mjs';
 
 const fail = (status, message) => {
   throw Object.assign(new Error(message), { status });
@@ -12,6 +13,8 @@ const fail = (status, message) => {
 const uuid =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 export function dispatchSpec(body) {
+  if (body.audioId !== undefined && !uuid.test(body.audioId)) fail(400, 'Invalid audio identifier.');
+  const attachment = body.audioId ? { audioId: body.audioId } : {};
   const content = typeof body.content === "string" ? body.content.trim() : "";
   if (!content || content.length > 1000)
     fail(400, "Write a message of 1–1000 characters.");
@@ -32,6 +35,7 @@ export function dispatchSpec(body) {
     if (!tags.length && !teamGroupIds.length)
       fail(400, "Select a group or enter its #tag.");
     return {
+      ...attachment,
       content,
       priority: body.priority,
       mode,
@@ -84,6 +88,7 @@ export function dispatchSpec(body) {
   )
     fail(400, "Choose valid geofence filters.");
   return {
+    ...attachment,
     content,
     priority: body.priority,
     mode,
@@ -166,7 +171,9 @@ export function dispatchRoutes(app, db, push, rateLimit, changed) {
   app.post("/api/alerts/preview", async (req, res) => {
     guard(req);
     rateLimit(req, "preview", 180);
-    res.json(await resolveDispatch(db, dispatchSpec(req.body)));
+    const spec = dispatchSpec(req.body);
+    if (spec.audioId) await ownedAudio(db, spec.audioId, req.user.id);
+    res.json(await resolveDispatch(db, spec));
   });
   app.post("/api/alerts", async (req, res) => {
     guard(req);
@@ -185,7 +192,7 @@ export function dispatchRoutes(app, db, push, rateLimit, changed) {
           fail(409, "Message identifier is already in use.");
         const matches = previous.target_spec
           ? isDeepStrictEqual(previous.target_spec, spec)
-          : previous.content === spec.content &&
+          : !spec.audioId && previous.content === spec.content &&
             previous.priority === spec.priority &&
             isDeepStrictEqual(previous.area, spec.area) &&
             isDeepStrictEqual(previous.groups, spec.groups) &&
@@ -200,6 +207,7 @@ export function dispatchRoutes(app, db, push, rateLimit, changed) {
       await tx.query(
         "lock table eligtas.team_groups,eligtas.group_members in share mode",
       );
+      const audio = spec.audioId ? await ownedAudio(tx, spec.audioId, req.user.id) : null;
       const audience = await resolveDispatch(tx, spec);
       if (
         (spec.mode === "groups" || previewHash) &&
@@ -217,7 +225,7 @@ export function dispatchRoutes(app, db, push, rateLimit, changed) {
             : "No eligible on-duty personnel share a recent location in this geofence.",
         );
       await tx.query(
-        "insert into eligtas.alerts(id,author_id,content,priority,area,groups,active_only,recipient_count,target_mode,target_label,target_group_ids,target_spec) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)",
+        "insert into eligtas.alerts(id,author_id,content,priority,area,groups,active_only,recipient_count,target_mode,target_label,target_group_ids,target_spec,audio,audio_id) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)",
         [
           id,
           req.user.id,
@@ -231,6 +239,8 @@ export function dispatchRoutes(app, db, push, rateLimit, changed) {
           audience.label,
           audience.groupIds,
           JSON.stringify(spec),
+          audio ? JSON.stringify(audio) : null,
+          audio?.id || null,
         ],
       );
       for (const user of audience.recipients)
@@ -246,6 +256,7 @@ export function dispatchRoutes(app, db, push, rateLimit, changed) {
         id,
         content: spec.content,
         priority: spec.priority,
+        audio,
         created_at: new Date().toISOString(),
         recipient_count: audience.recipients.length,
       };

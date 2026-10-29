@@ -9,8 +9,8 @@ android {
         applicationId 'ph.eligtas.app'
         minSdk 26
         targetSdk 36
-        versionCode 8
-        versionName '0.6.0'
+        versionCode 9
+        versionName '0.7.0'
         buildConfigField 'boolean', 'PUSH_CONFIGURED', hasFirebase.toString()
         buildConfigField 'String', 'APP_ORIGIN', '"https://ews-kappa.vercel.app"'
     }

@@ -56,7 +56,11 @@ public final class NativeAlertWorker extends Worker {
                 if (cached==null) return Result.success();
                 JSONArray alerts=state.getJSONArray("alerts"); boolean found=false;
                 for(int i=0;i<alerts.length();i++) if(id.equals(alerts.getJSONObject(i).optString("id"))) {
-                    cached.put("body",alerts.getJSONObject(i).optString("content")); found=true; break;
+                    JSONObject message = alerts.getJSONObject(i);
+                    cached.put("body", message.optString("content"));
+                    JSONObject audio = message.optJSONObject("audio");
+                    if (audio != null) { cached.put("audioId", audio.optString("id")); cached.put("audioKind", audio.optString("kind")); }
+                    found=true; break;
                 }
                 if (!found || !user.equals(AlarmSettings.prefs(c).getString("user",""))) return Result.success();
                 AlertStore.save(c,cached);

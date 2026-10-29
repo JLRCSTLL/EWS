@@ -27,9 +27,9 @@ export function PresentationMobile({ chapter }: { chapter: MobilePresentationCha
     <header className="presentation-mobile-stage-heading"><span><Smartphone size={18}/>FROM COMMAND CENTER TO PHONE</span><small>Interactive simulation · no real alerts, GPS or requests</small></header>
     <div className="presentation-mobile-layout">
       <div className="presentation-mobile-narration" data-demo="mobile-narration" aria-hidden="true"/>
-      <div className="presentation-mobile-device" aria-label="TANOVIQ mobile app demo">
+      <div className="presentation-mobile-device" aria-label="Mobile Phone mobile app demo">
         <div className="presentation-mobile-status" aria-hidden="true"><span>9:41</span><i/><span><Signal size={13}/><Wifi size={13}/><BatteryFull size={17}/></span></div>
-        <header className="presentation-mobile-header"><div><strong>TANOVIQ</strong><small>Personnel app</small></div><span><i/>Demo connected</span><span className="presentation-mobile-avatar">AL</span></header>
+        <header className="presentation-mobile-header"><div><strong>Mobile Phone</strong><small>Personnel app</small></div><span><i/>Demo connected</span><span className="presentation-mobile-avatar">AL</span></header>
         <div className="presentation-mobile-screen">
           {state.page === 'home' && <div data-demo="mobile-home-screen"><span className="presentation-mobile-eyebrow">YOUR COMMAND CENTER, WITH YOU</span><h2>Hello, Alex.</h2><p className="presentation-mobile-muted">Stay informed. Stay connected.</p>
             {alertCard}<div className="presentation-mobile-card"><span className="presentation-mobile-eyebrow">DUTY & LOCATION</span><h3>{state.sharing ? 'Your location is shared' : 'Ready when you are'}</h3><p>{state.sharing ? 'Your sample position is visible to the command center.' : 'Start a duty session to share your position with approved operators.'}</p><button className="presentation-mobile-secondary" onClick={() => navigate('area')}>View my area<MapPin size={15}/></button></div>

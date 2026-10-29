@@ -38,6 +38,7 @@ export function setupAndroidPush(db, raw = process.env.FCM_SERVICE_ACCOUNT_JSON,
           const payload = { message: { token: device.token, android: { priority: urgent ? 'HIGH' : 'NORMAL', ttl: '300s' }, data: {
             kind: 'eligtas-alert', id: alert.id, userId: device.user_id, priority: alert.priority,
             body: [...alert.content].slice(0,500).join(''), createdAt: new Date(alert.created_at || Date.now()).toISOString(),
+            ...(alert.audio ? { audioId: alert.audio.id, audioKind: alert.audio.kind } : {}),
           } } };
           for (let attempt = 0; attempt < 2; attempt++) {
             const response = await request(`https://fcm.googleapis.com/v1/projects/${credentials.project_id}/messages:send`, {

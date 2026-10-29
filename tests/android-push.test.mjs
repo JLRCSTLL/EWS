@@ -33,9 +33,11 @@ test('Android push targets actual recipients, uses urgent data payloads, and rem
   await push.send({id:alertId,content:'TEST — no emergency',priority:'critical'});
   assert.equal(sent.length,1); assert.equal(sent[0].message.token,'alice'.repeat(30));
   assert.equal(sent[0].message.android.priority,'HIGH'); assert.equal(sent[0].message.data.userId,a); assert.equal(sent[0].message.notification,undefined);
-  await push.send({id:alertId,content:'TEST — high priority',priority:'high'});
+  const audioId=randomUUID();
+  await push.send({id:alertId,content:'TEST — high priority',priority:'high',audio:{id:audioId,kind:'voice'}});
   assert.equal(sent[1].message.android.priority,'HIGH'); assert.equal(sent[1].message.data.priority,'high');
   assert.equal(sent[1].message.notification,undefined); assert.equal(sent[1].message.android.ttl,'300s');
+  assert.equal(sent[1].message.data.audioId,audioId); assert.equal(sent[1].message.data.audioKind,'voice');
   unregistered = true; await push.send({id:alertId,content:'TEST',priority:'normal'});
   assert.equal(oauth,1); assert.equal(sent[2].message.android.priority,'NORMAL');
   assert.equal((await db.query('select * from eligtas.android_devices where user_id=$1',[a])).rows.length,0);

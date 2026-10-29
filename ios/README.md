@@ -1,4 +1,4 @@
-# TANOVIQ for iPhone — 0.1.0
+# Mobile Phone for iPhone — 0.1.0
 
 This is the native SwiftUI iPhone app. The repository includes a GitHub-hosted
 Mac build workflow, so compilation does not require a Mac on the Windows host.
@@ -8,17 +8,17 @@ Mac build workflow, so compilation does not require a Mac on the Windows host.
 
 The [iPhone build workflow](https://github.com/JLRCSTLL/EWS/actions/workflows/ios-build.yml)
 uses the standard `xcode-27` Mac runner. Pushes affecting iOS source on
-`build/tanoviq-ios` compile the app and its Live Activity extension, run unit and
+`main` or `build/tanoviq-ios` compile the app and its Live Activity extension, run unit and
 UI tests, capture simulator screenshots, and compile an unsigned device archive.
 It uses read-only repository permissions and no Apple credentials. No production
 account is created and no real alert is sent by these tests.
 
 A successful run provides:
 
-- **TANOVIQ-iPhone-Simulator.zip**: compiled `.app` for the arm64 iPhone Simulator.
-- **TANOVIQ-iPhone-Unsigned-Archive.zip**: compiled `.xcarchive` for iPhone hardware.
+- **Mobile-Phone-iPhone-Simulator.zip**: compiled `.app` for the arm64 iPhone Simulator.
+- **Mobile-Phone-iPhone-Unsigned-Archive.zip**: compiled `.xcarchive` for iPhone hardware.
   It requires Apple signing and provisioning before installation or distribution.
-- **TANOVIQ-iPhone-build-evidence**: compiler logs, test summary, and screenshots.
+- **Mobile-Phone-iPhone-build-evidence**: compiler logs, test summary, and screenshots.
 
 GitHub retains these artifacts for seven days. Local copies and checksums are
 saved with the delivered iPhone build. Neither archive is an installable IPA or
@@ -44,8 +44,9 @@ xcrun simctl launch booted ph.tanoviq.app
 - Four native tabs: Overview, Alerts, Duty and Account. Registration/sign-in use
   the same command-center accounts, preferred names and recipient-scoped inbox.
   There is no mobile button that grants or opens command-center access.
-- The TANOVIQ logo is included for launch, app icon and initial loading. The
-  approved dark variant from `desktop/assets` is reused; no new logo was invented.
+- The home-screen display name, initial loading, notification text and Live
+  Activity use **Mobile Phone**. Internal target and bundle identifiers remain
+  unchanged for update compatibility.
 - Ordinary APNs **visible** notifications carry the message and category actions.
   Delivery does not depend on a suspended app fetching its inbox. Expand/hold a
   notification to read and acknowledge; acknowledgment requires unlocking and
@@ -65,6 +66,11 @@ xcrun simctl launch booted ph.tanoviq.app
   key belongs in the app. HTTPS requests do not follow redirects.
 
 ## Sound: what iOS permits
+
+Alert details include manual playback for an operator's attached alarm or voice
+message. Downloads use the signed-in recipient session and a strict size limit;
+leaving the view cancels playback. This requires the updated backend. Uploaded
+recordings do not replace the background APNs notification sound.
 
 Normal notifications obey iPhone sound settings. High/Critical messages request
 time-sensitive presentation by default. To use Critical Alerts, Apple must first

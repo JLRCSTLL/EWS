@@ -11,6 +11,7 @@ import { iosRoutes } from './ios-routes.mjs';
 import { accountRoutes } from './account.mjs';
 import { auditRoutes } from './audit.mjs';
 import { normalizeProfile } from './profile.mjs';
+import { alertAudioRoutes } from './alert-audio.mjs';
 
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const fail = (status, message) => { throw Object.assign(new Error(message), { status }); };
@@ -34,6 +35,7 @@ export function createApp(db, { push, production = process.env.NODE_ENV === 'pro
     }
     next();
   });
+  app.use('/api/alert-audio', express.json({ limit: '1400kb' }));
   app.use(express.json({ limit: '1mb' }));
   const limits = new Map();
   function rateLimit(req, key, max, windowMs = 15 * 60000) {
@@ -51,7 +53,7 @@ export function createApp(db, { push, production = process.env.NODE_ENV === 'pro
     res.cookie('eligtas_session', token, { httpOnly: true, secure: production, sameSite: 'lax', path: '/api', maxAge: 30 * 86400000 });
   }
   app.get('/api/health', async (_req, res) => { await db.query('select 1'); res.json({ ok: true, service: 'TANOVIQ', version: 2 }); });
-  app.get('/api/config', (_req, res) => res.json({ pushPublicKey: push?.publicKey || null, androidPushReady: !!push?.androidReady, iosPushReady: !!push?.iosReady, accountDeletionReady: true, nativeLocationReady: true, registration: true, registrationProfileReady: true, gsamReady: true, dutyTracking: true, groupManagementReady: true, boundaryGeofencesReady: true, auditLogsReady: true, commandCenterVersion: '1.1.0' }));
+  app.get('/api/config', (_req, res) => res.json({ pushPublicKey: push?.publicKey || null, androidPushReady: !!push?.androidReady, iosPushReady: !!push?.iosReady, accountDeletionReady: true, nativeLocationReady: true, registration: true, registrationProfileReady: true, gsamReady: true, dutyTracking: true, groupManagementReady: true, boundaryGeofencesReady: true, auditLogsReady: true, alertAudioReady: true, commandCenterVersion: '1.1.3' }));
   for (const method of ['put','delete']) app[method]('/api/location/native', async (req,res) => {
     const token = /^Bearer ([A-Za-z0-9_-]{43})$/.exec(req.get('authorization') || '')?.[1];
     res.json(await location.native(token,req.method,req.body));
@@ -107,6 +109,7 @@ export function createApp(db, { push, production = process.env.NODE_ENV === 'pro
     req.user = rows[0]; next();
   });
   accountRoutes(app, db, { rateLimit, changed: events.changed, production });
+  alertAudioRoutes(app, db, rateLimit);
   auditRoutes(app, db);
   app.get('/api/state', async (req, res) => {
     const operator = isOperator(req.user) && req.query.view !== 'public';

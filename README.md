@@ -1,4 +1,4 @@
-# TANOVIQ
+# Command Center Platform and Mobile Phone
 
 **See Risk Before It Strikes.**
 
@@ -13,9 +13,9 @@ clearly separated from connected accounts and alerts.
 | Client | Purpose | Current build |
 | --- | --- | --- |
 | [Command center](https://ews-kappa.vercel.app/) | Browser interface for approved operators | Web |
-| [Personnel app](https://ews-kappa.vercel.app/#/public) | Register, receive alerts, share location while on duty, request help | Mobile web / PWA |
-| [Windows](desktop/README.md) | Dedicated command-center window, splash and desktop controls | 1.1.1, x64 installer / portable |
-| [Android](android/README.md) | Mobile interface with native notifications, alarm controls and on-duty GPS | 0.6.0 pilot, version code 8 |
+| [Mobile Phone](https://ews-kappa.vercel.app/#/public) | Register, receive alerts, share location while on duty, request help | Mobile web / PWA |
+| [Windows](desktop/README.md) | Dedicated command-center window, splash and desktop controls | 1.1.3, x64 installer / portable |
+| [Android](android/README.md) | Mobile interface with native notifications, alarm controls and on-duty GPS | 0.7.0 pilot, version code 9 |
 | [iPhone](ios/README.md) | SwiftUI app, APNs and Live Activity implementation | Development; no signed IPA or TestFlight release |
 
 Windows and Android load the hosted interface. Rebuilding an installer does not
@@ -45,10 +45,16 @@ not Apple's native Liquid Glass renderer.
   Saved areas use solid teal outlines and explicit labels; the selected area is
   brighter, while unsaved previews use amber dashes. Searching an already-saved
   boundary selects it instead of creating a duplicate draft.
+  Press **Escape**, click the empty map, select the same boundary again, or use
+  **Clear selection** to leave an area without deleting it. **Layers** controls
+  saved boundary and shared personnel visibility in connected operations.
 - **Reviewed broadcasts:** inspect recipients before sending to a geofence or
   named groups. Group selection or a recognized message `#tag` reaches group
   members regardless of geofence or duty status. Overlapping memberships do not
   duplicate deliveries. The server recalculates the audience before dispatch.
+- **Alert audio:** upload an alarm clip or record a voice message of up to 30
+  seconds, preview it, then review and send it with written instructions. Audio
+  remains restricted to authorized operators and the actual alert recipients.
 - **Desktop bell:** review actual field requests, safe check-ins and broadcasts.
   Opening an item goes to the relevant workspace. Read state belongs to the
   signed-in account on that workstation; it never acknowledges a phone alert.
@@ -215,6 +221,33 @@ The iPhone implementation requires Apple signing, APNs configuration and device
 validation. Critical Alerts require Apple's entitlement approval and user
 permission. No store acceptance or TestFlight availability is implied.
 
+### Custom alarm sound and voice
+
+In **Compose alert → Alarm sound or voice**, choose a file purpose and upload an
+audio file (up to 8 MB, 0.1–30 seconds), or select **Record voice** and grant
+microphone access. Recordings stop automatically. Preview or remove the clip
+before reviewing recipients. Written instructions are required even with audio.
+Changing the attachment invalidates the previous audience review.
+
+Android 0.7.0 plays attached audio for High/Critical alerts using the native alarm
+service: alarm clips repeat for a bounded period; voice messages play once. The
+ordinary alarm starts immediately and remains the fallback if downloading or
+playing the attachment fails. Silence stops the current playback and restores
+the previous alarm volume. Existing OS permission, DND and battery restrictions
+still apply. Normal announcements offer manual playback in the inbox.
+
+The mobile web inbox and operator delivery history include an audio player.
+Automatic browser playback requires an open page and enabled browser audio.
+iPhone source includes manual playback in alert details; background notifications
+continue using the configured system sound. Arbitrary uploaded audio is not an
+iPhone background alarm.
+
+The server validates and stores normalized WAV bytes in Postgres, not public
+files. Push messages carry only audio identifiers. Draft audio is private to its
+author; sent audio requires an operator or recipient session. Unattached drafts
+older than 24 hours are cleaned up on subsequent uploads. Deploy the API with
+`alertAudioReady: true` before using these controls.
+
 ## Deployment
 
 `render.yaml` defines the Node API and Postgres service.
@@ -224,9 +257,11 @@ permission. No store acceptance or TestFlight availability is implied.
 1. Configure Render's server environment using `.env.example`. Keep
    `DATABASE_URL`, `BOOTSTRAP_TOKEN`, `FCM_SERVICE_ACCOUNT_JSON`, APNs private
    keys and push private keys server-only. Never use `VITE_*` for secrets.
-2. Deploy the API/schema first. For command-center 1.1, `/api/config` must report
-   `groupManagementReady: true`, `boundaryGeofencesReady: true` and
-   `commandCenterVersion: "1.1.0"`.
+2. Deploy the API/schema first. For this release, `/api/config` must report
+   `groupManagementReady: true`, `boundaryGeofencesReady: true`,
+   `registrationProfileReady: true`, `alertAudioReady: true`, and
+   `commandCenterVersion: "1.1.3"`. Verify the deployed commit: deploying the
+   latest commit of a stale branch does not deploy `main`.
 3. Deploy the frontend to the existing Vercel `ews` project. Production uses
    `main`; a branch preview does not update the public domain. The
    `.vercelignore` file excludes local data, secrets and native app build trees.
@@ -294,7 +329,7 @@ The original interface attribution is retained in [ATTRIBUTIONS.md](ATTRIBUTIONS
 
 ### Shared interface and presentation
 
-The desktop interface is temporarily named **Command Center Platform**; the personnel app retains **TANOVIQ**. Both use the charcoal glass material and typography in `src/styles/command-theme.css`. Mobile navigation remains sized for touch, and alert text uses a solid surface for readability. The emergency-profile registration form is shared by mobile and command-center account creation.
+The desktop interface is temporarily named **Command Center Platform**; the personnel app and demonstration phone are named **Mobile Phone**. Both use the charcoal glass material and typography in `src/styles/command-theme.css`. Mobile navigation remains sized for touch, and alert text uses a solid surface for readability. The emergency-profile registration form is shared by mobile and command-center account creation. Internal package identifiers and stored account sessions retain their existing names so installed updates remain compatible.
 
 Select **Demo** in the web command center to start the automatic cursor walkthrough. Its 17 chapters cover emergency-profile sharing, groups and leaders, group announcements, map views, geofences, population and exposure, geographic alerts, the mobile app, ambulance dispatch, resident evacuation, responder routes, CCTV, and Logs. The presentation repeats automatically for display; each loop resets its sample data. Pause/resume and 1×/1.5×/2× playback are available. **Esc** or the close button exits and restores the original workspace.
 

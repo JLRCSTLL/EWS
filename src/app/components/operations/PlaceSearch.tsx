@@ -35,7 +35,7 @@ export function PlaceSearch({ onPreview, onClear }: { onPreview:(place:BoundaryP
   return <div className="place-search">
     <form className="place-search-bar" role="search" onSubmit={e => {e.preventDefault();void search();}}>
       {busy ? <LoaderCircle className="place-search-spinner" size={16} /> : <Search size={16} />}
-      <input id="operations-place-search" type="search" maxLength={120} aria-label="Search Philippine places" placeholder="Search barangay, municipality, province…" value={query} onChange={e => {cancel();setQuery(e.target.value);setSelected(null);setResults([]);setError('');setNote('');}} onFocus={() => {if(results.length || error) setOpen(true);}} onKeyDown={e => {if(e.key === 'Escape') {cancel();setOpen(false);}}} />
+      <input id="operations-place-search" type="search" maxLength={120} aria-label="Search Philippine places" placeholder="Search barangay, municipality, province…" value={query} onChange={e => {cancel();setQuery(e.target.value);setSelected(null);setResults([]);setError('');setNote('');}} onFocus={() => {if(results.length || error) setOpen(true);}} onKeyDown={e => {if(e.key === 'Escape' && open) {e.preventDefault();e.stopPropagation();cancel();setOpen(false);}}} />
       {query && <button type="button" aria-label="Clear place search" onClick={() => {cancel();setQuery('');setSelected(null);setResults([]);setOpen(false);setError('');onClear();}}><X size={14} /></button>}
       <button type="submit" aria-label="Search boundaries" disabled={busy || query.trim().length < 2}><ArrowRight size={17} /></button>
     </form>

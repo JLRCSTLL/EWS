@@ -5,6 +5,7 @@ import { BrowserAlarm, createAlertTracker, presentAlert } from '../../lib/alert-
 import { android, isAndroidApp, type AndroidStatus } from '../../lib/android';
 import { api } from '../../lib/live-service';
 import type { LiveAlert } from '../../lib/live-model';
+import { alertAudioUrl } from '../../lib/alert-audio';
 
 export function AlertAlarm({ userId, alerts, onOpen, settings }: { userId: string; alerts: LiveAlert[]; onOpen: (alert: LiveAlert) => void; settings: boolean }) {
   const native = isAndroidApp();
@@ -66,10 +67,11 @@ export function AlertAlarm({ userId, alerts, onOpen, settings }: { userId: strin
     let cancelled = false;
     const duration = active.priority === 'normal' ? 8000 : 30000;
     if (native) {
-      void android<{playing: boolean}>('alert', { alert: { id: active.id, userId, body: active.content, priority: active.priority, createdAt: active.created_at } })
+      void android<{playing: boolean}>('alert', { alert: { id: active.id, userId, body: active.content, priority: active.priority, createdAt: active.created_at, ...(active.audio ? { audioId: active.audio.id, audioKind: active.audio.kind } : {}) } })
         .then(result => { if (!cancelled) setSounding(result.playing); }).catch(() => { if (!cancelled) setNote('Open Android alarm settings and check permissions.'); });
     } else if (enabled) {
       const played = audio.current?.play(duration) || false;
+      if (played && active.audio && active.priority !== 'normal') void audio.current?.playAttachment(alertAudioUrl(active.audio.id), active.audio.kind === 'alarm', duration);
       setSounding(played);
       if (!played) { setEnabled(false); setNote('Your browser paused audio. Tap Enable sound to resume.'); }
     }
@@ -107,7 +109,7 @@ export function AlertAlarm({ userId, alerts, onOpen, settings }: { userId: strin
       {(settings || !enabled) && <p className="el-caption">{native ? 'High and critical alerts automatically use full alarm volume, including silent ringer mode. Normal announcements follow notification settings. DND must allow alarm audio.' : 'Plays while this app is open after you enable sound. Browsers cannot override silent mode or force full volume.'}</p>}
       {settings && <><div className="el-alarm-actions"><button className="el-secondary" disabled={busy || (native && !enabled)} onClick={() => void run(test)}><Volume2 size={16} />Test alarm · 4 sec</button>{native && <button className="el-secondary" onClick={() => void run(async () => { await android('notifications'); })}>Android notifications</button>}</div>
         {native && status && <div className="el-native-settings">
-          {!status.managedAlarms && <p className="el-notice">Install TANOVIQ Android pilot 0.4.1 for duty permissions and always-enabled emergency alarms.</p>}
+          {!status.managedAlarms && <p className="el-notice">Install Mobile Phone Android pilot 0.7.0 for duty permissions and always-enabled emergency alarms.</p>}
           {status.appVersion && <p className="el-caption">Android app {status.appVersion}</p>}
           <p className="el-caption"><strong>Emergency alarm policy: always enabled, full alarm volume.</strong></p>
           <p className="el-caption">Rises to full alarm volume, then restores your previous volume when stopped. This also affects Test alarm.</p>

@@ -39,6 +39,7 @@ interface OperationsMapProps {
   areas: AlertGeofence[];
   selectedAreaId: string | null;
   onSelectGeofence: (id: string) => void;
+  onClearSelection: () => void;
   showResidents: boolean;
   simulationPaused: boolean;
   simulationReplay: number;
@@ -97,11 +98,11 @@ function addFenceLabel(boundary: L.Polygon | L.Circle, name: string, status: 'sa
     keyboard: !!onSelect, interactive: !!onSelect, zIndexOffset: status === 'saved' ? 1100 : 1200,
   }).addTo(group);
   marker.getElement()?.setAttribute('aria-label', description);
-  if (onSelect) { marker.on('click', onSelect); marker.getElement()?.setAttribute('aria-pressed', String(status === 'selected')); }
+  if (onSelect) { marker.on('click', event => { if (event.originalEvent) L.DomEvent.stopPropagation(event.originalEvent); onSelect(); }); marker.getElement()?.setAttribute('aria-pressed', String(status === 'selected')); }
 }
 
 export const OperationsMap = forwardRef<OperationsMapHandle, OperationsMapProps>(function OperationsMap(
-  { incidents, layers, region, basemap, selection, onSelect, geofence, drawing, previewing = false, onGeofencePoint, onGeofenceMove, areas, selectedAreaId, onSelectGeofence, showResidents, simulationPaused, simulationReplay, onSimulationTick, publicReports, residents = demoResidents, snapshotAt = demoSnapshotAt, live = false }, ref,
+  { incidents, layers, region, basemap, selection, onSelect, geofence, drawing, previewing = false, onGeofencePoint, onGeofenceMove, areas, selectedAreaId, onSelectGeofence, onClearSelection, showResidents, simulationPaused, simulationReplay, onSimulationTick, publicReports, residents = demoResidents, snapshotAt = demoSnapshotAt, live = false }, ref,
 ) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -110,6 +111,8 @@ export const OperationsMap = forwardRef<OperationsMapHandle, OperationsMapProps>
   const onGeofencePointRef = useRef(onGeofencePoint);
   const onGeofenceMoveRef = useRef(onGeofenceMove);
   const onSelectGeofenceRef = useRef(onSelectGeofence);
+  const backgroundClick = useRef(() => {});
+  backgroundClick.current = () => { if (!drawing && !previewing) onClearSelection(); };
   const framedLiveLocations = useRef(false);
   const residentLayer = useRef<L.LayerGroup | null>(null);
   const residentMarkers = useRef(new Map<string,L.CircleMarker>());
@@ -181,6 +184,11 @@ export const OperationsMap = forwardRef<OperationsMapHandle, OperationsMapProps>
       zoomSnap: 0.5, scrollWheelZoom: true, touchZoom: true,
     });
     mapRef.current = map;
+    map.on('click', event => {
+      const target = event.originalEvent?.target;
+      if (target instanceof Element && target.closest('.leaflet-interactive, .leaflet-marker-icon, .leaflet-popup, .leaflet-control')) return;
+      backgroundClick.current();
+    });
     markerLayerRef.current = L.layerGroup().addTo(map);
     L.control.attribution({ position: 'bottomright', prefix: false }).addTo(map);
     const observer = new ResizeObserver(() => map.invalidateSize({ animate: false }));
@@ -198,7 +206,7 @@ export const OperationsMap = forwardRef<OperationsMapHandle, OperationsMapProps>
     const group = L.layerGroup().addTo(map);
     for (const report of publicReports) {
       const label = document.createElement('span'); label.textContent = report.label;
-      L.circleMarker([report.point.lat, report.point.lng], { radius: report.kind === 'help' ? 12 : 8, color: '#fff', weight: 2, fillColor: report.kind === 'help' ? '#f49b62' : '#73cfab', fillOpacity: .95, interactive: !drawing }).addTo(group).bindTooltip(label, { direction: 'top', className: 'ops-map-tooltip' });
+      L.circleMarker([report.point.lat, report.point.lng], { radius: report.kind === 'help' ? 12 : 8, color: '#fff', weight: 2, fillColor: report.kind === 'help' ? '#f49b62' : '#73cfab', fillOpacity: .95, interactive: !drawing, bubblingMouseEvents: false }).addTo(group).bindTooltip(label, { direction: 'top', className: 'ops-map-tooltip' });
     }
     return () => { group.remove(); };
   }, [publicReports, drawing]);
@@ -277,9 +285,9 @@ export const OperationsMap = forwardRef<OperationsMapHandle, OperationsMapProps>
       const boundary = addFenceOutline(area, {
         color: selected ? '#d8fff3' : '#71e7c9', weight: selected ? 4 : 3,
         fillColor: '#43caa6', fillOpacity: selected ? .17 : .1,
-        interactive: !drawing, className: `ops-geofence-boundary${selected ? ' is-selected' : ''}`,
+        interactive: !drawing, bubblingMouseEvents: false, className: `ops-geofence-boundary${selected ? ' is-selected' : ''}`,
       }, group);
-      boundary.on('click', () => onSelectGeofenceRef.current(area.id));
+      boundary.on('click', event => { if (event.originalEvent) L.DomEvent.stopPropagation(event.originalEvent); onSelectGeofenceRef.current(area.id); });
       addFenceLabel(boundary, area.name || 'Unnamed area', selected ? 'selected' : 'saved', group, drawing ? undefined : () => onSelectGeofenceRef.current(area.id));
     });
     return () => { group.remove(); };

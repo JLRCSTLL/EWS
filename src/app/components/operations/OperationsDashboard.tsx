@@ -103,7 +103,7 @@ const sectionDescriptions: Record<Exclude<Section, null>, string> = {
   broadcast: 'Demo broadcasts reach matching public profiles in this browser. No real notifications are sent.',
   users: 'Review the existing operator directory and access roles.',
   help: 'A clearer view of your emergency operations.',
-  public: 'Two-way presentation updates from the TANOVIQ public app.',
+  public: 'Two-way presentation updates from the Mobile Phone app.',
   connected: 'Preferred names, on-duty locations, and consent-based contact access.',
   groups: 'Manage members, assign leaders, and send alerts to the teams you create.',
 };
@@ -168,6 +168,7 @@ export function OperationsDashboard({ auditLogs, messages, onSendMessage, onOpen
   const [filter, setFilter] = useState<IncidentFilter>('all');
   const [selection, setSelection] = useState<MapSelection | null>(null);
   const [layers, setLayers] = useState<MapLayers>({ incidents: true, responders: true, infrastructure: false, risk: true });
+  const [showGeofences, setShowGeofences] = useState(true);
   const [basemap, setBasemap] = useState<'satellite' | 'street'>('satellite');
   const [alertsVisible, setAlertsVisible] = useState(true);
   const [expandedAlert, setExpandedAlert] = useState<string | null>('event-1');
@@ -274,10 +275,15 @@ export function OperationsDashboard({ auditLogs, messages, onSendMessage, onOpen
   };
   const groupBroadcast = (id:string) => { setTeamGroupId(id);setBroadcastTab('compose');setSection('broadcast'); };
   const selectFence = (id: string) => {
-    setSelectedFenceId(id); setFenceDraft(null); setSelection(null); setFenceEditor(true);
+    setSelectedFenceId(id); setFenceDraft(null); setSelection(null); setFenceEditor(true); setShowGeofences(true);
+  };
+  const clearMapSelection = () => {
+    setSelectedFenceId(null); setSelection(null); setFenceDraft(null);
+    setEditingFenceId(null); setFenceEditor(false);
   };
 
   const drawFence = (shape: GeofenceShape) => {
+    setShowGeofences(true);
     setSelection(null);
     setEditingFenceId(null);
     setDraftName(`Alert area ${geofences.length + 1}`);
@@ -303,6 +309,7 @@ export function OperationsDashboard({ auditLogs, messages, onSendMessage, onOpen
   };
 
   const previewBoundary = (place: BoundaryPlace, geometry: GeofenceGeometry) => {
+    setShowGeofences(true);
     openView('map'); setSection(null); setSelection(null); setAlertsVisible(false);
     const sourceId = geometry.source?.recordId;
     const existing = sourceId ? visibleGeofences.find(area => area.source?.recordId === sourceId) : undefined;
@@ -323,11 +330,14 @@ export function OperationsDashboard({ auditLogs, messages, onSendMessage, onOpen
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
         event.preventDefault(); focusSearch();
       }
-      if (event.key === 'Escape') setSelection(null);
+      if (event.key === 'Escape' && !event.defaultPrevented && section === null &&
+          !(event.target instanceof Element && event.target.closest('[role="dialog"], [data-radix-popper-content-wrapper]'))) {
+        clearMapSelection();
+      }
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [tourIndex]);
+  }, [tourIndex, section]);
 
   const locate = (next: MapSelection) => {
     openView('map');
@@ -364,11 +374,12 @@ export function OperationsDashboard({ auditLogs, messages, onSendMessage, onOpen
     <OperationsMap ref={mapRef} incidents={liveView ? [] : incidents} layers={liveView ? { incidents: false, responders: false, infrastructure: false, risk: false } : layers} region={region} basemap={basemap} selection={selection} onSelect={setSelection} publicReports={tourIndex === null && !liveView ? publicReports : []}
       residents={liveView ? realUsers : undefined} snapshotAt={liveView ? live.locationNow : undefined} live={liveView}
       geofence={fenceDraft || alertGeofence} drawing={!!fenceDraft && fenceDraft.shape !== 'boundary'} previewing={!!fenceDraft} onGeofencePoint={addFencePoint}
-      areas={visibleGeofences} selectedAreaId={fenceDraft ? null : selectedFenceId} onSelectGeofence={selectFence} showResidents={showResidents}
+      areas={!liveView || showGeofences ? visibleGeofences : []} selectedAreaId={fenceDraft ? null : selectedFenceId} onSelectGeofence={id => tourIndex === null && id === selectedFenceId ? clearMapSelection() : selectFence(id)}
+      onClearSelection={() => { if (tourIndex === null && section === null) clearMapSelection(); }} showResidents={showResidents}
       simulationPaused={simulationPaused || activeView === 'cctv' || (tourIndex !== null && !tourPlaying)} simulationReplay={simulationReplay} onSimulationTick={setSimulationElapsed}
       onGeofenceMove={(index, point) => setFenceDraft((current) => current ? { ...current, points: current.points.map((previous, i) => i === index ? point : previous) } : current)} />
     <header className="ops-header">
-      <button className="ops-brand gsam-brand" onClick={() => { openView('map'); setSelection(null); mapRef.current?.reset(); }} aria-label="Command Center Platform home">
+      <button className="ops-brand gsam-brand" onClick={() => { openView('map'); clearMapSelection(); mapRef.current?.reset(); }} aria-label="Command Center Platform home">
 
         <span>Command Center Platform<span className="ops-brand-caption">Situational awareness & response</span></span>
       </button>
@@ -402,10 +413,10 @@ export function OperationsDashboard({ auditLogs, messages, onSendMessage, onOpen
         <h1>Live Operations Map</h1>
         <div className="ops-map-tools">
           {!liveView && <label className="ops-region"><MapPin size={13} /><select aria-label="Operations region" value={region} onChange={(event) => { setRegion(event.target.value as Region); setSelection(null); }}><option value="metro-manila">Metro Manila</option><option value="all">All regions</option></select><ChevronDown size={12} /></label>}
-          <Popover><PopoverTrigger asChild><button className="ops-map-tool"><Layers size={13} />Layers<span>{Object.values(layers).filter(Boolean).length}</span></button></PopoverTrigger><PopoverContent className="ops-popover" align="start"><h3>Map layers</h3>{Object.entries(layerLabels).map(([key, label]) => <label key={key}><input type="checkbox" checked={layers[key as keyof MapLayers]} onChange={() => { setLayers((current) => ({ ...current, [key]: !current[key as keyof MapLayers] })); setSelection(null); }} />{label}</label>)}<p>Toggle the information shown on your map.</p></PopoverContent></Popover>
+          <Popover><PopoverTrigger asChild><button className="ops-map-tool"><Layers size={13} />Layers<span>{liveView ? Number(showGeofences) + Number(showResidents) : Object.values(layers).filter(Boolean).length}</span></button></PopoverTrigger><PopoverContent className="ops-popover" align="start"><h3>Map layers</h3>{liveView ? <><label><input type="checkbox" checked={showGeofences} onChange={event => { setShowGeofences(event.target.checked); if (!event.target.checked) clearMapSelection(); }} />Saved geofences</label><label><input type="checkbox" checked={showResidents} onChange={event => setShowResidents(event.target.checked)} />Shared personnel locations</label></> : Object.entries(layerLabels).map(([key, label]) => <label key={key}><input type="checkbox" checked={layers[key as keyof MapLayers]} onChange={() => { setLayers((current) => ({ ...current, [key]: !current[key as keyof MapLayers] })); setSelection(null); }} />{label}</label>)}<p>Toggle the information shown on your map.</p></PopoverContent></Popover>
           <button className="ops-map-tool" aria-label="Geofence alert area" aria-expanded={fenceEditor} onClick={() => {
             setSelection(null);
-            if (fenceEditor) { setFenceEditor(false); setFenceDraft(null); }
+            if (fenceEditor) clearMapSelection();
             else if (visibleGeofences.length) setFenceEditor(true);
             else drawFence('polygon');
           }}><PenLine size={13} />Geofence{alertGeofence && <span>✓</span>}</button>
@@ -416,10 +427,11 @@ export function OperationsDashboard({ auditLogs, messages, onSendMessage, onOpen
 
       {fenceEditor && <GeofenceTools saved={alertGeofence} draft={fenceDraft} areas={visibleGeofences} draftName={draftName}
         onSelect={selectFence} onNew={() => drawFence('polygon')}
+        onClear={clearMapSelection}
         onDraw={(shape) => setFenceDraft({ shape, points: [] })} onSave={saveFence} onCenterPoint={() => mapRef.current?.addCenterPoint()}
         onUndo={() => setFenceDraft((current) => current ? { ...current, points: current.points.slice(0, -1) } : current)}
         onCancel={() => { setFenceDraft(null); if (!alertGeofence) setFenceEditor(false); }}
-        onClose={() => { setFenceEditor(false); setFenceDraft(null); }}
+        onClose={clearMapSelection}
         onEdit={() => { if (alertGeofence) { setEditingFenceId(alertGeofence.id); setDraftName(alertGeofence.name); setFenceDraft({ shape: alertGeofence.shape, points: alertGeofence.points.map((point) => ({ ...point })) }); } }}
         onRemove={() => { updateAreas(current => current.filter(area => area.id !== selectedFenceId)); setSelectedFenceId(null); setFenceDraft(null); }}
         onRename={(name) => fenceDraft ? setDraftName(name) : updateAreas(current => current.map(area => area.id === selectedFenceId ? { ...area, name } : area))}
@@ -444,7 +456,7 @@ export function OperationsDashboard({ auditLogs, messages, onSendMessage, onOpen
         <h2>{selected.name}</h2><p><MapPin size={12} />{selected.location}</p><p>{selected.detail}</p><span className="ops-selection-status" style={{ color: selected.color }}><i style={{ background: selected.color }} />{selected.status.replaceAll('-', ' ')}</span>
       </section>}
 
-      <div className="ops-map-controls" aria-label="Map controls"><div><button onClick={() => mapRef.current?.zoomIn()} aria-label="Zoom in"><Plus size={17} /></button><button onClick={() => mapRef.current?.zoomOut()} aria-label="Zoom out"><Minus size={17} /></button><span /><button onClick={() => { setSelection(null); mapRef.current?.reset(); }} aria-label="Reset map view"><Crosshair size={17} /></button><button onClick={onFullscreen} aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}><Expand size={16} /></button></div><div className="ops-basemap-controls"><button data-demo="satellite" className={basemap === 'satellite' ? 'is-active' : ''} aria-pressed={basemap === 'satellite'} onClick={() => setBasemap('satellite')}>Satellite</button><button data-demo="street" className={basemap === 'street' ? 'is-active' : ''} aria-pressed={basemap === 'street'} onClick={() => setBasemap('street')}>Street</button></div>
+      <div className="ops-map-controls" aria-label="Map controls"><div><button onClick={() => mapRef.current?.zoomIn()} aria-label="Zoom in"><Plus size={17} /></button><button onClick={() => mapRef.current?.zoomOut()} aria-label="Zoom out"><Minus size={17} /></button><span /><button onClick={() => { clearMapSelection(); mapRef.current?.reset(); }} aria-label="Reset map view"><Crosshair size={17} /></button><button onClick={onFullscreen} aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}><Expand size={16} /></button></div><div className="ops-basemap-controls"><button data-demo="satellite" className={basemap === 'satellite' ? 'is-active' : ''} aria-pressed={basemap === 'satellite'} onClick={() => setBasemap('satellite')}>Satellite</button><button data-demo="street" className={basemap === 'street' ? 'is-active' : ''} aria-pressed={basemap === 'street'} onClick={() => setBasemap('street')}>Street</button></div>
         {!liveView && <div className="ops-route-playback"><span className="ops-route-playback-label">Demo routes · 8×</span><button onClick={toggleRoutes} disabled={!!fenceDraft || !layers.responders} aria-label={simulationFinished ? 'Replay responder simulation' : simulationPaused ? 'Play responder simulation' : 'Pause responder simulation'}>{simulationFinished ? <RotateCcw size={14} /> : simulationPaused ? <Play size={14} /> : <Pause size={14} />}</button><button onClick={replayRoutes} disabled={!!fenceDraft || !layers.responders} aria-label="Restart responder routes"><RotateCcw size={13} /></button><button className="ops-ambulance-shortcut" disabled={!!fenceDraft} onClick={() => { setFenceEditor(false); locate({ kind: 'responder', id: 'team-2' }); }}><Ambulance size={15} />Ambulance</button></div>}
       </div>
 

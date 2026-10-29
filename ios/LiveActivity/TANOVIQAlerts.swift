@@ -9,7 +9,7 @@ struct AlertLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: TANOVIQAlertAttributes.self) { context in
             VStack(alignment: .leading, spacing: 12) {
-                HStack { Label("TANOVIQ", systemImage: "dot.radiowaves.left.and.right").font(.caption.bold()); Spacer(); Text(context.state.priority.uppercased()).font(.caption.bold()).foregroundStyle(.orange) }
+                HStack { Label("Mobile Phone", systemImage: "dot.radiowaves.left.and.right").font(.caption.bold()); Spacer(); Text(context.state.priority.uppercased()).font(.caption.bold()).foregroundStyle(.orange) }
                 Text(context.state.message).font(.headline).lineLimit(5)
                 HStack {
                     Text(context.isStale ? "Last update · check inbox" : "Command-center alert").font(.caption).foregroundStyle(.secondary)
@@ -20,7 +20,7 @@ struct AlertLiveActivity: Widget {
                 .widgetURL(URL(string: "tanoviq://alert/" + context.attributes.alertID))
         } dynamicIsland: { context in
             DynamicIsland {
-                DynamicIslandExpandedRegion(.leading) { Label("TANOVIQ", systemImage: "antenna.radiowaves.left.and.right").font(.caption.bold()).foregroundStyle(.mint) }
+                DynamicIslandExpandedRegion(.leading) { Label("Mobile Phone", systemImage: "antenna.radiowaves.left.and.right").font(.caption.bold()).foregroundStyle(.mint) }
                 DynamicIslandExpandedRegion(.trailing) { Text(context.state.priority.uppercased()).font(.caption.bold()).foregroundStyle(.orange) }
                 DynamicIslandExpandedRegion(.bottom) {
                     VStack(alignment: .leading, spacing: 10) {

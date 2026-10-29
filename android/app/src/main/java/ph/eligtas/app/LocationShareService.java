@@ -95,7 +95,7 @@ public final class LocationShareService extends Service implements LocationListe
     private Notification notification() {
         PendingIntent open = PendingIntent.getActivity(this,9103,new Intent(this,MainActivity.class).setAction("OPEN_LOCATION"),PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         PendingIntent stop = PendingIntent.getService(this,9104,new Intent(this,LocationShareService.class).setAction("STOP_LOCATION"),PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-        return new NotificationCompat.Builder(this,CHANNEL).setSmallIcon(R.drawable.ic_notification).setContentTitle("TANOVIQ · on duty")
+        return new NotificationCompat.Builder(this,CHANNEL).setSmallIcon(R.drawable.ic_notification).setContentTitle("Mobile Phone · on duty")
             .setContentText(message).setContentIntent(open).setOngoing(true).setOnlyAlertOnce(true).setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
             .addAction(0,"End duty",stop).build();
     }

@@ -28,14 +28,13 @@ targets:
     info:
       path: App/Info.plist
       properties:
-        CFBundleDisplayName: TANOVIQ
+        CFBundleDisplayName: Mobile Phone
         CFBundleURLTypes:
           - CFBundleURLName: ph.tanoviq.alert
             CFBundleURLSchemes: [tanoviq]
         ITSAppUsesNonExemptEncryption: false
         UILaunchScreen:
           UIColorName: LaunchBackground
-          UIImageName: Brand
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         UIBackgroundModes: [remote-notification, location]
         NSSupportsLiveActivities: true
@@ -63,7 +62,7 @@ targets:
     info:
       path: LiveActivity/Info.plist
       properties:
-        CFBundleDisplayName: TANOVIQ Alerts
+        CFBundleDisplayName: Mobile Phone Alerts
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
   TANOVIQTests:

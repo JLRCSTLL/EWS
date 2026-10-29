@@ -26,7 +26,7 @@ public final class AlertMessageActivity extends Activity {
         layout.setPadding(pad,pad*2,pad,pad); layout.setBackgroundColor(MobileStyle.BACKGROUND);
         layout.setOnApplyWindowInsetsListener((v,insets)->{v.setPadding(pad,pad+insets.getSystemWindowInsetTop(),pad,pad+insets.getSystemWindowInsetBottom());return insets;});
         setContentView(layout);
-        TextView brand = text(layout,"TANOVIQ · COMMAND CENTER",12,MobileStyle.ACCENT); brand.setLetterSpacing(.08f);
+        TextView brand = text(layout,"Mobile Phone · COMMAND CENTER",12,MobileStyle.ACCENT); brand.setLetterSpacing(.08f);
         if (alert == null) { text(layout,"This alert belongs to a previous sign-in or is no longer cached.",20,MobileStyle.INK); return; }
         TextView heading = text(layout,"Message from your center",28,MobileStyle.INK); heading.setTypeface(Typeface.create("sans-serif-medium",Typeface.NORMAL)); heading.setPadding(0,MobileStyle.dp(this,14),0,MobileStyle.dp(this,8));
         boolean urgent = AlertPolicy.urgent(alert.optString("priority","normal"));

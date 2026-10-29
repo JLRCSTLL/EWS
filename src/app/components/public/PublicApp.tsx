@@ -62,7 +62,7 @@ export default function PublicApp() {
     window.addEventListener('hashchange', changed);
     window.addEventListener('popstate', changed);
     const previousTitle = document.title;
-    document.title = 'TANOVIQ Personnel App · Demo';
+    document.title = 'Mobile Phone Personnel App · Demo';
     const theme = document.querySelector('meta[name="theme-color"]');
     const previous = theme?.getAttribute('content'); theme?.setAttribute('content', '#ffffff');
     return () => { window.removeEventListener('hashchange', changed); window.removeEventListener('popstate', changed); document.title = previousTitle; if (previous) theme?.setAttribute('content', previous); };
@@ -81,17 +81,17 @@ export default function PublicApp() {
     <aside className="public-presentation">
       <a href="/" className="public-back-command"><ArrowLeft size={15} />Command center</a>
       <span className="public-concept-pill"><Smartphone size={13} />PUBLIC APP CONCEPT</span>
-      <h1>TANOVIQ<br /><span>See Risk Before It Strikes.</span></h1>
-      <p>Tanaw + Vision + IQ<br />Connected awareness. Coordinated response.</p>
+      <h1>Mobile Phone<br /><span>Alerts · Location · Assistance</span></h1>
+      <p>Connected to your command center<br />Connected awareness. Coordinated response.</p>
       <div className="public-demo-connection"><i /><span>Connected demo workspace<small>Updates sync across tabs in this browser.</small></span></div>
-      <ol><li><span>01</span>Send a targeted alert from TANOVIQ.</li><li><span>02</span>Read it in the resident’s inbox.</li><li><span>03</span>Send a check-in or request help.</li></ol>
+      <ol><li><span>01</span>Send a targeted alert from Command Center Platform.</li><li><span>02</span>Read it in the resident’s inbox.</li><li><span>03</span>Send a check-in or request help.</li></ol>
 
       <p className="public-concept-disclaimer">Presentation mode uses fictional people and locations.</p>
     </aside>
-    <section className="public-phone" aria-label="TANOVIQ public mobile application">
+    <section className="public-phone" aria-label="Mobile Phone public mobile application">
       <div className="public-concept-bar">Personnel application <span>DEMO</span></div>
       <header className="public-header">
-        <button className="public-egov" onClick={() => go('home')} aria-label="Personnel home">TANOVIQ</button>
+        <button className="public-egov" onClick={() => go('home')} aria-label="Personnel home">Mobile Phone</button>
         <div className="public-header-actions"><button aria-label={`Open alerts, ${unreadCount} unread`} onClick={() => go('alerts')}><Bell size={21} />{unreadCount > 0 && <i>{unreadCount}</i>}</button><button className="public-avatar" aria-label="Open your demo profile" onClick={() => go('account')}>{profile.initials}</button></div>
       </header>
       <main ref={scroll} className="public-content">
@@ -103,7 +103,7 @@ export default function PublicApp() {
           <label className="public-search"><Search size={19} /><input aria-label="Search public services" value={query} onChange={event => setQuery(event.target.value)} placeholder="Search alerts or services" />{query && <button onClick={() => setQuery('')} aria-label="Clear search"><X size={16} /></button>}</label>
           {query ? <div className="public-search-results">{services.filter(service => (service.label + service.detail).toLowerCase().includes(query.toLowerCase())).map(service => <button key={service.page} onClick={() => go(service.page)}><service.icon size={20} /><span><strong>{service.label}</strong><small>{service.detail}</small></span><ChevronRight size={16} /></button>)}{!services.some(service => (service.label + service.detail).toLowerCase().includes(query.toLowerCase())) && <p>No matching service. Try alerts, evacuation, help, or status.</p>}</div> : <>
             <div className="public-services">{services.map(service => <button key={service.page} onClick={() => go(service.page)}><span><service.icon size={24} strokeWidth={1.7} /></span>{service.label}</button>)}</div>
-            <section className="public-hero"><div className="public-hero-eyebrow"><ShieldCheck size={17} />TANOVIQ <span>PUBLIC SAFETY</span></div><h2>See Risk<br />Before It Strikes.</h2><p>Local alerts and a helping hand,<br />all in one place.</p><button onClick={() => go('alerts')}>Open TANOVIQ<ArrowRight size={16} /></button><div className="public-hero-art" aria-hidden="true"><div /><ShieldCheck size={76} strokeWidth={1} /><i /><i /></div></section>
+            <section className="public-hero"><div className="public-hero-eyebrow"><ShieldCheck size={17} />Mobile Phone <span>PUBLIC SAFETY</span></div><h2>Stay informed.<br />Stay connected.</h2><p>Local alerts and a helping hand,<br />all in one place.</p><button onClick={() => go('alerts')}>Open Mobile Phone<ArrowRight size={16} /></button><div className="public-hero-art" aria-hidden="true"><div /><ShieldCheck size={76} strokeWidth={1} /><i /><i /></div></section>
             <button className="public-home-alert" onClick={() => openAlert(alerts[0])}><span className="public-alert-icon"><Waves size={23} /></span><span><small>{inbox.length ? 'FROM YOUR COMMAND CENTER' : 'SAMPLE ADVISORY'}</small><strong>{alerts[0].title}</strong><span>{profile.city} · {inbox.length ? 'New demo broadcast' : 'Flood monitoring scenario'}</span></span><ChevronRight size={18} /></button>
             <div className="public-section-title"><h3>Here for you</h3><span>Every step of the way</span></div>
             <div className="public-support-grid"><button className="public-safe-card" onClick={markSafe}><ShieldCheck size={26} /><strong>{checkIn ? 'You checked in safe' : 'I’m safe'}</strong><span>{checkIn ? 'Tap to update your check-in' : 'Let your command center know'}<ArrowRight size={14} /></span></button><button className="public-help-card" onClick={() => go('help')}><HeartHandshake size={26} /><strong>Request help</strong><span>Tell us what you need<ArrowRight size={14} /></span></button></div>
@@ -120,7 +120,7 @@ export default function PublicApp() {
           <div className="public-action-pair"><button onClick={markSafe}><ShieldCheck size={18} />I’m safe</button><button onClick={() => go('help')}><HeartHandshake size={18} />Request help</button></div>
           <button className="public-nearby-teaser" onClick={() => go('nearby')}><MapPin size={24} /><div><strong>View support locations</strong><p>Demo evacuation and medical facilities</p></div><ChevronRight size={17} /></button>
         </> : <>
-          <div className="public-page-title"><span>TANOVIQ / INBOX</span><h2>Your local alerts</h2><p>Updates that matter to your community.</p></div>
+          <div className="public-page-title"><span>Mobile Phone / INBOX</span><h2>Your local alerts</h2><p>Updates that matter to your community.</p></div>
           <div className="public-inbox-connection"><Radio size={15} /><span>Command-center demo connected<small>Messages sync in this browser.</small></span></div>
           <label className="public-search"><Search size={18} /><input aria-label="Search alerts" value={query} onChange={event => setQuery(event.target.value)} placeholder="Search announcements" /></label>
           <div className="public-filter-tabs"><button className={!unreadOnly ? 'is-active' : ''} onClick={() => setUnreadOnly(false)}>All alerts <span>{alerts.length}</span></button><button className={unreadOnly ? 'is-active' : ''} onClick={() => setUnreadOnly(true)}>Unread <span>{unreadCount}</span></button></div>
@@ -129,7 +129,7 @@ export default function PublicApp() {
           <p className="public-small-note">Only delivered demo broadcasts addressed to {resident.id} appear here.</p>
         </>)}
         {page === 'nearby' && <>
-          <div className="public-page-title"><span>TANOVIQ / NEARBY</span><h2>Find a helping hand</h2><p>Explore sample support locations on the map.</p></div>
+          <div className="public-page-title"><span>Mobile Phone / NEARBY</span><h2>Find a helping hand</h2><p>Explore sample support locations on the map.</p></div>
           <PublicMap location={resident.location!} area={area} selectedPlace={selectedPlace} onSelectPlace={setSelectedPlace} />
           <div className="public-map-caption"><span><i />Your demo location</span><span><i />Sample alert boundary</span></div>
           {selectedFacility && <div className="public-destination"><Navigation size={20} /><span><strong>{selectedFacility.name}</strong><small>Straight-line preview · not route guidance</small></span><button onClick={() => setSelectedPlace(null)} aria-label="Clear destination"><X size={17} /></button></div>}
@@ -139,7 +139,7 @@ export default function PublicApp() {
         </>}
         {page === 'help' && <>
           <button className="public-page-back" onClick={() => go('home')}><ArrowLeft size={17} />Home</button>
-          <div className="public-page-title"><span>TANOVIQ / ASSISTANCE</span><h2>You’re not alone.</h2><p>Tell your command center what you need.</p></div>
+          <div className="public-page-title"><span>Mobile Phone / ASSISTANCE</span><h2>You’re not alone.</h2><p>Tell your command center what you need.</p></div>
           <div className="public-context-note is-warm"><Siren size={21} /><p><strong>Presentation request only.</strong> This demo does not contact emergency services or dispatch real responders.</p></div>
           {activeRequest ? <div className="public-active-help"><Radio size={30} /><h3>You have an open demo request</h3><p>{activeRequest.type} · {requestStatusLabels[activeRequest.status]}</p><button className="public-primary" onClick={() => go('activity')}>View request status<ArrowRight size={17} /></button></div> : <form className="public-help-form" onSubmit={submitHelp}>
             <fieldset><legend>What do you need help with?</legend><div className="public-help-types">{(['Evacuation', 'Medical assistance', 'Rescue', 'Other assistance'] as HelpType[]).map(type => <label key={type} className={helpType === type ? 'is-active' : ''}><input type="radio" name="help-type" value={type} checked={helpType === type} onChange={() => setHelpType(type)} />{type}</label>)}</div></fieldset>
@@ -150,14 +150,14 @@ export default function PublicApp() {
           </form>}
         </>}
         {page === 'activity' && <>
-          <div className="public-page-title"><span>TANOVIQ / MY STATUS</span><h2>We’re keeping in touch.</h2><p>Your check-ins and assistance updates.</p></div>
+          <div className="public-page-title"><span>Mobile Phone / MY STATUS</span><h2>We’re keeping in touch.</h2><p>Your check-ins and assistance updates.</p></div>
           <section className="public-checkin-status"><ShieldCheck size={29} /><div><h3>{checkIn ? 'You reported safe' : 'Let your community know'}</h3><p>{checkIn ? time(checkIn.at) : 'Send a safe check-in to the command-center demo.'}</p></div><button onClick={markSafe}>{checkIn ? 'Update' : 'I’m safe'}</button></section>
           <div className="public-section-title"><h3>Assistance requests</h3><span>{requests.length} total</span></div>
           {requests.map(request => <section className="public-request-card" key={request.id}><div className="public-request-card-top"><HeartHandshake size={21} /><strong>{request.type}</strong><span>{request.people} {request.people === 1 ? 'person' : 'people'}</span></div><div className={`public-request-status is-${request.status}`}><i />{requestStatusLabels[request.status]}</div><small>Requested {time(request.createdAt)}</small>{request.note && <p>{request.note}</p>}{request.unit && <div className="public-unit"><Navigation size={20} /><span><strong>{request.unit}</strong><small>Assigned by the demo operator</small></span></div>}<div className="public-request-meta"><MapPin size={14} />{request.location ? 'Demo location included' : 'Location not shared'}</div>{isOpenRequest(request) && <button className="public-text-button" onClick={() => save(current => updateRequest(current, request.id, 'cancelled', new Date().toISOString()), 'Demo request cancelled.')}>Cancel demo request</button>}<p className="public-request-disclaimer">Demo status only. No real responder has been dispatched.</p></section>)}
           {!requests.length && <div className="public-empty"><HeartHandshake size={30} /><h3>No assistance requests</h3><p>When you request help, operator updates appear here.</p><button onClick={() => go('help')}>Request help<ArrowRight size={15} /></button></div>}
         </>}
         {page === 'account' && <>
-          <div className="public-page-title"><span>TANOVIQ / ACCOUNT</span><h2>Your community profile</h2><p>You decide what to share.</p></div>
+          <div className="public-page-title"><span>Mobile Phone / ACCOUNT</span><h2>Your community profile</h2><p>You decide what to share.</p></div>
           <div className="public-profile-card"><span>{profile.initials}</span><h3>{profile.name}</h3><p>Fictional resident · {profile.city}</p><small>{resident.id}</small><div><Accessibility size={14} />PWD{resident.age < 18 && ' · Child'} · Demo profile</div></div>
           <button className="public-nearby-teaser" onClick={() => go('activity')}><ShieldCheck size={24} /><div><strong>My status & requests</strong><p>View check-ins and operator updates.</p></div><ChevronRight size={17} /></button>
           <label className="public-profile-select">Presentation resident<select value={resident.id} onChange={event => changeProfile(event.target.value)}>{publicProfiles.map(item => <option key={item.resident.id} value={item.resident.id}>{item.name} · {item.city}</option>)}</select><small>Switch profiles to demonstrate geographic and group targeting.</small></label>

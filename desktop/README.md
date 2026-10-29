@@ -1,21 +1,21 @@
 # Command Center Platform for Windows
 
 An installable Windows 10/11 x64 command-center client. It opens the existing
-TANOVIQ web application at `https://ews-kappa.vercel.app/` in a dedicated,
+command-center web application at `https://ews-kappa.vercel.app/` in a dedicated,
 sandboxed desktop window. The website uses the same shared API and database as
 the Android app. This is an online client; it does not install a second server or
 database and does not provide offline broadcasts.
 
-The desktop display name is temporarily **Command Center Platform**. The mobile app keeps TANOVIQ. The application ID, protocol, and existing Windows session directory remain unchanged so the rename preserves saved sign-ins and window preferences.
+The desktop display name is temporarily **Command Center Platform**. The mobile app is displayed as Mobile Phone. The application ID, protocol, and existing Windows session directory remain unchanged so the rename preserves saved sign-ins and window preferences.
 
 ## Install and use
 
-1. Run `Command-Center-Platform-Setup-1.1.2-x64.exe`. The assisted installer installs
+1. Run `Command-Center-Platform-Setup-1.1.3-x64.exe`. The assisted installer installs
    for your Windows user and offers Start menu and desktop shortcuts.
 2. Open **Command Center Platform**. The loading screen remains visible while the
    command interface loads. A connection failure shows a retry screen and retries
    every 15 seconds.
-3. Select **Personnel**, then sign in with your existing TANOVIQ account.
+3. Select **Personnel**, then sign in with your existing account.
    New registrations still require operator/administrator approval. Installing
    this client does not grant command-center privileges.
 4. The client opens **connected operations**. On-duty Android personnel with
@@ -38,7 +38,7 @@ should sign future releases with its own certificate.
 | Control | Action |
 | --- | --- |
 | F11 / toolbar corners icon | Enter or leave full screen |
-| Escape | Leave desktop full screen |
+| Escape | Clear the selected map area; also leave desktop full screen |
 | Ctrl+R / F5 / toolbar refresh | Reload the command center |
 | Ctrl+Plus / Ctrl+Minus / Ctrl+0 | Interface zoom / reset |
 | Alt | Reveal the native menu |
@@ -54,6 +54,20 @@ already-installed clients without replacing their installer.
 of operator authorization, fresh GPS, alert receipt, or physical alarm playback.
 The app does not remain running in the notification area after it is closed.
 Phone background alarms still depend on the existing Android/FCM setup.
+
+### Geofences and custom alert audio (1.1.3)
+
+Selecting a saved boundary opens its details. Click the empty map, select the
+same boundary again, press Escape, or use **Clear selection** to leave it. These
+actions preserve the saved boundary. Live **Layers** controls show or hide saved
+geofences and shared personnel locations.
+
+In **Compose alert**, upload an alarm clip or record a voice message of up to 30
+seconds. The native microphone prompt permits audio only from the command-center
+page; camera access remains blocked. Preview the clip, keep the instructions in
+the written message, then review recipients and send. The updated backend and
+Android 0.7.0 are needed for custom background audio. The desktop delivery history
+also offers authenticated playback. See the [audio guide](../README.md#custom-alarm-sound-and-voice).
 
 ### Activity logs (1.1.1)
 
@@ -109,9 +123,11 @@ installer; there is no automatic desktop updater in this release.
 - Remote navigation is limited to the command-center origin and route. Personnel
   links and other HTTPS links require confirmation before opening in the default
   browser. File, script, and OS-protocol links cannot launch through the app.
-- Camera, microphone, geolocation, clipboard-read, screen capture, and device
-  permissions are denied. Only notifications from the configured origin are
-  eligible. Downloads other than bounded CSV log exports and popup windows are blocked.
+- Camera, geolocation, clipboard-read, screen capture, and device permissions are denied.
+  Notifications are confined to the configured origin. Voice recording can request
+  audio-only microphone access from the main command page, with a native confirmation
+  before its first use in the session. Downloads other than bounded CSV log exports
+  and popup windows are blocked.
 - No database password, Firebase credential, bootstrap token, or operator
   credential is included in the package. Authorization remains on the server.
 

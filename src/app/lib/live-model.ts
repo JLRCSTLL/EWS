@@ -12,7 +12,9 @@ export interface LiveUser {
   email: string; phone: string; contactVisible: string[];
   province?: string; barangay?: string; emergencyProfile?: Partial<EmergencyProfile> | null; emergencyContact?: EmergencyContact | null;
 }
+export interface AlertAudio { id: string; name: string; kind: 'alarm' | 'voice'; durationMs: number; byteLength: number }
 export interface LiveAlert {
+  audio?: AlertAudio | null;
   id: string; content: string; priority: 'normal' | 'high' | 'critical'; area: AlertGeofence | null;
   target_mode?: 'geofence' | 'groups'; target_label?: string; target_group_ids?: string[];
   groups: string[]; recipient_count: number; created_at: string;

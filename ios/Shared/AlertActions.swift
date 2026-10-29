@@ -15,7 +15,7 @@ enum AlertActions {
     }
 }
 struct AcknowledgeAlertIntent: LiveActivityIntent {
-    static var title: LocalizedStringResource = "Acknowledge TANOVIQ alert"
+    static var title: LocalizedStringResource = "Acknowledge Mobile Phone alert"
     static var openAppWhenRun: Bool = false
     static var authenticationPolicy: IntentAuthenticationPolicy = .requiresAuthentication
     @Parameter(title: "Alert") var alertID: String

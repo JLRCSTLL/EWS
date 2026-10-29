@@ -1,8 +1,8 @@
 {
   "id": "/?app=eligtas",
-  "name": "TANOVIQ · Personnel",
-  "short_name": "TANOVIQ",
-  "description": "See Risk Before It Strikes. Command-center alerts, duty location, and assistance requests.",
+  "name": "Mobile Phone · Personnel",
+  "short_name": "Mobile Phone",
+  "description": "Alerts · Location · Assistance Command-center alerts, duty location, and assistance requests.",
   "start_url": "/#/public",
   "scope": "/",
   "display": "standalone",

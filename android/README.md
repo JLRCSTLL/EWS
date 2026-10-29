@@ -1,4 +1,4 @@
-# TANOVIQ Android pilot 0.6.0
+# Mobile Phone Android pilot 0.7.0
 
 An installable Android app (Android 8+) for the existing personnel service.
 The public interface loads from `https://ews-kappa.vercel.app/#/public` in an
@@ -7,7 +7,8 @@ Firebase Cloud Messaging, safe external links, Android back navigation, and
 location permission. Accounts and consented locations use the existing Render
 API through the same HTTPS origin. No separate account system is introduced.
 
-Pilot 0.6.0 (version code 8) retains the notification/location improvements below
+Pilot 0.7.0 (version code 9) adds custom alert audio and the Mobile Phone display
+name. It retains the notification/location improvements below
 and the existing pilot signing identity. Its hosted interface uses the same Groups
 and command-center 1.1 service. Publishing web/API changes is separate from APK
 installation; see the [deployment guide](../README.md#deployment).
@@ -23,7 +24,7 @@ back-navigation behavior. No Apple fonts or native Apple frameworks are bundled.
 
 The cached notification message and offline/retry screens also use the new teal
 palette, rounded controls and larger text. These native changes require installing
-the 0.6.0 APK. The alarm, location, permissions and acknowledgment policies below
+the 0.7.0 APK. The alarm, location, permissions and acknowledgment policies below
 are unchanged. Physical-phone verification is still needed after installation.
 
 Design references: [iOS 27](https://www.apple.com/os/ios/) and
@@ -96,6 +97,19 @@ Without Firebase configuration, the app remains usable online and shows that
 background push is unavailable. It does not claim to have registered a device.
 
 ## Alarm behavior
+
+An operator can attach an alarm sound or voice recording of up to 30 seconds.
+For High/Critical alerts, the ordinary alarm starts immediately while the app
+downloads the authorized attachment. Voice plays once; an alarm clip repeats
+within the bounded alarm session. Failed downloads or playback retain the
+ordinary alarm. Silence invalidates pending downloads as well as current
+playback. Normal announcements have manual playback in the web inbox.
+
+This requires the 0.7.0 APK and a backend reporting `alertAudioReady: true`.
+Audio is fetched from the existing HTTPS service with the current account's
+session, never an arbitrary URL supplied in a push. Clips are limited in size,
+cached privately for playback, and deleted when the alarm ends. Test custom
+audio separately on a physical phone before operational use.
 
 - High/critical emergency alarms are always enabled at full alarm volume after
   sign-in. There is no alarm-off or volume toggle in the personnel app.

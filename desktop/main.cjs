@@ -2,7 +2,7 @@
 const { app, BrowserWindow, WebContentsView, Menu, session, protocol, ipcMain, dialog, shell, nativeTheme, screen, powerSaveBlocker } = require('electron');
 const fs = require('node:fs');
 const path = require('node:path');
-const { PRODUCTION_URL, SHELL_URL, TOOLBAR_HEIGHT, commandUrl, isCommandUrl, isExternalUrl, shellAsset, canNotify, canSaveActivityLog, windowBounds } = require('./policy.cjs');
+const { PRODUCTION_URL, SHELL_URL, TOOLBAR_HEIGHT, commandUrl, isCommandUrl, isExternalUrl, shellAsset, canNotify, canRecord, canSaveActivityLog, windowBounds } = require('./policy.cjs');
 
 // Keep the existing account/session directory while the display name is temporary.
 app.setPath('userData', path.join(app.getPath('appData'), 'TANOVIQ Command Center'));
@@ -148,7 +148,7 @@ function guardContents(contents) {
   });
   contents.on('before-input-event', (event, input) => {
     if (input.type !== 'keyDown') return;
-    if (input.key === 'Escape' && win.isFullScreen()) { event.preventDefault(); win.setFullScreen(false); }
+    if (input.key === 'Escape' && win.isFullScreen()) { win.setFullScreen(false); }
     if (input.key === 'F5') { event.preventDefault(); void loadCommand(); }
   });
   contents.on('render-process-gone', () => offline('The command-center window stopped responding. Retry to reopen it.'));
@@ -165,8 +165,16 @@ async function createWindow() {
   session.defaultSession.setPermissionRequestHandler((_wc, _permission, callback) => callback(false));
   session.defaultSession.setPermissionCheckHandler(() => false);
   remoteSession = session.fromPartition('persist:tanoviq-command');
-  remoteSession.setPermissionRequestHandler((contents, permission, callback, details) => callback(contents === view?.webContents && isCommandUrl(contents.getURL(), base) && canNotify(permission, details.requestingUrl ? new URL(details.requestingUrl).origin : '', base)));
-  remoteSession.setPermissionCheckHandler((contents, permission, origin) => contents === view?.webContents && isCommandUrl(contents.getURL(), base) && canNotify(permission, origin, base));
+  let microphoneAllowed = false;
+  remoteSession.setPermissionRequestHandler((contents, permission, callback, details) => {
+    const trusted = contents === view?.webContents && isCommandUrl(contents.getURL(), base);
+    let origin = ''; try { origin = new URL(details.requestingUrl).origin; } catch {}
+    if (!trusted) { callback(false); return; }
+    if (canNotify(permission, origin, base)) { callback(true); return; }
+    if (!canRecord(permission, origin, details, base)) { callback(false); return; }
+    void dialog.showMessageBox(win, { type: 'question', title: 'Record alert audio', message: 'Allow the command center to use your microphone for a voice alert?', detail: 'Recording starts after you allow access and stops when you press Stop or after 30 seconds.', buttons: ['Allow microphone', 'Cancel'], defaultId: 1, cancelId: 1 }).then(result => { microphoneAllowed = result.response === 0 && !contents.isDestroyed() && isCommandUrl(contents.getURL(), base); callback(microphoneAllowed); }).catch(() => callback(false));
+  });
+  remoteSession.setPermissionCheckHandler((contents, permission, origin, details) => contents === view?.webContents && isCommandUrl(contents.getURL(), base) && (canNotify(permission, origin, base) || (microphoneAllowed && canRecord(permission, origin, details, base))));
   remoteSession.on('will-download', (event, item, contents) => {
     if (contents !== view?.webContents || !canSaveActivityLog({ url: item.getURL(), filename: item.getFilename(), mimeType: item.getMimeType(), bytes: item.getTotalBytes(), pageUrl: contents.getURL() }, base)) {
       event.preventDefault(); return;

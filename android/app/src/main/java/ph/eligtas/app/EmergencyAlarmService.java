@@ -18,6 +18,7 @@ import android.os.VibrationEffect;
 import android.os.Vibrator;
 import org.json.JSONObject;
 import androidx.core.app.NotificationCompat;
+import java.io.File;
 
 public final class EmergencyAlarmService extends Service {
     static volatile String activeId = "";
@@ -27,6 +28,10 @@ public final class EmergencyAlarmService extends Service {
     private AudioFocusRequest focus;
     private JSONObject currentAlert;
     private boolean pausedForFocus, ducked, failureReported;
+    private File customFile;
+    private Thread download;
+    private int generation;
+    private final Runnable finishAlarm = this::stopSelf;
     @Override public IBinder onBind(Intent intent) { return null; }
     @Override public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent == null || "STOP".equals(intent.getAction())) { stopSelf(); return START_NOT_STICKY; }
@@ -67,10 +72,53 @@ public final class EmergencyAlarmService extends Service {
             for (int i = 1; i <= 10; i++) { final float volume = 0.15f + 0.085f * i; handler.postDelayed(() -> { if (player != null && !pausedForFocus && !ducked) player.setVolume(volume, volume); }, i * 150L); }
             Vibrator vibrator = getSystemService(Vibrator.class);
             if (vibrator != null && vibrator.hasVibrator()) vibrator.vibrate(VibrationEffect.createWaveform(new long[]{0,300,200,300,700}, 0));
-            handler.postDelayed(this::stopSelf, alert.optBoolean("test") ? 4000 : urgent ? 30000 : 8000);
+            handler.postDelayed(finishAlarm, alert.optBoolean("test") ? 4000 : urgent ? 30000 : 8000);
+            if (urgent && !alert.optBoolean("test") && AlertAudioDownload.hasAudio(alert)) {
+                final int request = generation;
+                download = new Thread(() -> {
+                    try {
+                        File sound = AlertAudioDownload.download(getApplicationContext(), alert);
+                        handler.post(() -> {
+                            if (request != generation) { sound.delete(); return; }
+                            replaceWithAttachment(alert.optString("id"), alert.optString("userId"), sound, alert.optString("audioKind"));
+                        });
+                    } catch (Exception unavailable) { /* Keep the bundled alarm sounding. */ }
+                }, "alert-audio-download");
+                download.start();
+            }
         } catch (Exception unavailable) { failed("Android could not start the alarm. Check notification, sound, and background permissions in Account."); }
         return START_NOT_STICKY;
     }
+    void replaceWithAttachment(String id, String user, File sound, String kind) {
+        if (!id.equals(activeId) || !user.equals(AlarmSettings.prefs(this).getString("user", "")) || AlertStore.silenced(this, id) || player == null) { sound.delete(); return; }
+        MediaPlayer next = new MediaPlayer();
+        MediaPlayer fallback = player;
+        try {
+            AudioAttributes attributes = new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_ALARM)
+                .setContentType("voice".equals(kind) ? AudioAttributes.CONTENT_TYPE_SPEECH : AudioAttributes.CONTENT_TYPE_SONIFICATION).build();
+            next.setAudioAttributes(attributes); next.setWakeMode(this, PowerManager.PARTIAL_WAKE_LOCK);
+            next.setDataSource(sound.getAbsolutePath()); next.setLooping(!"voice".equals(kind)); next.prepare();
+            if (next.getDuration() > 30100) throw new IllegalArgumentException("Audio too long");
+            // Keep the bundled player until the attachment is prepared successfully.
+            next.setOnErrorListener((media, what, extra) -> {
+                media.release(); player = fallback;
+                if (!pausedForFocus) fallback.start();
+                if (customFile != null) { customFile.delete(); customFile = null; }
+                AlarmSettings.playback(this, id, "playing", "Custom audio unavailable. Playing the standard alarm.");
+                return true;
+            });
+            next.setOnCompletionListener(media -> { if ("voice".equals(kind)) stopSelf(); });
+            fallback.pause(); player = next; customFile = sound; backupPlayer = fallback;
+            next.setVolume(ducked ? .25f : 1f, ducked ? .25f : 1f);
+            if (!pausedForFocus) next.start();
+            if ("voice".equals(kind)) { handler.removeCallbacks(finishAlarm); handler.postDelayed(finishAlarm, Math.min(31000, next.getDuration() + 1000L)); }
+            reportPlaying();
+        } catch (Exception invalidAudio) {
+            next.release(); player = fallback; backupPlayer = null; customFile = null; sound.delete();
+            if (!pausedForFocus) { try { fallback.start(); } catch (IllegalStateException ignored) {} }
+        }
+    }
+    private MediaPlayer backupPlayer;
     private void reportPlaying() {
         if (Boolean.FALSE.equals(AlarmSettings.alarmsAllowed(this))) AlarmSettings.playback(this,activeId,"blocked","Do Not Disturb currently blocks alarm audio. Allow alarms in Android Sound / Do Not Disturb settings.");
         else if (getSystemService(AudioManager.class).getStreamVolume(AudioManager.STREAM_ALARM) == 0) AlarmSettings.playback(this,activeId,"blocked","Alarm volume is zero. Enable full-volume alerts, then test again.");
@@ -97,8 +145,13 @@ public final class EmergencyAlarmService extends Service {
         stopSelf();
     }
     private void releaseAudio() {
+        generation++;
+        if (download != null) { download.interrupt(); download = null; }
         handler.removeCallbacksAndMessages(null);
+        if (backupPlayer != null && backupPlayer != player) { backupPlayer.release(); }
+        backupPlayer = null;
         if (player != null) { try { player.stop(); } catch (IllegalStateException ignored) {} player.release(); player = null; }
+        if (customFile != null) { customFile.delete(); customFile = null; }
         if (focus != null) { getSystemService(AudioManager.class).abandonAudioFocusRequest(focus); focus = null; }
         Vibrator vibrator = getSystemService(Vibrator.class); if (vibrator != null) vibrator.cancel();
         AlarmSettings.restoreVolume(this); activeId = ""; activePriority = ""; pausedForFocus = false; ducked = false; failureReported = false;

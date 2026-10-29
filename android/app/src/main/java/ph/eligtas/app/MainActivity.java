@@ -229,7 +229,7 @@ public final class MainActivity extends ComponentActivity {
                 case "test": {
                     if (!AlarmSettings.prefs(this).getBoolean("enabled",false)) throw new IllegalStateException();
                     JSONObject alert = new JSONObject().put("id",UUID.randomUUID().toString()).put("userId",AlarmSettings.prefs(this).getString("user",""))
-                        .put("body","TEST ONLY — TANOVIQ alarm sound check. No message was sent.").put("priority","critical").put("createdAt",Instant.now().toString()).put("test",true);
+                        .put("body","TEST ONLY — Mobile Phone alarm sound check. No message was sent.").put("priority","critical").put("createdAt",Instant.now().toString()).put("test",true);
                     reply(proxy,id,new JSONObject().put("playing",AlertDelivery.deliver(this,alert,true)).put("alarmId",alert.getString("id")),null); break;
                 }
                 case "stop": stopService(new Intent(this,EmergencyAlarmService.class)); reply(proxy,id,new JSONObject().put("ok",true),null); break;
@@ -253,7 +253,7 @@ public final class MainActivity extends ComponentActivity {
         permissionSetupRunning = true;
         AlarmSettings.prefs(this).edit().putBoolean("duty_setup_shown",true).apply();
         new AlertDialog.Builder(this).setTitle("Duty location & emergency alerts")
-            .setMessage("TANOVIQ shares your location with approved operators only after you start duty, including while the screen is locked. End duty stops tracking. High and critical alerts use full alarm volume even with a silent ringer. Android notification permission and DND alarm exceptions are still required.")
+            .setMessage("Mobile Phone shares your location with approved operators only after you start duty, including while the screen is locked. End duty stops tracking. High and critical alerts use full alarm volume even with a silent ringer. Android notification permission and DND alarm exceptions are still required.")
             .setPositiveButton("Set up permissions",(dialog,which) -> {
                 if (!LocationShareService.permitted(this)) requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.ACCESS_COARSE_LOCATION},106);
                 else setupNotificationPermission();
@@ -282,7 +282,7 @@ public final class MainActivity extends ComponentActivity {
         AlarmSettings.channels(this);
         if (!manager.isNotificationPolicyAccessGranted()) {
             new AlertDialog.Builder(this).setTitle("Emergency alarm permissions")
-                .setMessage("Allow TANOVIQ Do Not Disturb access, then allow alarms and Emergency alerts in the DND modes you use. Emergency alarm volume is enabled automatically. Android still controls these permissions; total-silence modes can block sound.")
+                .setMessage("Allow Mobile Phone Do Not Disturb access, then allow alarms and Emergency alerts in the DND modes you use. Emergency alarm volume is enabled automatically. Android still controls these permissions; total-silence modes can block sound.")
                 .setPositiveButton("Open alarm permissions",(dialog,which)->startActivity(new Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS)))
                 .setNegativeButton("Not now",null).show();
         }

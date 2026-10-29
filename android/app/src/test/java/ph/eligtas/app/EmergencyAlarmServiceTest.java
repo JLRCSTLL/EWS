@@ -80,6 +80,38 @@ public class EmergencyAlarmServiceTest {
         shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(28));
         assertTrue(shadowOf(controller.get()).isStoppedBySelf());
     }
+    @Test public void attachedVoiceUsesAlarmAudioAndStopsAfterOnePlayback() throws Exception {
+        start(); MediaPlayer bundled = player;
+        ShadowMediaPlayer.setMediaInfoProvider(source -> new ShadowMediaPlayer.MediaInfo(1000,0));
+        java.io.File file = java.io.File.createTempFile("test-voice-", ".wav", app.getCacheDir());
+        controller.get().replaceWithAttachment(alert.getString("id"), "resident", file, "voice");
+        assertNotSame(bundled, player); assertFalse(bundled.isPlaying()); assertTrue(player.isPlaying()); assertFalse(player.isLooping());
+        assertEquals(AudioAttributes.USAGE_ALARM, shadowOf(player).getAudioAttributes().getUsage());
+        assertEquals(AudioAttributes.CONTENT_TYPE_SPEECH, shadowOf(player).getAudioAttributes().getContentType());
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(2));
+        assertTrue(shadowOf(controller.get()).isStoppedBySelf());
+        controller.get().onDestroy(); assertFalse(file.exists());
+        assertEquals(2, audio.getStreamVolume(AudioManager.STREAM_ALARM));
+    }
+    @Test public void attachedAlarmRepeatsAndAnOldDownloadCannotReplaceANewAlert() throws Exception {
+        start(); MediaPlayer bundled = player;
+        java.io.File stale = java.io.File.createTempFile("test-stale-", ".wav", app.getCacheDir());
+        controller.get().replaceWithAttachment(UUID.randomUUID().toString(), "resident", stale, "alarm");
+        assertSame(bundled, player); assertFalse(stale.exists()); assertTrue(player.isPlaying());
+        ShadowMediaPlayer.setMediaInfoProvider(source -> new ShadowMediaPlayer.MediaInfo(1000,0));
+        java.io.File file = java.io.File.createTempFile("test-alarm-", ".wav", app.getCacheDir());
+        controller.get().replaceWithAttachment(alert.getString("id"), "resident", file, "alarm");
+        assertTrue(player.isLooping());
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(2)); assertTrue(player.isPlaying());
+    }
+    @Test public void invalidAttachmentKeepsTheBundledAlarm() throws Exception {
+        start(); MediaPlayer bundled = player;
+        // The decoder reports an overlong file; do not replace the fallback.
+        java.io.File file = java.io.File.createTempFile("test-invalid-", ".wav", app.getCacheDir());
+        controller.get().replaceWithAttachment(alert.getString("id"), "resident", file, "voice");
+        assertFalse(file.exists()); assertTrue(bundled.isPlaying());
+        assertEquals("playing", AlarmSettings.prefs(app).getString("alarm_state", ""));
+    }
     @Test public void deniedAudioFocusReportsBlockedAndPostsTheFallback() {
         shadowOf(audio).setNextFocusRequestResponse(AudioManager.AUDIOFOCUS_REQUEST_FAILED);
         start();

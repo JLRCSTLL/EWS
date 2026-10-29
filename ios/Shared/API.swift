@@ -40,6 +40,26 @@ actor API {
         let _: ServerReply = try await call("/alerts/\(id)/receipt", method: "POST", body: ["read": true])
         NotificationCenter.default.post(name: .tanoviqAlertChanged, object: nil)
     }
+    func audio(_ id: String, userID: String) async throws -> Data {
+        guard UUID(uuidString: id) != nil, SecureStore.value("userID") == userID,
+              let cookie = SecureStore.value("session") else { throw APIError.unauthorized }
+        var request = URLRequest(url: URL(string: Self.origin + "/api/alert-audio/" + id)!)
+        request.cachePolicy = .reloadIgnoringLocalCacheData
+        request.setValue("eligtas_session=" + cookie, forHTTPHeaderField: "Cookie")
+        request.setValue("audio/wav", forHTTPHeaderField: "Accept")
+        let (bytes, response) = try await session.bytes(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200,
+              http.url?.host == "ews-kappa.vercel.app", http.mimeType == "audio/wav",
+              http.expectedContentLength <= 960044 else { throw APIError.message("Audio could not load. Read the written instructions and try again when connected.") }
+        var data = Data(); data.reserveCapacity(960044)
+        for try await byte in bytes {
+            guard data.count < 960044 else { throw APIError.message("Audio is too large.") }
+            data.append(byte)
+        }
+        try Task.checkCancellation()
+        guard SecureStore.value("userID") == userID, SecureStore.value("session") == cookie else { throw APIError.unauthorized }
+        return data
+    }
 }
 private final class NoRedirects: NSObject, URLSessionTaskDelegate {
     func urlSession(_ session: URLSession, task: URLSessionTask, willPerformHTTPRedirection response: HTTPURLResponse, newRequest request: URLRequest, completionHandler: @escaping (URLRequest?) -> Void) { completionHandler(nil) }

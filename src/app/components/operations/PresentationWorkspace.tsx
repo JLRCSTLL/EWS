@@ -42,6 +42,6 @@ export function PresentationGroupBroadcast({team}:{team:PresentationTeam}) {
       <label>Message<textarea aria-label="Group alert message" rows={3} maxLength={500} required value={message} onChange={e=>{setMessage(e.target.value);setSent(false);}}/></label>
       <button className="ops-secondary-button" data-demo="send-group-preview" disabled={!message.trim()}><Bell size={16}/>Simulate group alert</button>
     </form>
-    {sent&&<div className="ops-tour-delivery" data-demo="group-delivery" role="status"><strong>Demo delivery preview · {team.members.length} recipients</strong><p>{message}</p><small>#{team.group.tag} · {priority} priority · no message sent</small><div className="presentation-phone-receipt" data-demo="mobile-receipt"><Smartphone size={24}/><div><strong>TANOVIQ personnel app · sample notification</strong><p>{message}</p><small><CheckCheck size={14}/>Acknowledgment returns to the command center when a person reads the alert.</small></div></div></div>}
+    {sent&&<div className="ops-tour-delivery" data-demo="group-delivery" role="status"><strong>Demo delivery preview · {team.members.length} recipients</strong><p>{message}</p><small>#{team.group.tag} · {priority} priority · no message sent</small><div className="presentation-phone-receipt" data-demo="mobile-receipt"><Smartphone size={24}/><div><strong>Mobile Phone personnel app · sample notification</strong><p>{message}</p><small><CheckCheck size={14}/>Acknowledgment returns to the command center when a person reads the alert.</small></div></div></div>}
   </div>;
 }

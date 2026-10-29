@@ -20,6 +20,7 @@ struct Personnel: Decodable {
     let dutyProjectId: String?
 }
 struct AlertMessage: Decodable, Identifiable {
+    let audio: AlertAudio?
     let id: String
     let content: String
     let priority: String
@@ -29,6 +30,12 @@ struct AlertMessage: Decodable, Identifiable {
     let target_label: String?
     var date: Date { ISO8601DateFormatter.fractional.date(from: created_at) ?? ISO8601DateFormatter().date(from: created_at) ?? .distantPast }
     var urgent: Bool { priority == "high" || priority == "critical" }
+}
+struct AlertAudio: Decodable {
+    let id: String
+    let name: String
+    let kind: String
+    let durationMs: Int
 }
 struct DutyProject: Decodable, Identifiable { let id: String; let name: String; let status: String }
 struct PersonnelState: Decodable { let user: Personnel; let alerts: [AlertMessage]; let projects: [DutyProject] }

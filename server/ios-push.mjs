@@ -14,7 +14,7 @@ export function pushText(text, budget = 2600) {
 export function applePayload(alert, device, criticalApproved = false, now = Date.now()) {
   const urgent = ['high', 'critical'].includes(alert.priority);
   const critical = urgent && criticalApproved && device.critical_enabled;
-  return { aps: { alert: { title: `TANOVIQ · ${alert.priority} alert`, body: pushText(alert.content) },
+  return { aps: { alert: { title: `Mobile Phone · ${alert.priority} alert`, body: pushText(alert.content) },
     category: 'TANOVIQ_ALERT', 'thread-id': 'command-center', 'mutable-content': 1,
     'content-available': 1, 'interruption-level': critical ? 'critical' : urgent ? 'time-sensitive' : 'active',
     sound: critical ? { critical: 1, name: 'default', volume: 1 } : 'default' },
@@ -27,7 +27,7 @@ export function liveActivityPayload(alert, device, now = Date.now()) {
     'attributes-type': 'TANOVIQAlertAttributes', attributes: { alertID: alert.id, userID: device.user_id },
     'content-state': { priority: alert.priority, message: pushText(alert.content, 1200), updatedAt: timestamp, acknowledged: false },
     'relevance-score': alert.priority === 'critical' ? 100 : 80,
-    alert: { title: 'TANOVIQ · Active alert', body: pushText(alert.content, 300) } } };
+    alert: { title: 'Mobile Phone · Active alert', body: pushText(alert.content, 300) } } };
 }
 async function sendHttp2({ environment, token, headers, payload }) {
   const host = environment === 'sandbox' ? 'https://api.sandbox.push.apple.com' : 'https://api.push.apple.com';

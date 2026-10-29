@@ -66,7 +66,7 @@ final class AlertDelivery {
         Intent stop = new Intent(c, AlertActionReceiver.class).setAction("SILENCE_ALERT").setData(Uri.parse("tanoviq://silence/"+id)).putExtra("alertId",id);
         PendingIntent silence = PendingIntent.getBroadcast(c, 2, stop, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         NotificationCompat.Builder builder = new NotificationCompat.Builder(c, channel).setSmallIcon(ph.eligtas.app.R.drawable.ic_notification)
-            .setColor(0xff21b8a6).setContentTitle("TANOVIQ · " + alert.optString("priority", "normal") + " alert")
+            .setColor(0xff21b8a6).setContentTitle("Mobile Phone · " + alert.optString("priority", "normal") + " alert")
             .setContentText(alert.optString("body")).setStyle(new NotificationCompat.BigTextStyle().bigText(alert.optString("body")))
             .setVisibility(NotificationCompat.VISIBILITY_PRIVATE).setCategory(AlertPolicy.urgent(alert.optString("priority")) ? NotificationCompat.CATEGORY_ALARM : NotificationCompat.CATEGORY_MESSAGE)
             .setContentIntent(content).setOnlyAlertOnce(true);

@@ -35,6 +35,11 @@ function shellAsset(value) {
 function canNotify(permission, origin, base = PRODUCTION_URL) {
   return permission === 'notifications' && origin === new URL(base).origin;
 }
+function canRecord(permission, origin, details = {}, base = PRODUCTION_URL) {
+  const requested = details.mediaTypes || (details.mediaType ? [details.mediaType] : []);
+  return permission === 'media' && origin === new URL(base).origin &&
+    requested.length === 1 && requested[0] === 'audio' && details.isMainFrame !== false;
+}
 function canSaveActivityLog({ url, filename, mimeType, bytes, pageUrl }, base = PRODUCTION_URL) {
   const download = parseUrl(url);
   return isCommandUrl(pageUrl, base) && !!download && download.protocol === 'blob:' && download.origin === new URL(base).origin &&
@@ -50,4 +55,4 @@ function windowBounds(saved, areas) {
   const visible = Number.isFinite(x) && Number.isFinite(y) && areas.some(a => x >= a.x && y >= a.y && x + width <= a.x + a.width && y + height <= a.y + a.height);
   return { x: visible ? x : primary.x + Math.round((primary.width - width) / 2), y: visible ? y : primary.y + Math.round((primary.height - height) / 2), width, height };
 }
-module.exports = { PRODUCTION_URL, SHELL_URL, TOOLBAR_HEIGHT, commandUrl, isCommandUrl, isExternalUrl, shellAsset, canNotify, canSaveActivityLog, windowBounds };
+module.exports = { PRODUCTION_URL, SHELL_URL, TOOLBAR_HEIGHT, commandUrl, isCommandUrl, isExternalUrl, shellAsset, canNotify, canRecord, canSaveActivityLog, windowBounds };

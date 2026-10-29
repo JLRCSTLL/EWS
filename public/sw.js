@@ -6,7 +6,7 @@ self.addEventListener('fetch', event => {
   if (event.request.mode === 'navigate') event.respondWith(fetch(event.request).catch(() => caches.match('/offline.html')));
 });
 self.addEventListener('push', event => {
-  let message = { title: 'TANOVIQ alert', body: 'Open your inbox for a new command-center message.' };
+  let message = { title: 'Mobile Phone alert', body: 'Open your inbox for a new command-center message.' };
   try { message = { ...message, ...event.data.json() }; } catch { /* Keep a useful generic notification. */ }
   const urgent = ['high','critical'].includes(message.priority);
   event.waitUntil(Promise.all([

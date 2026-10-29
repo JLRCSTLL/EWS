@@ -14,6 +14,7 @@ interface Props {
   onSave: () => void;
   onCancel: () => void;
   onClose: () => void;
+  onClear: () => void;
   onEdit: () => void;
   onRemove: () => void;
   onRename: (name: string) => void;
@@ -26,7 +27,7 @@ export function GeofenceTools(props: Props) {
   const error = draft ? getGeofenceError(draft) : null;
   return <section className="ops-geofence-panel ops-glass" aria-label="Geofence tools">
     <div className="ops-card-heading"><h2><PenLine size={14} />Alert geofence</h2><button className="ops-small-icon" onClick={props.onClose} aria-label="Close geofence tools"><X size={14} /></button></div>
-    {!draft && <div className="ops-fence-picker"><label>Saved areas ({props.areas.length})<select aria-label="Selected geofence" value={saved?.id || ''} onChange={event => props.onSelect(event.target.value)}><option value="" disabled>Choose an area</option>{props.areas.map(area => <option key={area.id} value={area.id}>{area.name || 'Unnamed area'}</option>)}</select></label><button onClick={props.onNew} aria-label="Draw a new geofence"><Plus size={15} /></button></div>}
+    {!draft && <div className="ops-fence-picker"><label>Saved areas ({props.areas.length})<select aria-label="Selected geofence" value={saved?.id || ''} onChange={event => event.target.value ? props.onSelect(event.target.value) : props.onClear()}><option value="">All areas · no selection</option>{props.areas.map(area => <option key={area.id} value={area.id}>{area.name || 'Unnamed area'}</option>)}</select></label><button onClick={props.onNew} aria-label="Draw a new geofence"><Plus size={15} /></button></div>}
     {draft ? <>
       <label className="ops-fence-name">Area name<input aria-label="Draft geofence name" value={props.draftName} maxLength={60} onChange={event => props.onRename(event.target.value)} /></label>
       {draft.shape !== 'boundary' && <div className="ops-fence-shapes" role="group" aria-label="Geofence shape">
@@ -46,6 +47,7 @@ export function GeofenceTools(props: Props) {
       <label className="ops-fence-name">Area name<input aria-label="Geofence area name" value={saved.name} maxLength={60} onChange={(event) => props.onRename(event.target.value)} /></label>
       <p className="ops-fence-instruction"><span className="ops-fence-shape-label">{saved.shape}</span> · {formatGeofenceArea(saved)} · saved locally</p><p className="ops-fence-hint">Search another location to add its boundary. Your saved areas stay on the map.</p>
       <div className="ops-fence-actions">
+        <button onClick={props.onClear}><X size={12} />Clear selection</button>
         {saved.shape !== 'boundary' && <button onClick={props.onEdit}><PenLine size={12} />Edit boundary</button>}
         <button onClick={props.onFocus}><Crosshair size={12} />Locate</button>
         <button onClick={props.onRemove} aria-label="Remove geofence"><Trash2 size={12} /></button>

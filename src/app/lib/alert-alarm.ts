@@ -23,6 +23,8 @@ export class BrowserAlarm {
   private interval: ReturnType<typeof setInterval> | undefined;
   private timeout: ReturnType<typeof setTimeout> | undefined;
   private voices = new Set<OscillatorNode>();
+  private recording: AudioBufferSourceNode | null = null;
+  private playback = 0;
   async enable() {
     const Audio = window.AudioContext || (window as any).webkitAudioContext;
     if (!Audio) throw new Error('This browser cannot play the alarm.');
@@ -52,7 +54,27 @@ export class BrowserAlarm {
     beep(); this.interval = setInterval(beep, 1300); this.timeout = setTimeout(() => this.stop(), duration);
     return true;
   }
+  async playAttachment(url: string, loop: boolean, duration = 30000) {
+    if (!this.play(duration)) return false;
+    const playback = this.playback;
+    // Keep the ordinary alarm sounding while an authenticated download loads.
+    try {
+      const response = await fetch(url, { credentials: 'include', cache: 'no-store', signal: AbortSignal.timeout(8000) });
+      if (!response.ok || !response.headers.get('content-type')?.startsWith('audio/wav')) return true;
+      const data = await response.arrayBuffer();
+      if (data.byteLength > 960044 || playback !== this.playback || !this.context) return true;
+      const buffer = await this.context.decodeAudioData(data);
+      if (playback !== this.playback || this.context.state !== 'running') return true;
+      this.stop();
+      const source = this.context.createBufferSource(); source.buffer = buffer; source.loop = loop;
+      source.connect(this.context.destination); this.recording = source; source.start();
+      this.timeout = setTimeout(() => this.stop(), loop ? duration : Math.ceil(buffer.duration * 1000) + 100);
+      return true;
+    } catch { return true; } // Default alarm remains the fallback.
+  }
   stop() {
+    this.playback++;
+    if (this.recording) { try { this.recording.stop(); } catch {} this.recording.disconnect(); this.recording = null; }
     clearInterval(this.interval); clearTimeout(this.timeout);
     for (const voice of this.voices) { try { voice.stop(); } catch { /* Already stopped. */ } }
     this.voices.clear();

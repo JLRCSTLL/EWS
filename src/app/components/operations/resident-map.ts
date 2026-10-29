@@ -20,6 +20,7 @@ export function residentMarker(user: Resident, at: string, options: { muted?: bo
     weight: options.muted ? 1 : options.live ? 3 : 1.5, opacity: options.muted ? .35 : 1,
     fillOpacity: options.muted ? .15 : options.live ? 1 : status === 'stale' ? .25 : .85,
     interactive: options.interactive !== false,
+    bubblingMouseEvents: false,
   });
   const popup = document.createElement('div');
   popup.className = 'ops-resident-popup';

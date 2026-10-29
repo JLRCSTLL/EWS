@@ -58,7 +58,7 @@ struct RootView: View {
 }
 struct SplashView: View {
     var body: some View {
-        VStack(spacing: 24) { Image("Brand").resizable().scaledToFit().frame(maxWidth: 250).accessibilityLabel("TANOVIQ"); Text("See Risk Before It Strikes.").font(.headline); ProgressView("Connecting to your command center") }
+        VStack(spacing: 24) { Image(systemName: "iphone.radiowaves.left.and.right").font(.system(size: 64)).foregroundStyle(.teal).accessibilityHidden(true); Text("Mobile Phone").font(.largeTitle.bold()); ProgressView("Connecting to your command center") }
             .padding(32).frame(maxWidth: .infinity, maxHeight: .infinity).background(Color(uiColor: .systemGroupedBackground))
     }
 }
@@ -73,7 +73,7 @@ struct SignInView: View {
             Form {
                 Section { VStack(alignment: .leading, spacing: 12) {
                     Image(systemName: "dot.radiowaves.left.and.right").font(.largeTitle).foregroundStyle(.teal).accessibilityHidden(true)
-                    Text("See Risk\nBefore It Strikes.").font(.largeTitle.bold())
+                    Text("Mobile Phone").font(.largeTitle.bold())
                     Text("Your connection to the command center. Alerts, duty location, and help in one place.").foregroundStyle(.secondary)
                 }.padding(.vertical, 18).listRowBackground(Color.clear) }
                 Section(registering ? "Create your account" : "Welcome back") {
@@ -90,7 +90,7 @@ struct SignInView: View {
                 }.listRowBackground(Color.clear)
                 if !store.error.isEmpty { Section { Label(store.error, systemImage: "exclamationmark.circle").foregroundStyle(.red) } }
                 Section { Text("Location is shared only while you are on duty. iPhone permission settings control notifications, background location, and Live Activities.").font(.footnote).foregroundStyle(.secondary) }
-            }.navigationTitle("TANOVIQ")
+            }.navigationTitle("Mobile Phone")
                 .toolbar {
                     if registering {
                         ToolbarItem(placement: .topBarLeading) {
@@ -132,7 +132,7 @@ struct HomeView: View {
                     Button("Manage duty", action: openDuty).buttonStyle(.bordered)
                 }.card()
                 if !store.error.isEmpty { Label(store.error, systemImage: "wifi.exclamationmark").font(.footnote).foregroundStyle(.red).card() }
-                Text("TANOVIQ · See Risk Before It Strikes.").font(.caption).foregroundStyle(.secondary).padding(.vertical, 8)
+                Text("Mobile Phone · Alerts and assistance").font(.caption).foregroundStyle(.secondary).padding(.vertical, 8)
             }.padding(20)
         }.background(Color(uiColor: .systemGroupedBackground)).navigationTitle("Overview")
             .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Refresh", systemImage: "arrow.clockwise") { Task { await store.refresh() } } } }
@@ -170,6 +170,9 @@ struct AlertDetailView: View {
                 VStack(alignment: .leading, spacing: 20) {
                     PriorityLabel(priority: alert.priority)
                     Text(alert.content).font(.title3).textSelection(.enabled)
+                    if let audio = alert.audio, let userID = store.state?.user.id {
+                        AlertAudioView(audio: audio, userID: userID).id(userID + audio.id)
+                    }
                     Text(alert.date.formatted(date: .abbreviated, time: .shortened)).font(.footnote).foregroundStyle(.secondary)
                     if !store.error.isEmpty { Text(store.error).foregroundStyle(.red) }
                 }.padding(24)
@@ -230,7 +233,7 @@ struct AccountView: View {
                 Button("Open iPhone settings") { if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) } }
                 Text("Expand a notification to read the message or acknowledge it without opening the app. Active urgent alerts can also appear in Dynamic Island and on the Lock Screen.").font(.footnote).foregroundStyle(.secondary)
             }
-            Section("Sound") { Text("iOS controls notification sound. Critical Alerts can sound through Silent Mode and Focus only after Apple approves TANOVIQ and you grant permission. Dismissing a notification does not forcibly stop a system sound already playing.").font(.footnote).foregroundStyle(.secondary) }
+            Section("Sound") { Text("iOS controls notification sound. Critical Alerts can sound through Silent Mode and Focus only after Apple approves this app and you grant permission. Dismissing a notification does not forcibly stop a system sound already playing.").font(.footnote).foregroundStyle(.secondary) }
             #if DEBUG
             Section("Local developer preview") { Button("Preview Dynamic Island · no alert sent") { push.previewLiveActivity() } }
             #endif

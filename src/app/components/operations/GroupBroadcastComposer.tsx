@@ -4,6 +4,8 @@ import { api, useLive } from "../../lib/live-service";
 import { groupTags, memberIds } from "../../lib/organization";
 import type { AlertGeofence, GeofencePoint } from "../../lib/geofencing";
 import type { AudienceGroup } from "../../lib/residents";
+import type { AlertAudio } from '../../lib/live-model';
+import { AlertAudioComposer } from './AlertAudioComposer';
 import "../../../styles/gsam.css";
 
 interface Preview {
@@ -56,7 +58,9 @@ export function GroupBroadcastComposer({
     [messageId, setMessageId] = useState(() => crypto.randomUUID());
   const tags = groupTags(content),
     effectiveMode = tags.length ? "groups" : mode;
+  const [audio, setAudio] = useState<AlertAudio | null>(null), [audioBusy, setAudioBusy] = useState(false);
   const draft = {
+    ...(audio ? { audioId: audio.id } : {}),
     targetMode: effectiveMode,
     teamGroupIds: effectiveMode === "groups" ? selectedGroups : [],
     content,
@@ -109,7 +113,7 @@ export function GroupBroadcastComposer({
   }, [key, revision]);
   async function send(event: FormEvent) {
     event.preventDefault();
-    if (!reviewed || !preview || previewing) return;
+    if (!reviewed || !preview || previewing || audioBusy) return;
     setBusy(true);
     setError("");
     try {
@@ -122,6 +126,7 @@ export function GroupBroadcastComposer({
         `Alert saved for ${result.recipient_count} people. Received/read counts update as their apps respond.`,
       );
       setContent("");
+      setAudio(null);
       setReviewed(false);
     } catch (error) {
       setError(error instanceof Error ? error.message : "Unable to send.");
@@ -238,7 +243,7 @@ export function GroupBroadcastComposer({
                   </label>
                 ))}
               {!groups.length && (
-                <p>Add groups and members in Structure first.</p>
+                <p>Add groups and members in Groups first.</p>
               )}
             </div>
           </>
@@ -278,6 +283,7 @@ export function GroupBroadcastComposer({
             ? "Announcements use ordinary notification settings."
             : "Emergency alarms are always enabled in the updated Android app. Android permissions and DND alarm exceptions still apply."}
         </p>
+        <AlertAudioComposer value={audio} onChange={value => { setAudio(value); setReviewed(false); }} onBusy={value => { setAudioBusy(value); if (value) setReviewed(false); }} />
         <div className="gsam-toolbar">
           <div className="el-audience-metric">
             <strong>
@@ -344,7 +350,7 @@ export function GroupBroadcastComposer({
           <input
             type="checkbox"
             checked={reviewed}
-            disabled={!preview?.recipients.length || previewing}
+            disabled={!preview?.recipients.length || previewing || audioBusy}
             onChange={(e) => setReviewed(e.target.checked)}
             required
           />
@@ -354,6 +360,7 @@ export function GroupBroadcastComposer({
           className="el-send-live"
           disabled={
             busy ||
+            audioBusy ||
             previewing ||
             !preview?.recipients.length ||
             !reviewed ||

@@ -1,7 +1,7 @@
 'use strict';
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { PRODUCTION_URL, commandUrl, isCommandUrl, isExternalUrl, shellAsset, canNotify, canSaveActivityLog, windowBounds } = require('../policy.cjs');
+const { PRODUCTION_URL, commandUrl, isCommandUrl, isExternalUrl, shellAsset, canNotify, canRecord, canSaveActivityLog, windowBounds } = require('../policy.cjs');
 test('installed apps cannot be redirected to an arbitrary service by command-line flags', () => {
   assert.equal(commandUrl(['--dev-url','https://evil.example'],true),PRODUCTION_URL);
   assert.equal(commandUrl(['--dev-url','http://127.0.0.1:4173'],false),'http://127.0.0.1:4173/');
@@ -30,6 +30,14 @@ test('disconnected-monitor bounds are restored to an accessible display', () => 
   const areas=[{x:0,y:0,width:1920,height:1080}];
   assert.deepEqual(windowBounds({x:3000,y:-900,width:1440,height:900},areas),{x:240,y:90,width:1440,height:900});
   assert.equal(windowBounds({width:10000,height:10000},areas).width,1920);
+});
+test('voice recording allows only an audio microphone on the trusted main page', () => {
+  const origin = 'https://ews-kappa.vercel.app';
+  assert.equal(canRecord('media', origin, { mediaTypes: ['audio'], isMainFrame: true }), true);
+  assert.equal(canRecord('media', origin, { mediaType: 'audio' }), true);
+  for (const details of [{ mediaTypes: ['video'] }, { mediaTypes: ['audio','video'] }, { mediaTypes: [] }, { mediaType: 'unknown' }, { mediaTypes: ['audio'], isMainFrame: false }]) assert.equal(canRecord('media', origin, details), false);
+  assert.equal(canRecord('media', 'https://evil.example', { mediaTypes: ['audio'] }), false);
+  assert.equal(canRecord('display-capture', origin, { mediaTypes: ['audio'] }), false);
 });
 
 test('desktop exports accept only bounded CSV log blobs from the command-center origin', () => {

@@ -182,6 +182,20 @@ alter table eligtas.alerts add column if not exists target_mode text not null de
 alter table eligtas.alerts add column if not exists target_label text not null default '';
 alter table eligtas.alerts add column if not exists target_group_ids uuid[] not null default '{}';
 alter table eligtas.alerts add column if not exists target_spec jsonb;
+alter table eligtas.alerts add column if not exists audio jsonb;
+create table if not exists eligtas.alert_audio (
+  id uuid primary key,
+  creator_id uuid not null references eligtas.users(id) on delete cascade,
+  name text not null check (length(name) between 1 and 80),
+  kind text not null check (kind in ('alarm','voice')),
+  duration_ms integer not null check (duration_ms between 100 and 30000),
+  byte_length integer not null check (byte_length between 3244 and 960044),
+  data bytea not null check (octet_length(data) = byte_length),
+  created_at timestamptz not null default now()
+);
+create index if not exists alert_audio_creator on eligtas.alert_audio(creator_id,created_at);
+alter table eligtas.alerts add column if not exists audio_id uuid references eligtas.alert_audio(id);
+create index if not exists alerts_audio_id on eligtas.alerts ((audio->>'id')) where audio is not null;
 -- Old, off-duty pins must not survive the transition to duty-scoped tracking.
 delete from eligtas.location_shares where user_id in (select id from eligtas.users where not on_duty);
 update eligtas.users set location_sharing=false,lat=null,lng=null,accuracy=null,location_at=null where not on_duty and location_sharing;
