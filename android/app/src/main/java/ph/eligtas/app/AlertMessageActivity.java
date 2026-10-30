@@ -44,6 +44,13 @@ public final class AlertMessageActivity extends Activity {
         TextView note = text(layout,"Silence stops this alarm only. Acknowledge tells the command center you have read the message.",12,MobileStyle.MUTED); note.setPadding(0,MobileStyle.dp(this,14),0,MobileStyle.dp(this,6));
         Button silence = action(layout,R.string.silence_alarm,false); silence.setOnClickListener(v->{AlertActionReceiver.silence(this,alertId);silence.setText(R.string.alarm_silenced);});
         Button read = action(layout,R.string.acknowledge_message,true); read.setOnClickListener(v->{AlertActionReceiver.silence(this,alertId);NativeAlertWorker.receipt(this,alert,false,true);read.setText(R.string.acknowledgment_queued);read.setEnabled(false);});
+        if (alert.optString("responseId").matches("[0-9a-fA-F-]{36}")) {
+            Button navigate = action(layout,R.string.open_responder_navigation,true);
+            navigate.setOnClickListener(v -> {
+                startActivity(new android.content.Intent(this,MainActivity.class).setAction("OPEN_RESPONSE").addFlags(android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP | android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP));
+                finish();
+            });
+        }
         Button close = action(layout,R.string.close_message,false); close.setOnClickListener(v->finish());
         NativeAlertWorker.receipt(this,alert,false,false);
     }

@@ -72,6 +72,12 @@ final class AlertDelivery {
             .setContentIntent(content).setOnlyAlertOnce(true);
         if(AlertPolicy.urgent(alert.optString("priority")) && !alert.optBoolean("silenced")) builder.addAction(0,"Silence alarm",silence);
         builder.addAction(0,"Read message",content);
+        if (alert.optString("responseId").matches("[0-9a-fA-F-]{36}")) {
+            Intent route = new Intent(c, MainActivity.class).setAction("OPEN_RESPONSE")
+                .setData(Uri.parse("tanoviq://response/" + alert.optString("responseId")))
+                .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            builder.addAction(0,"Open navigation",PendingIntent.getActivity(c,3,route,PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
+        }
         if(alert.optBoolean("silenced")) builder.setSubText("Alarm silenced · message saved");
         return builder;
     }

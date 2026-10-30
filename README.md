@@ -15,7 +15,7 @@ clearly separated from connected accounts and alerts.
 | [Command center](https://ews-kappa.vercel.app/) | Browser interface for approved operators | Web |
 | [Mobile Phone](https://ews-kappa.vercel.app/#/public) | Register, receive alerts, share location while on duty, request help | Mobile web / PWA |
 | [Windows](desktop/README.md) | Dedicated command-center window, splash and desktop controls | 1.1.3, x64 installer / portable |
-| [Android](android/README.md) | Mobile interface with native notifications, alarm controls and on-duty GPS | 0.7.0 pilot, version code 9 |
+| [Android](android/README.md) | Mobile interface with native notifications, alarm controls and on-duty GPS | 0.8.0 pilot, version code 10 |
 | [iPhone](ios/README.md) | SwiftUI app, APNs and Live Activity implementation | Development; no signed IPA or TestFlight release |
 
 Windows and Android load the hosted interface. Rebuilding an installer does not
@@ -65,8 +65,9 @@ not Apple's native Liquid Glass renderer.
   from the server's audit records. Demo logs remain separate. Contact details,
   precise GPS positions, and message contents are excluded; record names reflect
   current labels. Deploy the API update to enable `/api/audit` on hosted clients.
-- **Field response:** review assistance requests, assign available responders,
-  follow status changes and review alert delivery history.
+- **Responder dispatch:** validate a call, assign an on-duty driver and base, activate
+  mobile navigation, exchange private incident messages/photos, and follow scene,
+  hospital transport and return-to-base stages. See [the responder guide](docs/responder-dispatch.md).
 
 Operators and admins manage groups. Being a group leader does **not** grant
 operator/admin access. New registrations begin as personnel accounts and require

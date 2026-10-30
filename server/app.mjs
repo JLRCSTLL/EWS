@@ -12,6 +12,7 @@ import { accountRoutes } from './account.mjs';
 import { auditRoutes } from './audit.mjs';
 import { normalizeProfile } from './profile.mjs';
 import { alertAudioRoutes } from './alert-audio.mjs';
+import { responseRoutes, responseState } from './responses.mjs';
 
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const fail = (status, message) => { throw Object.assign(new Error(message), { status }); };
@@ -19,7 +20,7 @@ const text = (value, min, max, label) => typeof value === 'string' && value.trim
 const requireOperator = user => { if (!isOperator(user)) fail(403, 'Approved command-center access is required.'); };
 const passwordInput = value => typeof value === 'string' && value.length >= 12 && value.length <= 128 ? value : fail(400, 'Use a password of 12–128 characters.');
 
-export function createApp(db, { push, production = process.env.NODE_ENV === 'production', allowedOrigins = [], bootstrapToken = process.env.BOOTSTRAP_TOKEN } = {}) {
+export function createApp(db, { push, routing, production = process.env.NODE_ENV === 'production', allowedOrigins = [], bootstrapToken = process.env.BOOTSTRAP_TOKEN } = {}) {
   const app = express();
   const events = locationEvents(db);
   const location = locations(db, events.changed);
@@ -36,6 +37,7 @@ export function createApp(db, { push, production = process.env.NODE_ENV === 'pro
     next();
   });
   app.use('/api/alert-audio', express.json({ limit: '1400kb' }));
+  app.use('/api/responses/:id/messages', express.json({ limit: '3mb' }));
   app.use(express.json({ limit: '1mb' }));
   const limits = new Map();
   function rateLimit(req, key, max, windowMs = 15 * 60000) {
@@ -53,7 +55,7 @@ export function createApp(db, { push, production = process.env.NODE_ENV === 'pro
     res.cookie('eligtas_session', token, { httpOnly: true, secure: production, sameSite: 'lax', path: '/api', maxAge: 30 * 86400000 });
   }
   app.get('/api/health', async (_req, res) => { await db.query('select 1'); res.json({ ok: true, service: 'TANOVIQ', version: 2 }); });
-  app.get('/api/config', (_req, res) => res.json({ pushPublicKey: push?.publicKey || null, androidPushReady: !!push?.androidReady, iosPushReady: !!push?.iosReady, accountDeletionReady: true, nativeLocationReady: true, registration: true, registrationProfileReady: true, gsamReady: true, dutyTracking: true, groupManagementReady: true, boundaryGeofencesReady: true, auditLogsReady: true, alertAudioReady: true, commandCenterVersion: '1.1.3' }));
+  app.get('/api/config', (_req, res) => res.json({ pushPublicKey: push?.publicKey || null, androidPushReady: !!push?.androidReady, iosPushReady: !!push?.iosReady, accountDeletionReady: true, nativeLocationReady: true, registration: true, registrationProfileReady: true, gsamReady: true, dutyTracking: true, groupManagementReady: true, boundaryGeofencesReady: true, auditLogsReady: true, alertAudioReady: true, responderReady: true, commandCenterVersion: '1.2.0' }));
   for (const method of ['put','delete']) app[method]('/api/location/native', async (req,res) => {
     const token = /^Bearer ([A-Za-z0-9_-]{43})$/.exec(req.get('authorization') || '')?.[1];
     res.json(await location.native(token,req.method,req.body));
@@ -110,6 +112,7 @@ export function createApp(db, { push, production = process.env.NODE_ENV === 'pro
   });
   accountRoutes(app, db, { rateLimit, changed: events.changed, production });
   alertAudioRoutes(app, db, rateLimit);
+  responseRoutes(app, db, { changed: events.changed, push, rateLimit, routing });
   auditRoutes(app, db);
   app.get('/api/state', async (req, res) => {
     const operator = isOperator(req.user) && req.query.view !== 'public';
@@ -119,7 +122,8 @@ export function createApp(db, { push, production = process.env.NODE_ENV === 'pro
       : await db.query('select a.*,r.received_at,r.read_at from eligtas.alerts a join eligtas.receipts r on r.alert_id=a.id where r.user_id=$1 order by a.created_at desc limit 100', [req.user.id]);
     const requests = await db.query(`select r.*,u.name from eligtas.requests r join eligtas.users u on u.id=r.user_id ${operator ? '' : 'where r.user_id=$1'} order by r.created_at desc limit 200`, operator ? [] : [req.user.id]);
     const organization = await organizationState(db,req.user,operator);
-    res.json({ user: publicUser(req.user,{self:true}), users: users.map(row => publicUser(row,{self:row.id===req.user.id,visible:req.user.role==='admin'?contactVisibility(organization.contactRequests,req.user.id,row.id):[]})), alerts: alerts.rows, requests: requests.rows, ...organization, serverTime: new Date().toISOString() });
+    const responses = await responseState(db, req.user, operator);
+    res.json({ user: publicUser(req.user,{self:true}), users: users.map(row => publicUser(row,{self:row.id===req.user.id,visible:req.user.role==='admin'?contactVisibility(organization.contactRequests,req.user.id,row.id):[]})), alerts: alerts.rows, requests: requests.rows, ...organization, ...responses, serverTime: new Date().toISOString() });
   });
   organizationRoutes(app,db,events.changed);
   app.get('/api/location/events', (req,res) => events.connect(req,res,digest(tokenFrom(req))));
@@ -186,6 +190,7 @@ export function createApp(db, { push, production = process.env.NODE_ENV === 'pro
     await db.transaction(async tx => {
       const row = (await tx.query('select * from eligtas.requests where id=$1 for update', [req.params.id])).rows[0];
       if (!row || (status === 'cancelled' && row.user_id !== req.user.id)) fail(404, 'Request not found.');
+      if ((await tx.query("select id from eligtas.response_incidents where request_id=$1 and status not in ('completed','cancelled','rejected')",[row.id])).rows.length) fail(409,'This request has a dispatch. Update it in Dispatch or contact your operator.');
       const transitions = { new: ['acknowledged','assigned','cancelled'], acknowledged: ['assigned','resolved','cancelled'], assigned: ['assigned','resolved','cancelled'] };
       if (!transitions[row.status]?.includes(status)) fail(409, 'This request has changed. Refresh its status.');
       await tx.query('update eligtas.requests set status=$1,assigned_unit=case when $1=\'assigned\' then $2 else assigned_unit end,updated_at=now() where id=$3', [status,unit,row.id]);
@@ -239,7 +244,7 @@ export function createApp(db, { push, production = process.env.NODE_ENV === 'pro
   app.use((error, _req, res, _next) => {
     const status = error.status || (error.type === 'entity.parse.failed' ? 400 : 500);
     if (status >= 500) console.error('API error', error.code || error.name);
-    res.status(status).json({ error: status >= 500 ? 'The service could not save this change. Please try again.' : error.message });
+    res.status(status).json({ error: status >= 500 ? error.publicMessage || 'The service could not save this change. Please try again.' : error.message });
   });
   return app;
 }

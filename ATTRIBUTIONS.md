@@ -20,3 +20,7 @@ Administrative boundary search uses
 The provider describes the boundaries as indicative; source dates and any geometry
 simplification are disclosed in the preview. This is not an assertion of current
 official legal boundaries. Map imagery and boundary data are separate services.
+
+## Responder navigation
+
+Road directions use [OSRM](https://project-osrm.org/docs/v5.24.0/api/) with OpenStreetMap road data. Nearby hospital listings use [OpenStreetMap](https://www.openstreetmap.org/copyright) via [Overpass API](https://wiki.openstreetmap.org/wiki/Overpass_API). Data attribution remains on the map. These services do not establish hospital capacity, receiving capability, emergency access privileges or safe passage.

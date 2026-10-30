@@ -61,6 +61,23 @@ public class AlertDeliveryTest {
         assertNull(shadowOf(app).getNextStartedService());
         assertEquals("announcement",AlarmSettings.prefs(app).getString("alarm_state",""));
     }
+    @Test public void dispatchNotificationHasAnExplicitNavigationActionWithoutClinicalData() throws Exception {
+        String response = UUID.randomUUID().toString();
+        JSONObject message = alert("high").put("responseId",response);
+        Notification notification = AlertDelivery.notification(app,message,AlarmSettings.EMERGENCY).build();
+        Notification.Action navigation = null;
+        for (Notification.Action action : notification.actions) if ("Open navigation".contentEquals(action.title)) navigation = action;
+        assertNotNull(navigation);
+        Intent intent = shadowOf(navigation.actionIntent).getSavedIntent();
+        assertEquals("OPEN_RESPONSE",intent.getAction());
+        assertEquals(MainActivity.class.getName(),intent.getComponent().getClassName());
+        assertEquals("tanoviq://response/"+response,intent.getDataString());
+        assertNull(intent.getStringExtra("body"));
+    }
+    @Test public void ordinaryAlertsDoNotOfferAResponderRoute() throws Exception {
+        Notification notification = AlertDelivery.notification(app,alert("normal"),AlarmSettings.COMMUNITY).build();
+        for (Notification.Action action : notification.actions) assertNotEquals("Open navigation",action.title.toString());
+    }
     @Test public void playbackFailureCanSoundThePreviouslySilentNotification() throws Exception {
         JSONObject alert = alert("high");
         AlertDelivery.deliver(app,alert,true);

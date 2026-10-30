@@ -171,3 +171,7 @@ References: [iOS 27 platform guidance](https://developer.apple.com/ios/whats-new
 [Live Activities push](https://developer.apple.com/documentation/activitykit/starting-and-updating-live-activities-with-activitykit-push-notifications),
 [Critical Alerts](https://developer.apple.com/documentation/bundleresources/entitlements/com.apple.developer.usernotifications.critical-alerts),
 [TestFlight](https://developer.apple.com/testflight/).
+
+## Responder update 0.2.0
+
+The Respond tab shares the authenticated map, status controls and incident chat with the command center. It uses an isolated WebKit cookie store with the existing session, and clears it when removed. Native duty GPS continues separately. New assignments select Respond; dispatch notification taps select it after the assigned record is fetched. Camera/photo purpose strings are included for explicit incident attachments. Signing and physical-device verification remain required.

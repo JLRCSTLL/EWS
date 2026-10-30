@@ -7,19 +7,21 @@ import UIKit
     @StateObject private var store = AppStore()
     var body: some Scene { WindowGroup { RootView().environmentObject(store).tint(.teal) } }
 }
-private enum AppTab: Hashable { case home, alerts, duty, account }
+private enum AppTab: Hashable { case home, responder, alerts, duty, account }
 struct RootView: View {
     @EnvironmentObject private var store: AppStore
     @Environment(\.scenePhase) private var phase
     @State private var tab: AppTab = .home
     @State private var selectedAlert: AlertMessage?
     @State private var pendingAlertID: String?
+    @State private var openedDispatch: String?
     var body: some View {
         Group {
             if !store.ready { SplashView() }
             else if store.state == nil { SignInView() }
             else {
                 TabView(selection: $tab) {
+                    ResponderView(userID: store.state!.user.id).id(store.state!.user.id).tabItem { Label("Respond", systemImage: "location.north.line.fill") }.tag(AppTab.responder)
                     NavigationStack { HomeView(openAlert: { selectedAlert = $0 }, openDuty: { tab = .duty }) }.tabItem { Label("Overview", systemImage: "shield.lefthalf.filled") }.tag(AppTab.home)
                     NavigationStack { InboxView(openAlert: { selectedAlert = $0 }) }.tabItem { Label("Alerts", systemImage: "bell") }.badge(store.state?.alerts.filter { $0.read_at == nil }.count ?? 0).tag(AppTab.alerts)
                     NavigationStack { DutyView() }.tabItem { Label("Duty", systemImage: "location") }.tag(AppTab.duty)
@@ -28,6 +30,10 @@ struct RootView: View {
             }
         }
         .sheet(item: $selectedAlert) { alert in AlertDetailView(alert: alert).environmentObject(store).presentationDetents([.medium, .large]).presentationDragIndicator(.visible) }
+        .onChange(of: store.state?.responseIncidents?.first(where: { $0.active })?.id) { _, id in
+            if let id, openedDispatch != id { openedDispatch = id; selectedAlert = nil; tab = .responder }
+        }
+        .onChange(of: store.state?.user.id) { _, _ in openedDispatch = nil }
         .task {
             await store.refresh()
             if store.state != nil { await PushCoordinator.shared.register() }
@@ -53,7 +59,8 @@ struct RootView: View {
     private func openPendingAlert() {
         if pendingAlertID == nil { pendingAlertID = UserDefaults.standard.string(forKey: "pendingAlertID") }
         guard let id = pendingAlertID, let alert = store.state?.alerts.first(where: { $0.id == id }) else { return }
-        selectedAlert = alert; pendingAlertID = nil; UserDefaults.standard.removeObject(forKey: "pendingAlertID")
+        if alert.response_id != nil { selectedAlert = nil; tab = .responder } else { selectedAlert = alert }
+        pendingAlertID = nil; UserDefaults.standard.removeObject(forKey: "pendingAlertID")
     }
 }
 struct SplashView: View {

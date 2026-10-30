@@ -8,8 +8,8 @@ settings:
     SWIFT_VERSION: "5.0"
     IPHONEOS_DEPLOYMENT_TARGET: "17.2"
     TARGETED_DEVICE_FAMILY: "1"
-    MARKETING_VERSION: "0.1.0"
-    CURRENT_PROJECT_VERSION: "1"
+    MARKETING_VERSION: "0.2.0"
+    CURRENT_PROJECT_VERSION: "2"
     CODE_SIGN_STYLE: Automatic
   configs:
     Debug:
@@ -40,6 +40,8 @@ targets:
         NSSupportsLiveActivities: true
         TANOVIQCriticalAlertsApproved: false
         NSLocationWhenInUseUsageDescription: "Share your position with approved command-center operators while you are on duty."
+        NSCameraUsageDescription: "Take a photo you choose to attach to your assigned incident chat."
+        NSPhotoLibraryUsageDescription: "Select a photo to share privately with dispatch for your assigned incident."
         NSLocationAlwaysAndWhenInUseUsageDescription: "Continue sending your position during duty when the screen is locked or another app is open. End duty stops sharing."
     entitlements:
       path: App/TANOVIQ.entitlements

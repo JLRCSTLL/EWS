@@ -193,3 +193,7 @@ by unit tests or a successful APK build.
 Reference: [Android notification channels](https://developer.android.com/develop/ui/views/notifications/channels),
 [FCM Android delivery](https://firebase.google.com/docs/cloud-messaging/android/receive-messages),
 [background service restrictions](https://developer.android.com/develop/background-work/services/fgs/restrictions-bg-start).
+
+## Responder update 0.8.0
+
+The responder workspace opens assigned navigation automatically while the app is active. Dispatch notifications include **Open navigation**. Incident chat supports a single image chosen through Android’s system document picker; no broad storage permission is requested. Install the new pilot for that picker and notification action. See [the responder workflow](../docs/responder-dispatch.md).

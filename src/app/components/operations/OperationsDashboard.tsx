@@ -84,7 +84,7 @@ interface Props extends WidgetRuntimeProps {
 
 const incidentIcons = { typhoon: Wind, flood: Waves, earthquake: Activity, landslide: Mountain, fire: Flame };
 const navigation = [
-  ['incidents', 'Incidents'], ['responders', 'Responders'], ['public', 'Field inbox'], ['analytics', 'Analytics'], ['activity', 'Logs'],
+  ['incidents', 'Incidents'], ['responders', 'Responders'], ['public', 'Dispatch'], ['analytics', 'Analytics'], ['activity', 'Logs'],
 ] as const;
 const layerLabels: Record<keyof MapLayers, string> = {
   incidents: 'Incident markers', responders: 'Response teams', infrastructure: 'Critical facilities', risk: 'Risk zones',
@@ -92,7 +92,7 @@ const layerLabels: Record<keyof MapLayers, string> = {
 const sectionTitles: Record<Exclude<Section, null>, string> = {
   incidents: 'Incident center', responders: 'Response teams', analytics: 'Operational analytics',
   activity: 'Activity log', broadcast: 'Broadcast center', users: 'Team & access', help: 'Your command center',
-  public: 'Public assistance & check-ins',
+  public: 'Dispatch & field updates',
   connected: 'Personnel & access', groups: 'Groups',
 };
 const sectionDescriptions: Record<Exclude<Section, null>, string> = {

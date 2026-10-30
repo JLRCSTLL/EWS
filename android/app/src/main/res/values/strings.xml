@@ -1,4 +1,5 @@
 <resources>
+    <string name="open_responder_navigation">Open responder navigation</string>
     <string name="offline_title">Mobile Phone needs a connection</string>
     <string name="offline_description">Check your internet connection, then retry. Previously delivered notifications remain in Android’s notification tray.</string>
     <string name="retry">Try again</string>

@@ -58,6 +58,7 @@ public final class NativeAlertWorker extends Worker {
                 for(int i=0;i<alerts.length();i++) if(id.equals(alerts.getJSONObject(i).optString("id"))) {
                     JSONObject message = alerts.getJSONObject(i);
                     cached.put("body", message.optString("content"));
+                    if (!message.isNull("response_id")) cached.put("responseId",message.optString("response_id"));
                     JSONObject audio = message.optJSONObject("audio");
                     if (audio != null) { cached.put("audioId", audio.optString("id")); cached.put("audioKind", audio.optString("kind")); }
                     found=true; break;

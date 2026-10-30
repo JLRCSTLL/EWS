@@ -1,6 +1,10 @@
 import { isOperator } from './auth.mjs';
 
 const actions = {
+  response_reported: ['requests','Emergency call recorded'], response_validated: ['requests','Emergency validated'], response_rejected: ['requests','Emergency not validated'],
+  response_assigned: ['operations','Driver dispatched'], response_en_route: ['operations','Unit en route'], response_on_scene: ['operations','Unit arrived on scene'],
+  response_hospital_selected: ['operations','Receiving hospital selected'], response_to_hospital: ['operations','Transport to hospital started'],
+  response_at_hospital: ['operations','Unit arrived at hospital'], response_returning: ['operations','Unit returning to base'], response_completed: ['operations','Unit back at base'], response_cancelled: ['operations','Dispatch cancelled'],
   dispatch_alert: ['alerts', 'Alert dispatched'],
   create_group: ['groups', 'Group created'], update_group: ['groups', 'Group updated'],
   assign_group_member: ['groups', 'Member assignment changed'], remove_group_member: ['groups', 'Member removed from group'],

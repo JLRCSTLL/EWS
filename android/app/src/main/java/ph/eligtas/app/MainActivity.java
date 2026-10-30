@@ -20,6 +20,9 @@ import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.webkit.ValueCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
@@ -50,6 +53,16 @@ public final class MainActivity extends ComponentActivity {
     private boolean resumed;
     private boolean permissionSetupRunning;
     private boolean pendingAlarmSetup;
+    private ValueCallback<Uri[]> photoCallback;
+    private final ActivityResultLauncher<String[]> photoPicker = registerForActivityResult(
+        new ActivityResultContracts.OpenDocument(), uri -> {
+            ValueCallback<Uri[]> callback = photoCallback; photoCallback = null;
+            if (callback == null) return;
+            String mime = uri == null ? null : getContentResolver().getType(uri);
+            boolean image = uri != null && "content".equals(uri.getScheme()) && ("image/jpeg".equals(mime) || "image/png".equals(mime) || "image/webp".equals(mime));
+            // Only the single system-picker selection is passed to the trusted page.
+            callback.onReceiveValue(image && web != null && trusted(web.getUrl()) ? new Uri[]{uri} : null);
+        });
     static void refreshLocation() {
         MainActivity activity = current.get();
         if (activity != null) activity.runOnUiThread(() -> {
@@ -117,6 +130,14 @@ public final class MainActivity extends ComponentActivity {
             @Override public void onPageFinished(WebView view, String url) { CookieManager.getInstance().flush(); }
         });
         web.setWebChromeClient(new WebChromeClient() {
+            @Override public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> callback, FileChooserParams params) {
+                if (!trusted(view.getUrl())) { callback.onReceiveValue(null); return true; }
+                if (photoCallback != null) photoCallback.onReceiveValue(null);
+                photoCallback = callback;
+                try { photoPicker.launch(new String[]{"image/jpeg","image/png","image/webp"}); }
+                catch (RuntimeException unavailable) { photoCallback = null; callback.onReceiveValue(null); }
+                return true;
+            }
             @Override public void onProgressChanged(WebView view, int value) { progress.setProgress(value); progress.setVisibility(value == 100 ? View.GONE : View.VISIBLE); }
             @Override public void onGeolocationPermissionsShowPrompt(String origin, GeolocationPermissions.Callback callback) {
                 if (!trusted(origin)) { callback.invoke(origin,false,false); return; }
@@ -141,6 +162,7 @@ public final class MainActivity extends ComponentActivity {
     private void goBack() { if (web.canGoBack()) web.goBack(); else finish(); }
     @Override protected void onNewIntent(Intent intent) { super.onNewIntent(intent); setIntent(intent); openNotification(intent); }
     private void openNotification(Intent intent) {
+        if ("OPEN_RESPONSE".equals(intent.getAction())) web.loadUrl(BuildConfig.APP_ORIGIN + "/#/public/responder");
         if ("OPEN_ALERT".equals(intent.getAction())) { stopService(new Intent(this,EmergencyAlarmService.class)); web.loadUrl(BuildConfig.APP_ORIGIN + "/#/public/alerts"); }
         if ("OPEN_LOCATION".equals(intent.getAction())) web.loadUrl(BuildConfig.APP_ORIGIN + "/#/public/map");
     }
@@ -295,5 +317,5 @@ public final class MainActivity extends ComponentActivity {
     }
     @Override protected void onResume() { super.onResume(); resumed = true; LocationShareService.retryRemoval(this); if (web != null) { web.onResume(); refreshInbox(); refreshLocation(); if(pendingAlarmSetup){pendingAlarmSetup=false;web.post(this::setupAlarmPermission);} } }
     @Override protected void onPause() { resumed = false; if (web != null) web.onPause(); super.onPause(); }
-    @Override protected void onDestroy() { if (current.get()==this) current.clear(); if (locationCallback!=null) locationCallback.invoke(locationOrigin,false,false); web.destroy(); super.onDestroy(); }
+    @Override protected void onDestroy() { if (photoCallback!=null) { photoCallback.onReceiveValue(null); photoCallback=null; } if (current.get()==this) current.clear(); if (locationCallback!=null) locationCallback.invoke(locationOrigin,false,false); web.destroy(); super.onDestroy(); }
 }

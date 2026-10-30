@@ -196,6 +196,41 @@ create table if not exists eligtas.alert_audio (
 create index if not exists alert_audio_creator on eligtas.alert_audio(creator_id,created_at);
 alter table eligtas.alerts add column if not exists audio_id uuid references eligtas.alert_audio(id);
 create index if not exists alerts_audio_id on eligtas.alerts ((audio->>'id')) where audio is not null;
+create table if not exists eligtas.response_facilities (
+  id uuid primary key, kind text not null check(kind in ('base','hospital')),
+  name text not null check(length(name) between 1 and 120), location jsonb not null,
+  created_by uuid references eligtas.users(id) on delete set null, created_at timestamptz not null default now()
+);
+create table if not exists eligtas.response_incidents (
+  id uuid primary key, request_id uuid unique references eligtas.requests(id) on delete set null,
+  title text not null check(length(title) between 1 and 120), notes text not null default '' check(length(notes)<=1000),
+  priority text not null check(priority in ('normal','high','critical')), service text not null check(service in ('Ambulance','Rescue','Fire response')),
+  status text not null default 'reported' check(status in ('reported','validated','rejected','assigned','en_route','on_scene','to_hospital','at_hospital','returning','completed','cancelled')),
+  location jsonb not null, base jsonb, hospital jsonb, route_origin jsonb,
+  assigned_id uuid references eligtas.users(id) on delete set null, unit text not null default '' check(length(unit)<=80),
+  validation_note text not null default '' check(length(validation_note)<=500),
+  validated_by uuid references eligtas.users(id) on delete set null, created_by uuid references eligtas.users(id) on delete set null,
+  version integer not null default 1, created_at timestamptz not null default now(), updated_at timestamptz not null default now()
+);
+create unique index if not exists response_one_active_assignment on eligtas.response_incidents(assigned_id)
+  where assigned_id is not null and status in ('assigned','en_route','on_scene','to_hospital','at_hospital','returning');
+create index if not exists response_recent on eligtas.response_incidents(updated_at desc);
+create index if not exists response_assignee_recent on eligtas.response_incidents(assigned_id,updated_at desc);
+create table if not exists eligtas.response_events (
+  id uuid primary key, incident_id uuid not null references eligtas.response_incidents(id) on delete cascade,
+  actor_id uuid references eligtas.users(id) on delete set null, status text not null,
+  created_at timestamptz not null default now()
+);
+create table if not exists eligtas.response_messages (
+  id uuid primary key, incident_id uuid not null references eligtas.response_incidents(id) on delete cascade,
+  sender_id uuid not null references eligtas.users(id) on delete cascade,
+  body text not null default '' check(length(body)<=2000), photo_data bytea,
+  photo_sha256 text, photo_width integer, photo_height integer, created_at timestamptz not null default now(),
+  check(length(body)>0 or photo_sha256 is not null), check(photo_data is null or octet_length(photo_data)<=2097152)
+);
+create index if not exists response_timeline on eligtas.response_events(incident_id,created_at desc);
+create index if not exists response_messages_recent on eligtas.response_messages(incident_id,created_at desc,id desc);
+alter table eligtas.alerts add column if not exists response_id uuid references eligtas.response_incidents(id) on delete set null;
 -- Old, off-duty pins must not survive the transition to duty-scoped tracking.
 delete from eligtas.location_shares where user_id in (select id from eligtas.users where not on_duty);
 update eligtas.users set location_sharing=false,lat=null,lng=null,accuracy=null,location_at=null where not on_duty and location_sharing;

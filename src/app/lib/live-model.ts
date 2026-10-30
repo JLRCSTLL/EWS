@@ -2,6 +2,7 @@ import type { Resident } from './residents.ts';
 import type { AlertGeofence } from './geofencing.ts';
 import type { TeamGroup, GroupMember, Project, ProjectTask, ContactRequest } from './organization.ts';
 import type { EmergencyProfile, EmergencyContact } from './emergency-profile.ts';
+import type { ResponseIncident, ResponseFacility } from './response.ts';
 
 export interface LiveUser {
   id: string; username: string; name: string; role: 'resident' | 'operator' | 'admin';
@@ -14,6 +15,7 @@ export interface LiveUser {
 }
 export interface AlertAudio { id: string; name: string; kind: 'alarm' | 'voice'; durationMs: number; byteLength: number }
 export interface LiveAlert {
+  response_id?: string | null;
   audio?: AlertAudio | null;
   id: string; content: string; priority: 'normal' | 'high' | 'critical'; area: AlertGeofence | null;
   target_mode?: 'geofence' | 'groups'; target_label?: string; target_group_ids?: string[];
@@ -26,6 +28,7 @@ export interface LiveRequest {
   assigned_unit: string; created_at: string; updated_at: string;
 }
 export interface LiveState { user: LiveUser; users: LiveUser[]; alerts: LiveAlert[]; requests: LiveRequest[]; serverTime: string;
+  responseIncidents?: ResponseIncident[]; responseFacilities?: ResponseFacility[]; responderReady?: boolean;
   projects: Project[]; teamGroups: TeamGroup[]; memberships: GroupMember[]; tasks: ProjectTask[]; contactRequests: ContactRequest[];
 }
 export const alertLabel = (alert: LiveAlert) => alert.target_label || alert.area?.name || 'Group alert';

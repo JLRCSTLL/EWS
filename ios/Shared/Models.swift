@@ -20,6 +20,7 @@ struct Personnel: Decodable {
     let dutyProjectId: String?
 }
 struct AlertMessage: Decodable, Identifiable {
+    let response_id: String?
     let audio: AlertAudio?
     let id: String
     let content: String
@@ -38,7 +39,12 @@ struct AlertAudio: Decodable {
     let durationMs: Int
 }
 struct DutyProject: Decodable, Identifiable { let id: String; let name: String; let status: String }
-struct PersonnelState: Decodable { let user: Personnel; let alerts: [AlertMessage]; let projects: [DutyProject] }
+struct ResponderAssignment: Decodable {
+    let id: String
+    let status: String
+    var active: Bool { ["assigned","en_route","on_scene","to_hospital","at_hospital","returning"].contains(status) }
+}
+struct PersonnelState: Decodable { let user: Personnel; let alerts: [AlertMessage]; let projects: [DutyProject]; let responseIncidents: [ResponderAssignment]? }
 struct ServerReply: Decodable { let ok: Bool? }
 struct RegisterReply: Decodable { let recoveryCode: String }
 struct LocationCredential: Decodable { let token: String; let userId: String }
