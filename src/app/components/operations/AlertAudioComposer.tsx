@@ -13,7 +13,7 @@ export function AlertAudioComposer({ value, onChange, onBusy }: {
   const [preview, setPreview] = useState(''), [kind, setKind] = useState<'alarm' | 'voice'>('alarm');
   const input = useRef<HTMLInputElement>(null), recorder = useRef<MediaRecorder | null>(null);
   const stream = useRef<MediaStream | null>(null), mounted = useRef(true), generation = useRef(0);
-  const timer = useRef<ReturnType<typeof setInterval>>(), limit = useRef<ReturnType<typeof setTimeout>>();
+  const timer = useRef<ReturnType<typeof setInterval> | undefined>(undefined), limit = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const check = () => { setReady(null); void api('/config').then(result => { if (mounted.current) setReady(result.alertAudioReady === true); }).catch(() => { if (mounted.current) setReady(false); }); };
   const stopTracks = () => { clearInterval(timer.current); clearTimeout(limit.current); stream.current?.getTracks().forEach(track => track.stop()); stream.current = null; };
   useEffect(() => {

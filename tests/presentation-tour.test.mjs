@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { presentationSteps, presentationArea, presentationMessage, tourStepIndex, tourCardPosition, tourCueAt, tourStepDuration, tourMoveDuration, tourTypingInterval } from '../src/app/lib/presentation-tour.ts';
+import { presentationSteps, presentationArea, presentationMessage, tourStepIndex, tourCardPosition, tourCueAt, tourStepDuration, tourMoveDuration, tourTypingInterval, tourLevels, tourSpeeds, tourChapterIndices, tourIntroDuration, tourPlaybackDuration, tourEstimatedMinutes, normalizeTourSettings } from '../src/app/lib/presentation-tour.ts';
 import { createPresentationState, changePresentationGroup } from '../src/app/lib/presentation-data.ts';
 import { canUseWebDemo } from '../src/app/lib/presentation-platform.ts';
 
@@ -26,6 +26,41 @@ test('continuous playback traverses every chapter again and desktop clients cann
   assert.equal(canUseWebDemo('Mozilla/5.0 (iPhone) Version/27.0 Mobile Safari/605.1.15'), true);
   assert.equal(canUseWebDemo('Mozilla/5.0 tanoviq-command-center/1.1.2 Chrome/149.0.0.0 Electron/45.0.0 Safari/537.36'), false);
   assert.equal(canUseWebDemo('Mozilla/5.0 TANOVIQDesktop/2.0'), false);
+});
+
+test('demo levels loop only through their selected chapters and support back/restart', () => {
+  const counts = tourLevels.map(level => tourChapterIndices(level.id).length);
+  assert.ok(counts[0] < counts[1] && counts[1] < counts[2]);
+  for (const level of tourLevels) {
+    const chapters = tourChapterIndices(level.id);
+    assert.equal(presentationSteps[chapters[0]].id, 'welcome');
+    assert.equal(presentationSteps[chapters.at(-1)].id, 'complete');
+    assert.equal(new Set(chapters).size, chapters.length);
+    for (const required of ['message','mobile-alert','mobile-responder','mobile-evacuation']) assert.ok(chapters.some(i=>presentationSteps[i].id===required));
+    let current=chapters[0]; const visited=[];
+    for(let i=0;i<chapters.length*2;i++){visited.push(current);current=tourStepIndex(current,'next',level.id);}
+    assert.deepEqual(visited,[...chapters,...chapters]);
+    assert.equal(tourStepIndex(chapters[0],'back',level.id),chapters[0]);
+    assert.equal(tourStepIndex(chapters[2],'back',level.id),chapters[1]);
+    assert.equal(tourStepIndex(chapters.at(-1),'restart',level.id),chapters[0]);
+  }
+  assert.equal(tourStepIndex(1,'next','quick'),0);
+});
+
+test('safe defaults are slow with reading time, and duration estimates follow level and speed', () => {
+  assert.deepEqual(normalizeTourSettings(null),{level:'standard',speed:.5});
+  assert.deepEqual(normalizeTourSettings({level:'unknown',speed:0}),{level:'standard',speed:.5});
+  assert.deepEqual(normalizeTourSettings({level:'quick',speed:.35}),{level:'quick',speed:.35});
+  for(const speed of tourSpeeds) assert.equal(normalizeTourSettings({speed:speed.value}).speed,speed.value);
+  for(let i=0;i<presentationSteps.length;i++) {
+    assert.ok(tourIntroDuration(i)>=3500);
+    assert.equal(tourPlaybackDuration(i),tourIntroDuration(i)+tourStepDuration(i));
+  }
+  for(const level of tourLevels) {
+    assert.ok(tourEstimatedMinutes(level.id,.5)>tourEstimatedMinutes(level.id,1));
+    assert.ok(Number.isFinite(tourEstimatedMinutes(level.id,NaN)));
+  }
+  assert.ok(tourEstimatedMinutes('quick',.5)<tourEstimatedMinutes('full',.5));
 });
 
 test('presentation groups are isolated, add leaders, and include members outside a geofence', () => {

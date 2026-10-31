@@ -1,0 +1,54 @@
+.ops-demo-setup-overlay { position: fixed; inset: 0; z-index: 10010; background: #0b1213b3; backdrop-filter: blur(9px); }
+.ops-demo-setup { position: fixed; z-index: 10011; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(560px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow: auto; padding: 30px; border: 1px solid #e5fff22a; border-radius: 25px; background: linear-gradient(125deg, #36413b, #252d29 70%); color: #edf5f0; font-family: 'Inter', 'Segoe UI', sans-serif; box-shadow: 0 24px 90px #0008, inset 0 1px #ffffff14; }
+.ops-demo-setup button, .ops-demo-setup select, .ops-tour-card select { font: inherit; cursor: pointer; }
+.ops-demo-setup :focus-visible, .ops-tour-card select:focus-visible { outline: 2px solid #bce9d3; outline-offset: 4px; }
+.ops-demo-setup-close { position: absolute; top: 16px; right: 16px; width: 36px; height: 36px; display: grid; place-items: center; background: #ffffff06; color: #d4e0d8; border: 1px solid #ffffff1b; border-radius: 50%; }
+.ops-demo-setup-kicker { display: flex; align-items: center; gap: 8px; font-size: 10px; font-weight: 500; letter-spacing: 1.5px; color: #b1d3bf; margin: 0 36px 16px 0; }
+.ops-demo-setup h2 { font-weight: 500; font-size: 29px; line-height: 1.2; letter-spacing: -.8px; margin: 0 0 10px; }
+.ops-demo-setup > p { color: #c0d0c6; font-size: 13px; line-height: 1.7; margin: 0; }
+.ops-demo-levels { border: 0; margin: 22px 0 20px; padding: 0; display: grid; gap: 9px; }
+.ops-demo-levels legend { color: #c5d6ca; font-size: 12px; margin-bottom: 10px; }
+.ops-demo-levels label { position: relative; display: flex; align-items: center; gap: 13px; border: 1px solid #ffffff21; border-radius: 15px; padding: 15px; background: #ffffff03; cursor: pointer; }
+.ops-demo-levels label.is-selected { background: #b6ddc615; border-color: #b6ddc66b; box-shadow: inset 0 1px #ffffff0a; }
+.ops-demo-levels input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.ops-demo-levels label:has(input:focus-visible) { outline: 2px solid #bce9d3; outline-offset: 3px; }
+.ops-demo-level-number { display: grid; place-items: center; flex-shrink: 0; width: 32px; height: 38px; color: #a9c1b0; font-size: 13px; font-variant-numeric: tabular-nums; border-radius: 11px; background: #ffffff07; }
+.ops-demo-levels label > span:nth-of-type(2) { flex: 1; min-width: 0; }
+.ops-demo-levels strong { display: block; font-size: 15px; font-weight: 550; }
+.ops-demo-levels small { display: block; color: #bbcbbf; font-size: 11px; line-height: 1.6; margin-top: 4px; }
+.ops-demo-levels em { display: flex; align-items: center; gap: 5px; font-size: 10px; font-style: normal; margin-top: 8px; color: #a9c6b4; }
+.ops-demo-levels label > svg { flex-shrink: 0; color: #c4efcf; }
+.ops-demo-setup-speed { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; align-items: center; font-size: 13px; }
+.ops-demo-setup-speed select, .ops-tour-chapter-select select { min-height: 40px; width: 100%; border: 1px solid #ffffff2c; border-radius: 9px; padding: 9px 10px; color: #e9f4ed; background: #17251d5c; font-size: 12px; color-scheme: dark; }
+.ops-demo-setup-speed select option, .ops-tour-chapter-select select option { background: #29312d; }
+.ops-demo-setup-speed small { grid-column: 1/-1; color: #aac1b0; font-size: 11px; line-height: 1.6; }
+.ops-demo-setup > p.ops-demo-loop-note { margin: 20px 0 14px; display: flex; align-items: center; gap: 8px; color: #aec6b6; font-size: 11px; }
+.ops-demo-start { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 49px; background: #c4e5d2; border: 1px solid #d2eddd; color: #1e3b2b; font-weight: 600 !important; font-size: 14px !important; border-radius: 13px; }
+.ops-demo-start:hover { background: #d7f0e1; }
+.ops-tour-card { width: 340px; padding: 20px; border-radius: 19px; background: linear-gradient(145deg, #35403a, #242d28 70%); }
+.ops-tour-card h2 { font-size: 23px; line-height: 1.25; margin: 9px 0 10px; }
+.ops-tour-card > p { font-size: 14px; line-height: 1.75; color: #d5dfd8; }
+.ops-tour-top > span { font-size: 9px; }
+.ops-tour-top button { width: 30px; height: 30px; }
+.ops-tour-current { min-height: 38px; font-size: 12px; margin-top: 12px; align-items: flex-start; }
+.ops-tour-current > i { margin-top: 6px; }
+.ops-tour-time { display: flex; justify-content: space-between; font-size: 10px; color: #aec4b6; margin-top: 12px; font-variant-numeric: tabular-nums; }
+.ops-tour-actions button { min-height: 42px; font-size: 12px; border-radius: 9px; }
+.ops-tour-options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
+.ops-tour-options label { font-size: 11px; }
+.ops-tour-options select { min-height: 39px; padding: 8px; border-radius: 8px; font-size: 11px; }
+.ops-tour-chapter-select { display: grid; gap: 5px; font-size: 11px; color: #b6c8bd; margin-top: 10px; }
+.ops-tour-chapter-select select { font-size: 12px; }
+.ops-tour-footer { flex-wrap: wrap; font-size: 9px; line-height: 1.5; }
+@media (min-width: 1121px) {
+  .ops-tour-overlay[data-step^="mobile-"] .ops-tour-card { width: 310px; }
+}
+@media (max-width: 700px) {
+  .ops-demo-setup { padding: 24px 20px; }
+  .ops-demo-setup h2 { font-size: 26px; }
+  .ops-demo-levels label { padding: 13px 11px; gap: 10px; }
+  .ops-tour-card { width: calc(100vw - 36px); padding: 16px; }
+  .ops-tour-card h2 { font-size: 21px; }
+  .ops-tour-card > p { font-size: 13px; line-height: 1.65; }
+  .ops-tour-chapter { display: flex; }
+}

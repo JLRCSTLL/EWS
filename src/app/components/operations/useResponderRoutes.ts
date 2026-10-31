@@ -8,6 +8,7 @@ interface Options {
   visible: boolean;
   drawing: boolean;
   paused: boolean;
+  speed?: number;
   replay: number;
   selectedId: string | null;
   onSelect: (teamId: string) => void;
@@ -90,7 +91,7 @@ export function useResponderRoutes(options: Options) {
       const state = current.current;
       const seconds = Math.max(0, Math.min((now - previous) / 1000, .1));
       previous = now;
-      if (!state.paused && !state.drawing && !document.hidden) elapsed.current = Math.min(RESPONDER_DEMO_DURATION, elapsed.current + seconds);
+      if (!state.paused && !state.drawing && !document.hidden) elapsed.current = Math.min(RESPONDER_DEMO_DURATION, elapsed.current + seconds * (state.speed ?? 1));
       const selectedChanged = state.selectedId !== lastSelection;
       if ((now - painted >= 40 && lastElapsed !== elapsed.current) || selectedChanged) {
         painted = now;

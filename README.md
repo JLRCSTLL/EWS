@@ -301,7 +301,7 @@ have been excluded. See [SECURITY.md](SECURITY.md) for handling a suspected leak
 
 ## Presentation mode
 
-Select **Demo** in a web browser for the looping, automatic cursor walkthrough.
+Select **Demo** in a web browser, choose a level and speed, then start the looping, automatic cursor walkthrough.
 The Windows desktop client has no Demo or Demo data controls and always opens
 connected operations, including when a demo query parameter is supplied. Demo alerts never send
 external messages. Sample incidents, responder routes and CCTV footage are
@@ -332,7 +332,9 @@ The original interface attribution is retained in [ATTRIBUTIONS.md](ATTRIBUTIONS
 
 The desktop interface is temporarily named **Command Center Platform**; the personnel app and demonstration phone are named **Mobile Phone**. Both use the charcoal glass material and typography in `src/styles/command-theme.css`. Mobile navigation remains sized for touch, and alert text uses a solid surface for readability. The emergency-profile registration form is shared by mobile and command-center account creation. Internal package identifiers and stored account sessions retain their existing names so installed updates remain compatible.
 
-Select **Demo** in the web command center to start the automatic cursor walkthrough. Its 17 chapters cover emergency-profile sharing, groups and leaders, group announcements, map views, geofences, population and exposure, geographic alerts, the mobile app, ambulance dispatch, resident evacuation, responder routes, CCTV, and Logs. The presentation repeats automatically for display; each loop resets its sample data. Pause/resume and 1×/1.5×/2× playback are available. **Esc** or the close button exits and restores the original workspace.
+Select **Demo** in the web command center to choose **Quick overview** (7 chapters), **Standard tour** (12 chapters), or **Full workflow** (all 17 chapters). Standard tour at **0.5× Slow** is the default. At that speed the tours take approximately 5, 9, and 12 minutes, respectively. The full workflow adds emergency-profile sharing, groups and leaders, exposure review, CCTV, and Logs to the core map, alert, and mobile navigation story.
+
+Each chapter starts with dedicated reading time before the cursor acts. Playback offers **0.35× Extra slow, 0.5× Slow, 0.75× Relaxed, 1× Normal, and 1.5× Fast**. Use **Pause** (or **Space**), the chapter selector, or the level selector while presenting; changing levels restarts at the welcome chapter. The browser remembers the chosen level and speed. Every level repeats automatically with fresh sample data. **Esc** or the close button exits and restores the original workspace.
 
 The mobile chapters show a phone alongside simulated operator updates: read and acknowledge an alert, review the masked profile, share a sample duty position, send an assistance request, and receive a team assignment. In **Ambulance navigation**, the simulated dispatch opens a driving route to the emergency immediately on receipt. In **Resident evacuation**, an evacuation alert opens walking directions to the nearest available sample center, excluding closed or full centers. Both show a moving marker, turn guidance, remaining distance, and arrival; pause and playback speed apply to the journeys too. The chapter selector can jump directly to any scene.
 

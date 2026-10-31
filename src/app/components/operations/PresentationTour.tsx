@@ -1,13 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ArrowLeft, ArrowRight, MousePointer2, Pause, Play, Repeat2, RotateCcw, X } from 'lucide-react';
-import { presentationSteps, tourCardPosition, tourCueAt, tourMoveDuration, tourStepDuration, tourTypingInterval } from '../../lib/presentation-tour';
+import { presentationSteps, tourCardPosition, tourCueAt, tourMoveDuration, tourPlaybackDuration, tourIntroDuration, tourTypingInterval, tourChapterIndices, tourLevels, tourSpeeds, type TourLevel } from '../../lib/presentation-tour';
 import '../../../styles/presentation-tour.css';
+import '../../../styles/presentation-controls.css';
 
 interface Props {
   index: number;
   run: number;
   cycle: number;
+  level: TourLevel;
+  speed: number;
+  onLevelChange: (level: TourLevel) => void;
   onNext: () => void;
   onBack: () => void;
   onRestart: () => void;
@@ -29,7 +33,7 @@ function enterValue(element: HTMLElement, value: string) {
 }
 
 export function PresentationTour(props: Props) {
-  const { index, run, cycle, onNext, onBack, onRestart, onExit } = props;
+  const { index, run, cycle, level, speed, onNext, onBack, onRestart, onExit } = props;
   const step = presentationSteps[index];
   const card = useRef<HTMLDivElement>(null);
   const heading = useRef<HTMLHeadingElement>(null);
@@ -39,16 +43,20 @@ export function PresentationTour(props: Props) {
   const clock = useRef({ index, run, elapsed: 0, cueIndex: -1, acted: false, typed: -1, waiting: 0,
     element: null as HTMLElement | null, from: pointer.current, bounds: null as Rect | null });
   const [playing, setPlaying] = useState(true);
-  const [speed, setSpeed] = useState(1);
   const [problem, setProblem] = useState('');
   const [visual, setVisual] = useState({ ...pointer.current, pressed: false, typing: false, cue: 0, elapsed: 0, rect: null as Rect | null });
   const [position, setPosition] = useState({ left: 18, top: 90 });
-  const last = index === presentationSteps.length - 1;
-  const duration = tourStepDuration(index);
+  const chapters = tourChapterIndices(level);
+  const chapterPosition = chapters.indexOf(index);
+  const last = chapterPosition === chapters.length - 1;
+  const introDuration = tourIntroDuration(index);
+  const duration = tourPlaybackDuration(index);
+  const reading = visual.elapsed < introDuration;
+  const secondsLeft = Math.ceil(Math.max(0, (reading ? introDuration : duration) - visual.elapsed) / speed / 1000);
   const cue = step.cues[visual.cue] || step.cues[0];
 
   useEffect(() => { props.onPlayingChange(playing); }, [playing, props.onPlayingChange]);
-  useEffect(() => { props.onSpeedChange(speed); }, [speed, props.onSpeedChange]);
+  useEffect(() => { heading.current?.focus({ preventScroll: true }); }, [index, run]);
 
   useEffect(() => {
     if (clock.current.index !== index || clock.current.run !== run) {
@@ -56,7 +64,6 @@ export function PresentationTour(props: Props) {
       setProblem('');
       setVisual(current => ({ ...current, cue: 0, elapsed: 0, rect: null }));
     }
-    heading.current?.focus({ preventScroll: true });
     if (!playing) return;
     let previous = performance.now();
     const timer = window.setInterval(() => {
@@ -65,7 +72,17 @@ export function PresentationTour(props: Props) {
       previous = now;
       if (document.hidden) return;
       const state = clock.current;
-      const frame = tourCueAt(index, state.elapsed);
+      if (state.elapsed < introDuration) {
+        setVisual(current => ({ ...current, elapsed: state.elapsed, pressed: false, typing: false, rect: null }));
+        const size = card.current?.getBoundingClientRect();
+        const narration = document.querySelector<HTMLElement>('[data-demo="mobile-narration"]')?.getBoundingClientRect();
+        const placed = narration?.width ? {left: narration.left, top: Math.max(18, Math.min(narration.top, window.innerHeight - (size?.height || 460) - 18))}
+          : tourCardPosition(null, {width: window.innerWidth, height: window.innerHeight}, {width: size?.width || 340, height: size?.height || 460});
+        setPosition(current => current.left === placed.left && current.top === placed.top ? current : placed);
+        state.elapsed += delta * speed;
+        return;
+      }
+      const frame = tourCueAt(index, state.elapsed - introDuration);
       const action = frame.cue;
       if (frame.index !== state.cueIndex) {
         state.cueIndex = frame.index; state.acted = false; state.typed = -1; state.waiting = 0;
@@ -126,13 +143,14 @@ export function PresentationTour(props: Props) {
       if (state.elapsed >= duration) { window.clearInterval(timer); callbacks.current.onNext(); }
     }, 33);
     return () => window.clearInterval(timer);
-  }, [index, run, playing, duration, speed]);
+  }, [index, run, playing, duration, introDuration, speed]);
 
   useEffect(() => {
     const keys = (event: KeyboardEvent) => {
       if (event.key === 'Escape') { event.preventDefault(); event.stopImmediatePropagation(); callbacks.current.onExit(); }
       else if (event.key === 'ArrowRight' && !(event.target instanceof HTMLSelectElement)) { event.preventDefault(); event.stopImmediatePropagation(); callbacks.current.onNext(); }
       else if (event.key === 'ArrowLeft' && !(event.target instanceof HTMLSelectElement)) { event.preventDefault(); event.stopImmediatePropagation(); callbacks.current.onBack(); }
+      else if (event.code === 'Space' && !(event.target instanceof HTMLElement && event.target.matches('button, select, input, textarea'))) { event.preventDefault(); event.stopImmediatePropagation(); setPlaying(value => !value); }
       else if (event.key === 'Tab') {
         const buttons = Array.from(card.current?.querySelectorAll<HTMLElement>('button:not(:disabled), select:not(:disabled)') || []);
         if (!buttons.length) return;
@@ -145,27 +163,29 @@ export function PresentationTour(props: Props) {
     return () => window.removeEventListener('keydown', keys, true);
   }, []);
 
-  return createPortal(<div className="ops-tour-overlay" data-step={step.id}>
+  return createPortal(<div className="ops-tour-overlay" data-step={step.id} data-level={level}>
     {visual.rect && <div className="ops-tour-spotlight" aria-hidden="true" style={{ left: visual.rect.left, top: visual.rect.top, width: visual.rect.width, height: visual.rect.height }} />}
-    <div className={`ops-demo-cursor${visual.pressed ? ' is-clicking' : ''}${visual.typing ? ' is-typing' : ''}`} aria-hidden="true" style={{ transform: `translate3d(${visual.x}px, ${visual.y}px, 0)` }}>
+    <div className={`ops-demo-cursor${visual.pressed ? ' is-clicking' : ''}${visual.typing ? ' is-typing' : ''}`} aria-hidden="true" style={{ visibility: reading ? 'hidden' : 'visible', transform: `translate3d(${visual.x}px, ${visual.y}px, 0)` }}>
       <span className="ops-demo-click-ring" /><svg viewBox="0 0 32 38" width="29" height="35"><path d="M3 2L26 22L16 23L22 34L16 37L10 25L3 32Z" fill="#f4f8f5" stroke="#16271e" strokeWidth="2" strokeLinejoin="round" /></svg><span className="ops-demo-cursor-label">DEMO</span>
     </div>
     <div ref={card} className="ops-tour-card" role="dialog" aria-modal="true" aria-labelledby="ops-tour-title" aria-describedby="ops-tour-description" style={position}>
       <div className="ops-tour-top"><span><MousePointer2 size={12} />AUTOMATIC PRESENTATION</span><button onClick={onExit} aria-label="Exit guided demo"><X size={16} /></button></div>
-      <div className="ops-tour-progress" aria-label={`Step ${index + 1} of ${presentationSteps.length}`}>{presentationSteps.map((item, stepIndex) => <span key={item.id} className={stepIndex <= index ? 'is-complete' : ''} />)}</div>
-      <div className="ops-tour-chapter">{String(index + 1).padStart(2, '0')} / {String(presentationSteps.length).padStart(2, '0')}<span>{step.label}</span></div>
+      <div className="ops-tour-progress" aria-label={`Chapter ${chapterPosition + 1} of ${chapters.length}`}>{chapters.map((stepIndex, position) => <span key={stepIndex} className={position <= chapterPosition ? 'is-complete' : ''} />)}</div>
+      <div className="ops-tour-chapter">{String(chapterPosition + 1).padStart(2, '0')} / {String(chapters.length).padStart(2, '0')}<span>{step.label}</span></div>
       <h2 id="ops-tour-title" ref={heading} tabIndex={-1}>{step.title}</h2>
       <p id="ops-tour-description">{step.description}</p>
-      <div className="ops-tour-current" role="status"><i className={playing ? 'is-playing' : ''} /><span>{problem || (playing ? cue.label : 'Presentation paused')}</span></div>
+      <div className="ops-tour-current" role="status"><i className={playing ? 'is-playing' : ''} /><span>{problem || (!playing ? 'Paused — take your time to read' : reading ? 'Read the overview. The demonstration starts shortly.' : cue.label)}</span></div>
+      <div className="ops-tour-time"><span>{reading ? 'Reading time' : 'This chapter'}</span><span>{playing ? `${secondsLeft}s remaining` : 'Timer paused'}</span></div>
       <div className="ops-tour-countdown"><i style={{ width: `${Math.max(0, 1 - visual.elapsed / duration) * 100}%` }} /></div>
       <div className="ops-tour-actions">
-        <button disabled={!index} onClick={onBack} aria-label="Previous demo step"><ArrowLeft size={15} /></button>
+        <button disabled={chapterPosition <= 0} onClick={onBack} aria-label="Previous demo step"><ArrowLeft size={15} /></button>
         <button className="ops-tour-play" onClick={() => { setProblem(''); setPlaying(value => !value); }} aria-label={playing ? 'Pause automatic demo' : 'Resume automatic demo'}>{playing ? <Pause size={14} /> : <Play size={14} />}{playing ? 'Pause' : 'Resume'}</button>
         <button onClick={onNext} aria-label={last ? 'Begin next demo loop' : 'Next demo step'}>{last ? <Repeat2 size={15} /> : <ArrowRight size={15} />}</button>
         <button onClick={onRestart} aria-label="Restart guided demo"><RotateCcw size={14} /></button>
       </div>
-      <div className="ops-tour-options"><label>Chapter<select aria-label="Demo chapter" value={index} onChange={event=>props.onJump(Number(event.target.value))}>{presentationSteps.map((item,i)=><option key={item.id} value={i}>{i+1}. {item.label}</option>)}</select></label><label>Speed<select aria-label="Demo playback speed" value={speed} onChange={event=>setSpeed(Number(event.target.value))}><option value={1}>1×</option><option value={1.5}>1.5×</option><option value={2}>2×</option></select></label></div>
-      <div className="ops-tour-footer"><span>Loop {cycle} · No real alerts</span><span>Repeats automatically · Esc to exit</span></div>
+      <div className="ops-tour-options"><label>Level<select aria-label="Demo level" value={level} onChange={event=>props.onLevelChange(event.target.value as TourLevel)}>{tourLevels.map(item=><option key={item.id} value={item.id}>{item.label}</option>)}</select></label><label>Speed<select aria-label="Demo playback speed" value={speed} onChange={event=>props.onSpeedChange(Number(event.target.value))}>{tourSpeeds.map(item=><option key={item.value} value={item.value}>{item.label}</option>)}</select></label></div>
+      <label className="ops-tour-chapter-select">Chapter<select aria-label="Demo chapter" value={index} onChange={event=>props.onJump(Number(event.target.value))}>{chapters.map((i, position)=><option key={i} value={i}>{position+1}. {presentationSteps[i].label}</option>)}</select></label>
+      <div className="ops-tour-footer"><span>Loop {cycle} · No real alerts</span><span>Auto repeat · Space to pause · Esc to exit</span></div>
     </div>
   </div>, document.body);
 }

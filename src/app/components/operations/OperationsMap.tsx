@@ -42,6 +42,7 @@ interface OperationsMapProps {
   onClearSelection: () => void;
   showResidents: boolean;
   simulationPaused: boolean;
+  simulationSpeed?: number;
   simulationReplay: number;
   onSimulationTick: (elapsed: number) => void;
   publicReports?: { id: string; point: GeofencePoint; label: string; kind: 'help' | 'safe' }[];
@@ -102,7 +103,7 @@ function addFenceLabel(boundary: L.Polygon | L.Circle, name: string, status: 'sa
 }
 
 export const OperationsMap = forwardRef<OperationsMapHandle, OperationsMapProps>(function OperationsMap(
-  { incidents, layers, region, basemap, selection, onSelect, geofence, drawing, previewing = false, onGeofencePoint, onGeofenceMove, areas, selectedAreaId, onSelectGeofence, onClearSelection, showResidents, simulationPaused, simulationReplay, onSimulationTick, publicReports, residents = demoResidents, snapshotAt = demoSnapshotAt, live = false }, ref,
+  { incidents, layers, region, basemap, selection, onSelect, geofence, drawing, previewing = false, onGeofencePoint, onGeofenceMove, areas, selectedAreaId, onSelectGeofence, onClearSelection, showResidents, simulationPaused, simulationSpeed = 1, simulationReplay, onSimulationTick, publicReports, residents = demoResidents, snapshotAt = demoSnapshotAt, live = false }, ref,
 ) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -196,7 +197,7 @@ export const OperationsMap = forwardRef<OperationsMapHandle, OperationsMapProps>
     return () => { observer.disconnect(); map.stop(); map.remove(); mapRef.current = null; markerLayerRef.current = null; };
   }, []);
 
-  useResponderRoutes({ mapRef, visible: layers.responders, drawing, paused: simulationPaused, replay: simulationReplay,
+  useResponderRoutes({ mapRef, visible: layers.responders, drawing, paused: simulationPaused, speed: simulationSpeed, replay: simulationReplay,
     selectedId: selection?.kind === 'responder' ? selection.id : null,
     onSelect: (id) => onSelectRef.current({ kind: 'responder', id }), onTick: onSimulationTick });
 
@@ -314,8 +315,10 @@ export const OperationsMap = forwardRef<OperationsMapHandle, OperationsMapProps>
       if (previous && previous.options.interactive === !drawing) {
         // Keep the same marker and open popup across updates; position is the latest reported GPS fix.
         previous.setLatLng(next.getLatLng()).setStyle(next.options).setRadius(next.getRadius());
-        previous.setPopupContent(next.getPopup()!.getContent()!);
-        if (next.getTooltip()) previous.setTooltipContent(next.getTooltip()!.getContent()!);
+        const popupContent = next.getPopup()?.getContent();
+        const tooltipContent = next.getTooltip()?.getContent();
+        if (popupContent) previous.setPopupContent(typeof popupContent === 'function' ? popupContent(previous) : popupContent);
+        if (tooltipContent) previous.setTooltipContent(typeof tooltipContent === 'function' ? tooltipContent(previous) : tooltipContent);
       } else {
         if (previous) group.removeLayer(previous);
         next.addTo(group); residentMarkers.current.set(user.id,next);

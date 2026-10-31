@@ -31,6 +31,7 @@ import { CommandSidebar } from './CommandSidebar';
 import { ResponderRouteCard } from './ResponderRouteCard';
 import { CctvMonitoring } from './CctvMonitoring';
 import { PresentationTour } from './PresentationTour';
+import { PresentationSetup } from './PresentationSetup';
 import { PresentationNavigation } from './PresentationNavigation';
 import { isNavigationChapter } from '../../lib/presentation-navigation';
 import { canUseWebDemo } from '../../lib/presentation-platform';
@@ -49,12 +50,16 @@ import { asResident, openRequest } from '../../lib/live-model';
 import { usePublicDemo } from '../../lib/public-demo-store';
 import { isOpenRequest, publicProfiles } from '../../lib/public-demo';
 import '../../../styles/public-bridge.css';
-import { presentationArea, presentationSteps, tourStepIndex } from '../../lib/presentation-tour';
+import { presentationArea, presentationSteps, tourStepIndex, normalizeTourSettings, type TourLevel } from '../../lib/presentation-tour';
 import { RESPONDER_DEMO_DURATION, responderRoutes } from '../../lib/responder-routes';
 import { demoGeofences, type AudienceGroup } from '../../lib/residents';
 import { getGeofenceError, isAlertGeofence, type AlertGeofence, type GeofenceGeometry, type GeofencePoint, type GeofenceShape } from '../../lib/geofencing';
 
 const GEOFENCE_STORAGE_KEY = 'ecc-map-geofences-v2';
+function readTourSettings() {
+  try { return normalizeTourSettings(JSON.parse(localStorage.getItem('ccp-demo-settings-v1') || 'null')); }
+  catch { return normalizeTourSettings(null); }
+}
 function readGeofences(): AlertGeofence[] {
   try {
     const areas = JSON.parse(localStorage.getItem(GEOFENCE_STORAGE_KEY) || 'null');
@@ -160,7 +165,13 @@ export function OperationsDashboard({ auditLogs, messages, onSendMessage, onOpen
   const realUsers = useMemo(() => approved ? live.state!.users.map(asResident) : [], [approved,live.state?.users]);
   const [tourRun, setTourRun] = useState(0);
   const [tourPlaying, setTourPlaying] = useState(true);
-  const [tourSpeed, setTourSpeed] = useState(1);
+  const [tourSpeed, setTourSpeed] = useState(() => readTourSettings().speed);
+  const [tourLevel, setTourLevel] = useState<TourLevel>(() => readTourSettings().level);
+  const [tourSetupOpen, setTourSetupOpen] = useState(false);
+  useEffect(() => {
+    if (!demoAvailable) return;
+    try { localStorage.setItem('ccp-demo-settings-v1', JSON.stringify({level: tourLevel, speed: tourSpeed})); } catch { /* Settings are optional. */ }
+  }, [tourLevel, tourSpeed, demoAvailable]);
   const [tourCycle, setTourCycle] = useState(1);
   const [presentationTeam, setPresentationTeam] = useState<PresentationTeam | null>(null);
   const [presentationAreas, setPresentationAreas] = useState<AlertGeofence[]>(demoGeofences);
@@ -197,12 +208,12 @@ export function OperationsDashboard({ auditLogs, messages, onSendMessage, onOpen
   const beforeTour = useRef<ReturnType<typeof captureTourState> | null>(null);
   const startTour = () => {
     if (!demoAvailable) return;
-    beforeTour.current = captureTourState(); setTourPlaying(true); setTourSpeed(1); setTourCycle(1); setTourIndex(0); setTourRun(value => value + 1);
+    beforeTour.current = captureTourState(); setTourSetupOpen(false); setTourPlaying(true); setTourCycle(1); setTourIndex(tourStepIndex(0, 'restart', tourLevel)); setTourRun(value => value + 1);
   };
   const advanceTour = () => {
     if (tourIndex === null) return;
     if (tourIndex === presentationSteps.length - 1) { setTourRun(value => value + 1); setTourCycle(value => value + 1); }
-    setTourIndex(tourStepIndex(tourIndex, 'next'));
+    setTourIndex(tourStepIndex(tourIndex, 'next', tourLevel));
   };
   const exitTour = () => {
     const previous = beforeTour.current;
@@ -376,7 +387,7 @@ export function OperationsDashboard({ auditLogs, messages, onSendMessage, onOpen
       geofence={fenceDraft || alertGeofence} drawing={!!fenceDraft && fenceDraft.shape !== 'boundary'} previewing={!!fenceDraft} onGeofencePoint={addFencePoint}
       areas={!liveView || showGeofences ? visibleGeofences : []} selectedAreaId={fenceDraft ? null : selectedFenceId} onSelectGeofence={id => tourIndex === null && id === selectedFenceId ? clearMapSelection() : selectFence(id)}
       onClearSelection={() => { if (tourIndex === null && section === null) clearMapSelection(); }} showResidents={showResidents}
-      simulationPaused={simulationPaused || activeView === 'cctv' || (tourIndex !== null && !tourPlaying)} simulationReplay={simulationReplay} onSimulationTick={setSimulationElapsed}
+      simulationPaused={simulationPaused || activeView === 'cctv' || (tourIndex !== null && !tourPlaying)} simulationSpeed={tourIndex !== null ? tourSpeed : 1} simulationReplay={simulationReplay} onSimulationTick={setSimulationElapsed}
       onGeofenceMove={(index, point) => setFenceDraft((current) => current ? { ...current, points: current.points.map((previous, i) => i === index ? point : previous) } : current)} />
     <header className="ops-header">
       <button className="ops-brand gsam-brand" onClick={() => { openView('map'); clearMapSelection(); mapRef.current?.reset(); }} aria-label="Command Center Platform home">
@@ -394,7 +405,7 @@ export function OperationsDashboard({ auditLogs, messages, onSendMessage, onOpen
       <div className="ops-header-actions">
         {demoAvailable && <div className="ops-data-modes" role="group" aria-label="Data source"><button aria-pressed={liveView} className={liveView ? 'is-active' : ''} onClick={() => locatePhone()}>Live data</button><button aria-pressed={!liveView} className={!liveView ? 'is-active' : ''} onClick={() => { setLiveMode(false); setSection(null); }}>Demo data</button></div>}
         <a href="#/public" target="_blank" rel="noreferrer" className="ops-public-app-link" aria-label="Open public mobile app" title="Open public mobile app"><Smartphone size={14} /><span>Personnel app</span></a>
-        {demoAvailable && <button className="ops-demo-button" onClick={startTour} aria-label="Start guided demo"><Play size={12} />Demo</button>}
+        {demoAvailable && <button className="ops-demo-button" onClick={() => setTourSetupOpen(true)} aria-label="Start guided demo"><Play size={12} />Demo</button>}
         <PlaceSearch onPreview={previewBoundary} onClear={() => { if (fenceDraft?.shape === 'boundary') { setFenceDraft(null); setFenceEditor(false); } }} />
         <span className="ops-header-divider" />
         <CommandNotifications onOpen={destination => { setLiveMode(true); if (destination === 'broadcast') setBroadcastTab('history'); setSection(destination); }} />
@@ -517,7 +528,8 @@ export function OperationsDashboard({ auditLogs, messages, onSendMessage, onOpen
     </DialogContent></Dialog>
     {demoAvailable && isMobilePresentationChapter(tourChapter) && <PresentationMobile key={`${tourRun}-${tourChapter}`} chapter={tourChapter} />}
     {demoAvailable && isNavigationChapter(tourChapter) && <PresentationNavigation key={`${tourRun}-${tourChapter}`} chapter={tourChapter} playing={tourPlaying} speed={tourSpeed} />}
-    {demoAvailable && tourIndex !== null && <PresentationTour run={tourRun} cycle={tourCycle} index={tourIndex} onNext={advanceTour} onBack={() => setTourIndex(tourStepIndex(tourIndex, 'back'))} onRestart={() => { setTourIndex(0); setTourRun(value => value + 1); setTourCycle(1); }} onExit={exitTour}
+    {demoAvailable && <PresentationSetup open={tourSetupOpen} onOpenChange={setTourSetupOpen} level={tourLevel} speed={tourSpeed} onLevelChange={setTourLevel} onSpeedChange={setTourSpeed} onStart={startTour} />}
+    {demoAvailable && tourIndex !== null && <PresentationTour run={tourRun} cycle={tourCycle} index={tourIndex} level={tourLevel} speed={tourSpeed} onLevelChange={level => { setTourLevel(level); setTourIndex(tourStepIndex(0, 'restart', level)); setTourRun(value => value + 1); setTourCycle(1); }} onNext={advanceTour} onBack={() => setTourIndex(tourStepIndex(tourIndex, 'back', tourLevel))} onRestart={() => { setTourIndex(0); setTourRun(value => value + 1); setTourCycle(1); }} onExit={exitTour}
       onJump={setTourIndex} onPlayingChange={setTourPlaying} onSpeedChange={setTourSpeed} projectPoint={point => mapRef.current?.projectPoint(point) || null} onMapPoint={addFencePoint} />}
     <Toaster position="bottom-right" theme="dark" richColors closeButton />
   </div>;

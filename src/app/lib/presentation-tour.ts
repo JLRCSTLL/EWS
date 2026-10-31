@@ -175,6 +175,38 @@ export const presentationSteps: { id: string; label: string; title: string; desc
 
 export const tourMoveDuration = 700;
 export const tourTypingInterval = 28;
+export type TourLevel = 'quick' | 'standard' | 'full';
+export const tourLevels: { id: TourLevel; label: string; description: string; chapters?: string[] }[] = [
+  { id: 'quick', label: 'Quick overview', description: 'The essentials: awareness, an alert, and navigation on the phone.', chapters: ['welcome', 'population', 'message', 'mobile-alert', 'mobile-responder', 'mobile-evacuation', 'complete'] },
+  { id: 'standard', label: 'Standard tour', description: 'Follow the core workflow from the map to residents and responders.', chapters: ['welcome', 'map', 'geofence', 'population', 'audience', 'message', 'mobile-alert', 'mobile-help', 'mobile-responder', 'mobile-evacuation', 'responders', 'complete'] },
+  { id: 'full', label: 'Full workflow', description: 'Every chapter, including profiles, group leaders, exposure, CCTV, and logs.' },
+];
+export const tourSpeeds = [
+  { value: .35, label: '0.35× · Extra slow' },
+  { value: .5, label: '0.5× · Slow' },
+  { value: .75, label: '0.75× · Relaxed' },
+  { value: 1, label: '1× · Normal' },
+  { value: 1.5, label: '1.5× · Fast' },
+];
+export const defaultTourSettings = { level: 'standard' as TourLevel, speed: .5 };
+export function normalizeTourSettings(value: unknown): { level: TourLevel; speed: number } {
+  const settings = value && typeof value === 'object' ? value as Record<string, unknown> : {};
+  return { level: tourLevels.some(l => l.id === settings.level) ? settings.level as TourLevel : defaultTourSettings.level,
+    speed: tourSpeeds.some(s => s.value === settings.speed) ? settings.speed as number : defaultTourSettings.speed };
+}
+export function tourChapterIndices(level: TourLevel) {
+  const chapters = tourLevels.find(l => l.id === level)?.chapters;
+  return presentationSteps.flatMap((step, index) => !chapters || chapters.includes(step.id) ? [index] : []);
+}
+// A separate introduction lets viewers read the chapter before the cursor starts acting.
+export function tourIntroDuration(index: number) {
+  return Math.min(6000, Math.max(3500, presentationSteps[index].description.trim().split(/\s+/).length * 180));
+}
+export function tourPlaybackDuration(index: number) { return tourIntroDuration(index) + tourStepDuration(index); }
+export function tourEstimatedMinutes(level: TourLevel, speed: number) {
+  const safeSpeed = normalizeTourSettings({ level, speed }).speed;
+  return Math.ceil(tourChapterIndices(level).reduce((total, index) => total + tourPlaybackDuration(index), 0) / safeSpeed / 60000);
+}
 export function tourStepDuration(index: number) { return presentationSteps[index].cues.reduce((total, cue) => total + cue.duration, 0); }
 export function tourCueAt(index: number, elapsed: number) {
   let start = 0;
@@ -186,10 +218,13 @@ export function tourCueAt(index: number, elapsed: number) {
   throw new Error('A presentation step must contain an action.');
 }
 
-export function tourStepIndex(current: number, action: 'next' | 'back' | 'restart') {
-  if (action === 'restart') return 0;
-  if (action === 'next' && current === presentationSteps.length - 1) return 0;
-  return Math.max(0, Math.min(presentationSteps.length - 1, current + (action === 'next' ? 1 : -1)));
+export function tourStepIndex(current: number, action: 'next' | 'back' | 'restart', level: TourLevel = 'full') {
+  const chapters = tourChapterIndices(level);
+  if (action === 'restart') return chapters[0];
+  const position = chapters.indexOf(current);
+  if (position < 0) return chapters[0];
+  if (action === 'next') return chapters[(position + 1) % chapters.length];
+  return chapters[Math.max(0, position - 1)];
 }
 
 export function tourCardPosition(target: { left: number; top: number; right: number; bottom: number } | null, viewport: { width: number; height: number }, card: { width: number; height: number }) {
