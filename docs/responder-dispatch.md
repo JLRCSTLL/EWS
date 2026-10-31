@@ -16,6 +16,8 @@ Reassignment is available before departure. It immediately revokes the previous 
 
 Sign in and start duty. New assignments open the responder map automatically while the mobile app is active. In the background, the operating system displays the dispatch notification; **Open navigation** opens the assigned route when tapped on Android. The app does not force itself over other apps.
 
+The mobile shell has four persistent tabs: **Home, Respond, Alerts, and Account**. Home summarizes the current assignment, alert count, and duty/location status. Respond opens a full map with a standby card until dispatch arrives. During an assignment, use **Navigation**, **Chat**, or **Incident** in the bottom sheet; the next valid status action stays visible. **Trip options & hospital** expands destination choices and route details. Recenter restores following after manually moving the map, and the chat composer stays above the on-screen keyboard.
+
 The navigation screen uses colored satellite or street imagery, a highlighted road route, next maneuver, estimated remaining distance/time, and the duty GPS position. The stages are:
 
 **Assigned → En route → On scene → Transporting to hospital → At hospital → Returning to base → Completed**

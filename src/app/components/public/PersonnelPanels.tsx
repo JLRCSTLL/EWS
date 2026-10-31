@@ -5,7 +5,7 @@ import { contactFieldLabel } from "../../lib/emergency-profile";
 import { android, isAndroidApp } from "../../lib/android";
 import "../../../styles/gsam.css";
 
-export function DutyCard() {
+export function DutyCard({ compact = false }: { compact?: boolean }) {
   const live = useLive(),
     user = live.state!.user,
     [project, setProject] = useState(user.dutyProjectId || ""),
@@ -29,7 +29,7 @@ export function DutyCard() {
   }
   return (
     <section
-      className="el-card el-location-card"
+      className={"el-card el-location-card" + (compact ? " el-duty-compact" : "")}
       aria-label="Duty and live location"
     >
       <div className="el-section-heading">
@@ -67,7 +67,7 @@ export function DutyCard() {
         </label>
       )}
       {user.onDuty && (
-        <p className="el-location-status" role="status">
+        <p className={"el-location-status" + (!live.sharingOnDevice || !user.location || Date.now() - Date.parse(user.location.updatedAt) > 120000 ? " needs-attention" : "")} role="status">
           {live.sharingOnDevice ? live.locationStatus : 'This device is not transmitting. Resume duty location if this is your active device.'}
         </p>
       )}
@@ -111,13 +111,16 @@ export function DutyCard() {
           </button>
         )}
       </div>
-      <p className="el-caption">
+      <details className="el-duty-privacy">
+        <summary>How duty location works</summary>
+        <p className="el-caption">
         Starting duty shares fresh GPS updates with approved operators. Ending
         duty stops tracking and removes your point.{" "}
         {isAndroidApp()
           ? "Android continues while the screen is locked and shows an ongoing duty notification."
           : "Keep this page open; use the Android app for tracking while the screen is locked."}
-      </p>
+        </p>
+      </details>
       {error && (
         <p className="el-notice" role="alert">
           {error}

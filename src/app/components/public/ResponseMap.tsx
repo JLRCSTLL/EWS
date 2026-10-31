@@ -10,6 +10,9 @@ export function ResponseMap({
   follow = true,
   select,
   onSelect,
+  interactive = true,
+  onFollowChange,
+  recenterKey = 0,
 }: {
   position?: { lat: number; lng: number } | null;
   destination?: ResponsePoint | null;
@@ -18,19 +21,29 @@ export function ResponseMap({
   follow?: boolean;
   select?: ResponsePoint | null;
   onSelect?: (p: ResponsePoint) => void;
+  interactive?: boolean;
+  onFollowChange?: (follow: boolean) => void;
+  recenterKey?: number;
 }) {
   const element = useRef<HTMLDivElement>(null),
     map = useRef<L.Map | null>(null),
     marker = useRef<L.Marker | null>(null),
     pick = useRef(onSelect),
     manual = useRef(false);
+  const followChange = useRef(onFollowChange);
   pick.current = onSelect;
+  followChange.current = onFollowChange;
   useEffect(() => {
     if (!element.current) return;
     const current = L.map(element.current, {
       zoomControl: false,
       attributionControl: true,
-      scrollWheelZoom: true,
+      scrollWheelZoom: interactive,
+      dragging: interactive,
+      touchZoom: interactive,
+      doubleClickZoom: interactive,
+      boxZoom: interactive,
+      keyboard: interactive,
     }).setView([14.58, 121.1], 12);
     map.current = current;
     current.on("click", (e) =>
@@ -38,6 +51,7 @@ export function ResponseMap({
     );
     current.on("dragstart", () => {
       manual.current = true;
+      followChange.current?.(false);
     });
     const observer = new ResizeObserver(() => current.invalidateSize());
     observer.observe(element.current);
@@ -86,6 +100,10 @@ export function ResponseMap({
       const label = document.createElement("span");
       label.textContent = target.label;
       L.marker([target.lat, target.lng], {
+        keyboard: interactive,
+        interactive,
+        title: target.label,
+        alt: target.label,
         icon: L.divIcon({
           className: "rsp-destination",
           html: "<span></span>",
@@ -99,8 +117,8 @@ export function ResponseMap({
         current.fitBounds(
           L.latLngBounds(route.coordinates.map(([lng, lat]) => [lat, lng])),
           {
-            paddingTopLeft: [35, 160],
-            paddingBottomRight: [35, 270],
+            paddingTopLeft: [35, Math.min(175, current.getSize().y * .22)],
+            paddingBottomRight: [35, Math.min(300, current.getSize().y * .4)],
             maxZoom: 16,
             animate: false,
           },
@@ -132,8 +150,13 @@ export function ResponseMap({
       marker.current = null;
       return;
     }
+    const firstFix = !marker.current;
     if (!marker.current)
       marker.current = L.marker([position.lat, position.lng], {
+        keyboard: interactive,
+        interactive,
+        title: "Your shared position",
+        alt: "Your shared position",
         zIndexOffset: 1200,
         icon: L.divIcon({
           className: "rsp-vehicle",
@@ -145,7 +168,7 @@ export function ResponseMap({
         .addTo(current)
         .bindTooltip("Your shared position");
     else marker.current.setLatLng([position.lat, position.lng]);
-    if (follow && !manual.current && !pick.current)
+    if ((follow || (!destination && !route && firstFix)) && !manual.current && !pick.current)
       current.panTo([position.lat, position.lng], {
         animate: true,
         duration: 0.7,
@@ -156,7 +179,7 @@ export function ResponseMap({
       manual.current = false;
       map.current.panTo([position.lat, position.lng]);
     }
-  }, [follow]);
+  }, [follow, recenterKey]);
   return (
     <div
       className="rsp-map"

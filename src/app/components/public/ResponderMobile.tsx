@@ -8,6 +8,7 @@ import {
   ArrowRight,
   Check,
   ChevronRight,
+  ChevronDown,
   Clock,
   Compass,
   Hospital,
@@ -58,6 +59,37 @@ export function ResponderMobile() {
     ),
     [satellite, setSatellite] = useState(true),
     [follow, setFollow] = useState(true);
+  const [expanded, setExpanded] = useState(false);
+  const [recenterKey, setRecenterKey] = useState(0);
+  const [now, setNow] = useState(Date.now);
+  const [keyboardHeight, setKeyboardHeight] = useState<number | null>(null);
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    if (!viewport) return;
+    let frame = 0;
+    const update = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const editing = document.activeElement?.matches(".rsp-chat-compose textarea");
+        setKeyboardHeight(editing && viewport.scale === 1 &&
+          (viewport.height < window.innerHeight - 120 || viewport.height < 520)
+          ? viewport.height : null);
+      });
+    };
+    viewport.addEventListener("resize", update);
+    document.addEventListener("focusin", update);
+    document.addEventListener("focusout", update);
+    return () => {
+      cancelAnimationFrame(frame);
+      viewport.removeEventListener("resize", update);
+      document.removeEventListener("focusin", update);
+      document.removeEventListener("focusout", update);
+    };
+  }, []);
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 15000);
+    return () => clearInterval(timer);
+  }, []);
   const [route, setRoute] = useState<ResponseRoute | null>(null),
     [routing, setRouting] = useState(false),
     [routeError, setRouteError] = useState(""),
@@ -76,7 +108,7 @@ export function ResponderMobile() {
   const destination = incident ? destinationFor(incident) : null,
     position = user.location;
   const fixAge = position
-    ? Date.now() - Date.parse(position.updatedAt)
+    ? now - Date.parse(position.updatedAt)
     : Infinity;
   const usable =
     !!position &&
@@ -156,6 +188,7 @@ export function ResponderMobile() {
     setSelected(null);
     setView("navigation");
     setHospitalOpen(false);
+    setExpanded(false);
   }, [active?.id]);
   useEffect(() => {
     if (!incident || view !== "details") return;
@@ -207,43 +240,25 @@ export function ResponderMobile() {
   }
   if (!incident)
     return (
-      <section className="rsp-standby">
-        <span className="rsp-kicker">
-          <Radio size={14} /> RESPONDER WORKSPACE
-        </span>
-        <div className="rsp-standby-icon">
-          <Ambulance size={50} strokeWidth={1.2} />
+      <div className="rsp-workspace rsp-idle">
+        <ResponseMap position={position} satellite={satellite} follow={follow} recenterKey={recenterKey} onFollowChange={setFollow} />
+        <div className="rsp-map-shade" />
+        <header className="rsp-topbar">
+          <div className="rsp-glass rsp-brand"><Ambulance size={23}/><span><small>MOBILE PHONE</small><strong>Responder</strong></span></div>
+          <span className={"rsp-live-pill " + (live.connection === "connected" ? "is-online" : "")} role="status"><i/>{live.connection === "connected" ? "Connected" : "Reconnecting"}</span>
+        </header>
+        <div className="rsp-idle-label"><span><Radio size={14}/>{user.onDuty ? "WAITING FOR DISPATCH" : "YOUR RESPONSE MAP"}</span><p>{position ? fresh ? "Your shared position" : "Last shared position" : "Regional overview · no location shared"}</p></div>
+        <div className="rsp-map-actions">
+          <button className="rsp-glass rsp-icon-button" onClick={() => setSatellite(v => !v)} aria-label={satellite ? "Use street map" : "Use satellite map"}><Layers size={20}/></button>
+          <button className="rsp-glass rsp-icon-button" disabled={!position} onClick={() => { setFollow(true); setRecenterKey(v => v + 1); }} aria-label="Recenter on my location"><LocateFixed size={20}/></button>
         </div>
-        <h1>
-          Ready for the
-          <br />
-          next response.
-        </h1>
-        <p>
-          Validated assignments arrive from dispatch. Your route opens
-          automatically when you are assigned.
-        </p>
-        {!live.state?.responderReady && (
-          <p className="rsp-error">
-            The responder service is being updated. Reload after deployment.
-          </p>
-        )}
-        <DutyCard />
-        {incidents.length > 0 && (
-          <div className="rsp-history">
-            <h2>Recent dispatches</h2>
-            {incidents.map((r) => (
-              <button onClick={() => setSelected(r.id)} key={r.id}>
-                <span>
-                  <strong>{r.title}</strong>
-                  <small>{responseLabels[r.status]}</small>
-                </span>
-                <ChevronRight size={18} />
-              </button>
-            ))}
-          </div>
-        )}
-      </section>
+        <section className="rsp-glass rsp-idle-sheet">
+          <div className="rsp-idle-heading"><span className="rsp-ready-icon"><Radio size={23}/></span><div><span className="rsp-kicker">{user.onDuty ? "STANDING BY" : "OFF DUTY"}</span><h1>{user.onDuty ? "Ready for your next call" : "Start your response shift"}</h1></div></div>
+          <p className="rsp-idle-description">{user.onDuty ? "A validated assignment opens your route automatically." : "Go on duty to receive assignments and share your location with dispatch."}</p>
+          <DutyCard compact />
+          {incidents.length > 0 && <details className="rsp-history"><summary>Recent dispatches <span>{incidents.length}</span><ChevronDown size={16}/></summary>{incidents.map(r => <button onClick={() => { setSelected(r.id); setView("details"); }} key={r.id}><span><strong>{r.title}</strong><small>{responseLabels[r.status]}</small></span><ChevronRight size={18}/></button>)}</details>}
+        </section>
+      </div>
     );
   const next = responseTransitions[incident.status] || [];
   const Turn = step?.modifier?.includes("left")
@@ -252,16 +267,19 @@ export function ResponderMobile() {
       ? ArrowRight
       : ArrowUp;
   return (
-    <div className={"rsp-workspace rsp-view-" + view}>
+    <div className={"rsp-workspace rsp-view-" + view + (keyboardHeight ? " rsp-keyboard-open" : "")} style={keyboardHeight ? {height: keyboardHeight} : undefined}>
       <ResponseMap
         position={position}
         destination={destination || incident.location}
         route={route}
         satellite={satellite}
         follow={follow}
+        onFollowChange={setFollow}
+        recenterKey={recenterKey}
       />
       <div className="rsp-map-shade" />
       <header className="rsp-topbar">
+        <button className="rsp-glass rsp-icon-button rsp-back" onClick={() => { if (!activeResponse(incident)) { setSelected(null); setView("navigation"); } else location.hash = "#/public"; }} aria-label={activeResponse(incident) ? "Back to home" : "Back to responder map"}><ArrowLeft size={20}/></button>
         <div className="rsp-glass rsp-brand">
           <Ambulance size={22} />
           <span>
@@ -311,8 +329,9 @@ export function ResponderMobile() {
               className={
                 "rsp-glass rsp-icon-button " + (follow ? "is-active" : "")
               }
-              onClick={() => setFollow((v) => !v)}
-              aria-label="Follow my location"
+              onClick={() => { setFollow(true); setRecenterKey(v => v + 1); }}
+              disabled={!position}
+              aria-label="Recenter on my location"
               aria-pressed={follow}
             >
               <LocateFixed size={20} />
@@ -331,10 +350,10 @@ export function ResponderMobile() {
       <section
         className={
           "rsp-glass rsp-bottom-sheet " +
-          (view === "navigation" ? "" : "is-expanded")
+          (view === "navigation" ? (expanded ? "has-trip-details" : "is-compact") : "is-expanded")
         }
       >
-        <div className="rsp-sheet-handle" />
+        {view === "navigation" && <button className="rsp-sheet-toggle" onClick={() => setExpanded(v => !v)} aria-expanded={expanded} aria-label={expanded ? "Show more map" : "Show trip options"}><span/></button>}
         <nav className="rsp-view-tabs" aria-label="Dispatch views">
           {[
             [Compass, "navigation", "Navigation"],
@@ -345,6 +364,7 @@ export function ResponderMobile() {
               key={id}
               className={view === id ? "is-active" : ""}
               onClick={() => setView(id)}
+              aria-pressed={view === id}
             >
               <Icon size={17} />
               {label}
@@ -456,13 +476,13 @@ export function ResponderMobile() {
                 position arrives. <a href="#/public/account">Review location</a>
               </p>
             )}
-            {route && (
+            {route && expanded && (
               <p className="rsp-caption">
                 Road directions · no live traffic or road-closure data
               </p>
             )}
             <div className="rsp-status-actions">
-              {next.map((status) => (
+              {next.filter(status => expanded || status !== "returning" || next.length === 1).map((status) => (
                 <button
                   key={status}
                   className={
@@ -486,7 +506,7 @@ export function ResponderMobile() {
                 </button>
               ))}
             </div>
-            {["assigned", "en_route", "on_scene", "to_hospital"].includes(
+            {expanded && ["assigned", "en_route", "on_scene", "to_hospital"].includes(
               incident.status,
             ) && (
               <button
@@ -500,7 +520,7 @@ export function ResponderMobile() {
                 <ChevronRight size={16} />
               </button>
             )}
-            {destination && (
+            {expanded && destination && (
               <a
                 className="rsp-external-route"
                 href={
@@ -516,6 +536,7 @@ export function ResponderMobile() {
                 Open turn-by-turn in Maps <ArrowUpRight size={13} />
               </a>
             )}
+            <button className="rsp-trip-options" onClick={() => setExpanded(v => !v)} aria-expanded={expanded}>{expanded ? "Show more map" : "Trip options & hospital"}<ChevronDown size={16} className={expanded ? "is-open" : ""}/></button>
           </>
         )}
         {error && (
