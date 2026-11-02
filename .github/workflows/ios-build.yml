@@ -63,6 +63,7 @@ jobs:
       - name: Capture simulator appearance and package runnable simulator app
         run: |
           set -euo pipefail
+          python3 scripts/verify-bundle-version.py build/DerivedData/Build/Products/Debug-iphonesimulator/TANOVIQ.app
           xcrun simctl launch "$SIMULATOR_ID" ph.tanoviq.app
           sleep 3
           xcrun simctl ui "$SIMULATOR_ID" appearance light
@@ -80,6 +81,7 @@ jobs:
             -destination 'generic/platform=iOS' -archivePath build/TANOVIQ.xcarchive \
             -derivedDataPath build/DeviceDerivedData CODE_SIGNING_ALLOWED=NO archive \
             2>&1 | tee build/evidence/archive.log
+          python3 scripts/verify-bundle-version.py build/TANOVIQ.xcarchive/Products/Applications/TANOVIQ.app
           ditto -c -k --sequesterRsrc --keepParent build/TANOVIQ.xcarchive build/Mobile-Phone-iPhone-Unsigned-Archive.zip
           printf '%s\n' 'Simulator zip: runs in an iPhone Simulator on a Mac.' \
             'Unsigned archive: compiled for iPhone hardware, requires Apple signing before installation.' \
