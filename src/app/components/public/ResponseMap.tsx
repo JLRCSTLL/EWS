@@ -2,6 +2,8 @@ import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { ResponsePoint, ResponseRoute } from "../../lib/response";
+import { mapViewport, type MapInsets } from "../../lib/map-viewport";
+const defaultInsets: MapInsets = { top: 35, right: 35, bottom: 35, left: 35 };
 export function ResponseMap({
   position,
   destination,
@@ -13,6 +15,7 @@ export function ResponseMap({
   interactive = true,
   onFollowChange,
   recenterKey = 0,
+  insets = defaultInsets,
 }: {
   position?: { lat: number; lng: number } | null;
   destination?: ResponsePoint | null;
@@ -24,6 +27,7 @@ export function ResponseMap({
   interactive?: boolean;
   onFollowChange?: (follow: boolean) => void;
   recenterKey?: number;
+  insets?: MapInsets;
 }) {
   const element = useRef<HTMLDivElement>(null),
     map = useRef<L.Map | null>(null),
@@ -31,6 +35,30 @@ export function ResponseMap({
     pick = useRef(onSelect),
     manual = useRef(false);
   const followChange = useRef(onFollowChange);
+  const frameView = useRef<() => void>(() => {});
+  const padding = useRef(insets);
+  padding.current = insets;
+  function panToVisibleCenter(current: L.Map, point: { lat: number; lng: number }, animate = false, zoom = current.getZoom()) {
+    const size = current.getSize();
+    const { centerOffset } = mapViewport(size.x, size.y, padding.current);
+    const center = current.unproject(current.project([point.lat, point.lng], zoom).add(centerOffset), zoom);
+    current.setView(center, zoom, { animate, duration: .5 });
+  }
+  function fitRoute(current: L.Map) {
+    if (!route?.coordinates.length) return;
+    const size = current.getSize();
+    const { paddingTopLeft, paddingBottomRight } = mapViewport(size.x, size.y, padding.current);
+    current.fitBounds(L.latLngBounds(route.coordinates.map(([lng, lat]) => [lat, lng])), {
+      paddingTopLeft, paddingBottomRight, maxZoom: 16, animate: false,
+    });
+  }
+  frameView.current = () => {
+    const current = map.current;
+    if (!current || manual.current) return;
+    if (follow && position && !pick.current) panToVisibleCenter(current, position);
+    else if (route?.coordinates.length) fitRoute(current);
+    else if (select || destination) panToVisibleCenter(current, (select || destination)!);
+  };
   pick.current = onSelect;
   followChange.current = onFollowChange;
   useEffect(() => {
@@ -53,7 +81,10 @@ export function ResponseMap({
       manual.current = true;
       followChange.current?.(false);
     });
-    const observer = new ResizeObserver(() => current.invalidateSize());
+    const observer = new ResizeObserver(() => {
+      current.invalidateSize({ pan: false });
+      frameView.current();
+    });
     observer.observe(element.current);
     return () => {
       observer.disconnect();
@@ -113,23 +144,10 @@ export function ResponseMap({
       })
         .addTo(group)
         .bindTooltip(label, { direction: "top" });
-      if (route?.coordinates.length)
-        current.fitBounds(
-          L.latLngBounds(route.coordinates.map(([lng, lat]) => [lat, lng])),
-          {
-            paddingTopLeft: [35, Math.min(175, current.getSize().y * .22)],
-            paddingBottomRight: [35, Math.min(300, current.getSize().y * .4)],
-            maxZoom: 16,
-            animate: false,
-          },
-        );
+      if (route?.coordinates.length) fitRoute(current);
       else if (select)
-        current.setView(
-          [select.lat, select.lng],
-          Math.max(current.getZoom(), 14),
-          { animate: false },
-        );
-      else current.setView([target.lat, target.lng], 15, { animate: false });
+        panToVisibleCenter(current, select, false, Math.max(current.getZoom(), 14));
+      else panToVisibleCenter(current, target, false, 15);
     }
     manual.current = false;
     return () => {
@@ -169,17 +187,15 @@ export function ResponseMap({
         .bindTooltip("Your shared position");
     else marker.current.setLatLng([position.lat, position.lng]);
     if ((follow || (!destination && !route && firstFix)) && !manual.current && !pick.current)
-      current.panTo([position.lat, position.lng], {
-        animate: true,
-        duration: 0.7,
-      });
+      panToVisibleCenter(current, position, true);
   }, [position?.lat, position?.lng, follow]);
   useEffect(() => {
     if (follow && position && map.current) {
       manual.current = false;
-      map.current.panTo([position.lat, position.lng]);
+      panToVisibleCenter(map.current, position, true);
     }
   }, [follow, recenterKey]);
+  useEffect(() => { frameView.current(); }, [insets.top, insets.right, insets.bottom, insets.left]);
   return (
     <div
       className="rsp-map"

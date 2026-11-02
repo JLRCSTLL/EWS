@@ -232,6 +232,20 @@ test("operator-to-driver dispatch: validation, scoped alerts, chat photos, hospi
   assert.equal(driverState.alerts[0].response_id, iid);
   assert.equal(outsiderState.responseIncidents.length, 0);
   assert.equal(outsiderState.alerts.length, 0);
+  const dispatchAlert = driverState.alerts[0];
+  assert.equal(dispatchAlert.read_at, null);
+  assert.equal((await req("other", `/alerts/${dispatchAlert.id}/receipt`, { read: true })).status, 404);
+  await ok("driver", `/alerts/${dispatchAlert.id}/receipt`, { read: false });
+  assert.equal((await ok("driver", "/state?view=public")).alerts.filter(a => !a.read_at).length, 1);
+  await ok("driver", `/alerts/${dispatchAlert.id}/receipt`, { read: true });
+  const acknowledged = await ok("driver", "/state?view=public");
+  assert.equal(acknowledged.alerts.filter(a => !a.read_at).length, 0, "read dispatch clears the unread badge");
+  assert.ok(acknowledged.alerts[0].read_at);
+  assert.equal(acknowledged.responseIncidents[0].status, incident.status, "read receipt must not advance the response");
+  assert.equal(acknowledged.responseIncidents[0].version, incident.version);
+  await ok("driver", `/alerts/${dispatchAlert.id}/receipt`, { read: true });
+  assert.equal((await ok("driver", "/state?view=public")).alerts[0].read_at, acknowledged.alerts[0].read_at);
+  assert.equal((await ok("operator", "/state")).alerts.find(a => a.id === dispatchAlert.id).read_count, 1);
   for (const suffix of ["/route", "/messages", "/timeline", "/hospitals"])
     assert.equal((await req("other", path + suffix)).status, 404);
   let route = await ok("driver", path + "/route");

@@ -50,7 +50,7 @@ export function GeofenceTools(props: Props) {
         <button onClick={props.onClear}><X size={12} />Clear selection</button>
         {saved.shape !== 'boundary' && <button onClick={props.onEdit}><PenLine size={12} />Edit boundary</button>}
         <button onClick={props.onFocus}><Crosshair size={12} />Locate</button>
-        <button onClick={props.onRemove} aria-label="Remove geofence"><Trash2 size={12} /></button>
+        <button onClick={props.onRemove} aria-label="Remove geofence"><Trash2 size={12} />Remove</button>
       </div>
       {saved.source && <p className="ops-fence-hint"><a href={saved.source.url} target="_blank" rel="noreferrer">{saved.source.label}</a><br />{saved.source.note}</p>}
       <button className="ops-fence-broadcast" onClick={props.onBroadcast} disabled={!saved.name.trim()}>Send alert to this area<ArrowUpRight size={14} /></button>

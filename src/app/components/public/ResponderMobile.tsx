@@ -36,6 +36,8 @@ import {
 } from "../../lib/response";
 import { ResponseMap } from "./ResponseMap";
 import { ResponseChat } from "./ResponseChat";
+import { useResponderMapInsets } from "./useResponderMapInsets";
+import { DispatchReceipt } from "./DispatchReceipt";
 import { DutyCard } from "./PersonnelPanels";
 import "../../../styles/responder.css";
 const actionLabels: Partial<Record<ResponseStatus, string>> = {
@@ -46,21 +48,24 @@ const actionLabels: Partial<Record<ResponseStatus, string>> = {
   returning: "Return to base",
   completed: "Confirm back at base",
 };
+const requestedDispatch = () => new URLSearchParams(location.hash.split('?')[1] || '').get('dispatch');
 export function ResponderMobile() {
   const live = useLive(),
     user = live.state!.user,
     incidents = live.state?.responseIncidents || [];
   const active = incidents.find(activeResponse),
-    [selected, setSelected] = useState<string | null>(null);
+    [selected, setSelected] = useState<string | null>(requestedDispatch);
   const incident =
     incidents.find((r) => r.id === (selected || active?.id)) || active;
   const [view, setView] = useState<"navigation" | "chat" | "details">(
-      "navigation",
+    requestedDispatch() ? "details" : "navigation",
     ),
     [satellite, setSatellite] = useState(true),
     [follow, setFollow] = useState(true);
   const [expanded, setExpanded] = useState(false);
   const [recenterKey, setRecenterKey] = useState(0);
+  const workspace = useRef<HTMLDivElement>(null);
+  const mapInsets = useResponderMapInsets(workspace, `${incident?.id || 'idle'}:${view}:${expanded}`);
   const [now, setNow] = useState(Date.now);
   const [keyboardHeight, setKeyboardHeight] = useState<number | null>(null);
   useEffect(() => {
@@ -185,11 +190,16 @@ export function ResponderMobile() {
       void loadRoute();
   }, [position?.updatedAt]);
   useEffect(() => {
-    setSelected(null);
-    setView("navigation");
+    setSelected(requestedDispatch());
+    setView(requestedDispatch() ? "details" : "navigation");
     setHospitalOpen(false);
     setExpanded(false);
   }, [active?.id]);
+  useEffect(() => {
+    const sync = () => { const id = requestedDispatch(); setSelected(id); setView(id ? "details" : "navigation"); };
+    window.addEventListener('hashchange', sync);
+    return () => window.removeEventListener('hashchange', sync);
+  }, []);
   useEffect(() => {
     if (!incident || view !== "details") return;
     let disposed = false;
@@ -240,19 +250,19 @@ export function ResponderMobile() {
   }
   if (!incident)
     return (
-      <div className="rsp-workspace rsp-idle">
-        <ResponseMap position={position} satellite={satellite} follow={follow} recenterKey={recenterKey} onFollowChange={setFollow} />
+      <div className="rsp-workspace rsp-idle" ref={workspace}>
+        <ResponseMap position={position} satellite={satellite} follow={follow} recenterKey={recenterKey} onFollowChange={setFollow} insets={mapInsets} />
         <div className="rsp-map-shade" />
-        <header className="rsp-topbar">
+        <header className="rsp-topbar" data-map-occlusion="top">
           <div className="rsp-glass rsp-brand"><Ambulance size={23}/><span><small>MOBILE PHONE</small><strong>Responder</strong></span></div>
           <span className={"rsp-live-pill " + (live.connection === "connected" ? "is-online" : "")} role="status"><i/>{live.connection === "connected" ? "Connected" : "Reconnecting"}</span>
         </header>
-        <div className="rsp-idle-label"><span><Radio size={14}/>{user.onDuty ? "WAITING FOR DISPATCH" : "YOUR RESPONSE MAP"}</span><p>{position ? fresh ? "Your shared position" : "Last shared position" : "Regional overview · no location shared"}</p></div>
+        <div className="rsp-idle-label" data-map-occlusion="top"><span><Radio size={14}/>{user.onDuty ? "WAITING FOR DISPATCH" : "YOUR RESPONSE MAP"}</span><p>{position ? fresh ? "Your shared position" : "Last shared position" : "Regional overview · no location shared"}</p></div>
         <div className="rsp-map-actions">
           <button className="rsp-glass rsp-icon-button" onClick={() => setSatellite(v => !v)} aria-label={satellite ? "Use street map" : "Use satellite map"}><Layers size={20}/></button>
           <button className="rsp-glass rsp-icon-button" disabled={!position} onClick={() => { setFollow(true); setRecenterKey(v => v + 1); }} aria-label="Recenter on my location"><LocateFixed size={20}/></button>
         </div>
-        <section className="rsp-glass rsp-idle-sheet">
+        <section className="rsp-glass rsp-idle-sheet" data-map-occlusion="sheet">
           <div className="rsp-idle-heading"><span className="rsp-ready-icon"><Radio size={23}/></span><div><span className="rsp-kicker">{user.onDuty ? "STANDING BY" : "OFF DUTY"}</span><h1>{user.onDuty ? "Ready for your next call" : "Start your response shift"}</h1></div></div>
           <p className="rsp-idle-description">{user.onDuty ? "A validated assignment opens your route automatically." : "Go on duty to receive assignments and share your location with dispatch."}</p>
           <DutyCard compact />
@@ -267,7 +277,7 @@ export function ResponderMobile() {
       ? ArrowRight
       : ArrowUp;
   return (
-    <div className={"rsp-workspace rsp-view-" + view + (keyboardHeight ? " rsp-keyboard-open" : "")} style={keyboardHeight ? {height: keyboardHeight} : undefined}>
+    <div className={"rsp-workspace rsp-view-" + view + (keyboardHeight ? " rsp-keyboard-open" : "")} ref={workspace} style={keyboardHeight ? {height: keyboardHeight} : undefined}>
       <ResponseMap
         position={position}
         destination={destination || incident.location}
@@ -276,10 +286,11 @@ export function ResponderMobile() {
         follow={follow}
         onFollowChange={setFollow}
         recenterKey={recenterKey}
+        insets={mapInsets}
       />
       <div className="rsp-map-shade" />
-      <header className="rsp-topbar">
-        <button className="rsp-glass rsp-icon-button rsp-back" onClick={() => { if (!activeResponse(incident)) { setSelected(null); setView("navigation"); } else location.hash = "#/public"; }} aria-label={activeResponse(incident) ? "Back to home" : "Back to responder map"}><ArrowLeft size={20}/></button>
+      <header className="rsp-topbar" data-map-occlusion="top">
+        <button className="rsp-glass rsp-icon-button rsp-back" onClick={() => { if (!activeResponse(incident)) { setSelected(null); setView("navigation"); location.hash = "#/public/responder"; } else location.hash = "#/public"; }} aria-label={activeResponse(incident) ? "Back to home" : "Back to responder map"}><ArrowLeft size={20}/></button>
         <div className="rsp-glass rsp-brand">
           <Ambulance size={22} />
           <span>
@@ -299,7 +310,7 @@ export function ResponderMobile() {
       </header>
       {view === "navigation" && (
         <>
-          <section className="rsp-glass rsp-guidance">
+          <section className="rsp-glass rsp-guidance" data-map-occlusion="top">
             <div className="rsp-turn">
               <Turn size={31} />
             </div>
@@ -348,6 +359,7 @@ export function ResponderMobile() {
         </>
       )}
       <section
+        data-map-occlusion="sheet"
         className={
           "rsp-glass rsp-bottom-sheet " +
           (view === "navigation" ? (expanded ? "has-trip-details" : "is-compact") : "is-expanded")
@@ -371,6 +383,7 @@ export function ResponderMobile() {
             </button>
           ))}
         </nav>
+        {view !== "chat" && <DispatchReceipt incidentId={incident.id} />}
         {view === "chat" ? (
           <ResponseChat key={incident.id} incident={incident} />
         ) : view === "details" ? (

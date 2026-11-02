@@ -495,15 +495,17 @@
 .ops-map--drawing, .ops-map--drawing .leaflet-grab { cursor: crosshair; }
 .ops-fence-vertex { display: grid; place-items: center; background: transparent; border: 0; }
 .ops-fence-vertex span { width: 10px; height: 10px; background: #f1f5f5; border: 2px solid #3d565b; border-radius: 50%; box-shadow: 0 0 0 3px #ffffff35, 0 2px 8px #0007; }
-.ops-geofence-panel { position: absolute; right: 24px; top: 28px; width: 280px; padding: 17px; z-index: 4; pointer-events: auto; }
+.ops-geofence-panel { position: absolute; right: 24px; top: 28px; width: min(320px, calc(100% - 48px)); min-width: 0; box-sizing: border-box; padding: 18px; z-index: 4; pointer-events: auto; overflow-x: hidden; overscroll-behavior: contain; scrollbar-width: thin; }
+.ops-geofence-panel > * { min-width: 0; }
 .ops-geofence-panel h2 { display: flex; align-items: center; gap: 8px; }
 .ops-fence-shapes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-top: 16px; }
 .ops-fence-shapes button { background: #ffffff05; border: 1px solid #ffffff15; color: #c5c5c5; border-radius: 6px; text-transform: capitalize; padding: 8px 4px; font-size: 10px; }
 .ops-fence-shapes button[aria-pressed='true'] { background: #ffffff16; border-color: #ffffff3a; color: #fff; box-shadow: inset 0 1px 0 #ffffff12; }
 .ops-fence-instruction { font-size: 11px; line-height: 1.65; color: #e0e0e0; margin-top: 13px !important; }
-.ops-fence-hint { font-size: 10px; line-height: 1.6; color: #b0b0b0; margin-top: 6px !important; }
-.ops-fence-actions { display: flex; align-items: center; gap: 7px; margin-top: 14px; }
-.ops-fence-actions button { display: inline-flex; align-items: center; justify-content: center; gap: 5px; padding: 7px 9px; color: #d8d8d8; font-size: 10px; background: #ffffff06; border: 1px solid #ffffff15; border-radius: 6px; }
+.ops-fence-hint { font-size: 11px; line-height: 1.6; color: #c2cbc6; margin-top: 6px !important; overflow-wrap: anywhere; }
+.ops-fence-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: stretch; gap: 8px; margin-top: 14px; }
+.ops-fence-actions button { display: inline-flex; align-items: center; justify-content: center; min-width: 0; min-height: 40px; gap: 6px; padding: 8px; color: #e4ebe7; font-size: 11px; line-height: 1.4; background: #ffffff06; border: 1px solid #ffffff25; border-radius: 8px; }
+.ops-fence-actions button svg, .ops-fence-broadcast svg { flex-shrink: 0; }
 .ops-fence-actions button:hover { background: #ffffff14; }
 .ops-fence-actions button:disabled, .ops-fence-broadcast:disabled { opacity: .4; cursor: not-allowed; }
 .ops-fence-actions--primary { justify-content: space-between; padding-top: 12px; border-top: 1px solid var(--ops-line); }
@@ -542,7 +544,7 @@
 .ops-fence-picker { display: flex; align-items: flex-end; gap: 7px; margin-top: 14px; }
 .ops-fence-picker label { flex: 1; min-width: 0; color: #bdbdbd; font-size: 10px; }
 .ops-fence-picker select { display: block; width: 100%; margin-top: 5px; padding: 8px; background: #252525b3; color: #eee; border: 1px solid #ffffff28; border-radius: 6px; font-size: 11px; }
-.ops-fence-picker button { height: 33px; width: 33px; display: grid; place-items: center; color: #eee; border: 1px solid #ffffff28; background: #ffffff10; border-radius: 6px; }
+.ops-fence-picker button { height: 36px; width: 36px; flex-shrink: 0; display: grid; place-items: center; color: #eee; border: 1px solid #ffffff28; background: #ffffff10; border-radius: 6px; }
 .ops-fence-picker option, .ops-form-label option { background: #303030; color: #eee; }
 .ops-bottom-panels { grid-template-columns: 1.35fr 1fr; }
 .ops-bottom-panels > section { height: 232px; padding: 15px 17px; }
