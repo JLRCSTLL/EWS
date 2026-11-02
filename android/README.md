@@ -194,6 +194,16 @@ Reference: [Android notification channels](https://developer.android.com/develop
 [FCM Android delivery](https://firebase.google.com/docs/cloud-messaging/android/receive-messages),
 [background service restrictions](https://developer.android.com/develop/background-work/services/fgs/restrictions-bg-start).
 
+## Map and receipt update 0.8.1
+
+The responder map centers GPS and navigation within the visible area above the
+bottom card (or beside it in landscape). Open a dispatch in Alerts and tap
+**Mark dispatch as read**, or acknowledge it from the responder details. A
+successful receipt reduces the unread badge without changing the trip status.
+These interface changes are hosted; reopen an installed app to load them.
+Version 0.8.1 uses version code 11 and the existing pilot signing identity so it
+can update the previous pilot without uninstalling it.
+
 ## Responder update 0.8.0
 
 The responder workspace opens assigned navigation automatically while the app is active. Dispatch notifications include **Open navigation**. Incident chat supports a single image chosen through Android’s system document picker; no broad storage permission is requested. Install the new pilot for that picker and notification action. See [the responder workflow](../docs/responder-dispatch.md).

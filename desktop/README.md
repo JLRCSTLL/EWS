@@ -10,7 +10,7 @@ The desktop display name is temporarily **Command Center Platform**. The mobile 
 
 ## Install and use
 
-1. Run `Command-Center-Platform-Setup-1.1.3-x64.exe`. The assisted installer installs
+1. Run `Command-Center-Platform-Setup-1.1.4-x64.exe`. The assisted installer installs
    for your Windows user and offers Start menu and desktop shortcuts.
 2. Open **Command Center Platform**. The loading screen remains visible while the
    command interface loads. A connection failure shows a retry screen and retries
@@ -54,6 +54,12 @@ already-installed clients without replacing their installer.
 of operator authorization, fresh GPS, alert receipt, or physical alarm playback.
 The app does not remain running in the notification area after it is closed.
 Phone background alarms still depend on the existing Android/FCM setup.
+
+### Layout update (1.1.4)
+
+The geofence editor keeps its text and controls inside the card, with actions in
+two columns. Reload the command center to receive this hosted fix. The new
+installer preserves the existing application ID and workstation profile.
 
 ### Geofences and custom alert audio (1.1.3)
 

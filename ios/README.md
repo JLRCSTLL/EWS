@@ -172,6 +172,18 @@ References: [iOS 27 platform guidance](https://developer.apple.com/ios/whats-new
 [Critical Alerts](https://developer.apple.com/documentation/bundleresources/entitlements/com.apple.developer.usernotifications.critical-alerts),
 [TestFlight](https://developer.apple.com/testflight/).
 
+## Map and receipt update 0.2.1 (build 3)
+
+The shared responder map accounts for the bottom card when centering GPS and
+navigation. Opening a dispatch notification shows the written message and
+**Mark dispatch as read** action. A successful receipt clears that message's
+unread state without changing the incident status. New assignments still open
+Respond automatically when an alert detail is not already open.
+
+This release remains an unsigned device archive and a simulator build until an
+Apple signing team is configured. It is not an installable IPA or TestFlight
+release.
+
 ## Responder update 0.2.0
 
-The Respond tab shares the authenticated map, status controls and incident chat with the command center. It uses an isolated WebKit cookie store with the existing session, and clears it when removed. Native duty GPS continues separately. New assignments select Respond; dispatch notification taps select it after the assigned record is fetched. Camera/photo purpose strings are included for explicit incident attachments. Signing and physical-device verification remain required.
+The Respond tab shares the authenticated map, status controls and incident chat with the command center. It uses an isolated WebKit cookie store with the existing session, and clears it when removed. Native duty GPS continues separately. New assignments select Respond. Camera/photo purpose strings are included for explicit incident attachments. Signing and physical-device verification remain required.

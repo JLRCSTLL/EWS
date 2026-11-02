@@ -31,7 +31,10 @@ struct RootView: View {
         }
         .sheet(item: $selectedAlert) { alert in AlertDetailView(alert: alert).environmentObject(store).presentationDetents([.medium, .large]).presentationDragIndicator(.visible) }
         .onChange(of: store.state?.responseIncidents?.first(where: { $0.active })?.id) { _, id in
-            if let id, openedDispatch != id { openedDispatch = id; selectedAlert = nil; tab = .responder }
+            if let id, openedDispatch != id {
+                openedDispatch = id
+                if selectedAlert == nil, pendingAlertID == nil { tab = .responder }
+            }
         }
         .onChange(of: store.state?.user.id) { _, _ in openedDispatch = nil }
         .task {
@@ -59,7 +62,8 @@ struct RootView: View {
     private func openPendingAlert() {
         if pendingAlertID == nil { pendingAlertID = UserDefaults.standard.string(forKey: "pendingAlertID") }
         guard let id = pendingAlertID, let alert = store.state?.alerts.first(where: { $0.id == id }) else { return }
-        if alert.response_id != nil { selectedAlert = nil; tab = .responder } else { selectedAlert = alert }
+        // Opening a notification must keep its message and read-receipt action accessible.
+        selectedAlert = alert
         pendingAlertID = nil; UserDefaults.standard.removeObject(forKey: "pendingAlertID")
     }
 }
@@ -184,8 +188,17 @@ struct AlertDetailView: View {
                     if !store.error.isEmpty { Text(store.error).foregroundStyle(.red) }
                 }.padding(24)
             }.safeAreaInset(edge: .bottom) {
-                Button { Task { await store.acknowledge(alert) } } label: { Label(acknowledged ? "Acknowledged" : "Acknowledge message", systemImage: acknowledged ? "checkmark.circle.fill" : "checkmark.circle").frame(maxWidth: .infinity).padding(.vertical, 10) }
-                    .buttonStyle(.borderedProminent).disabled(store.busy || acknowledged).padding(20).background(.regularMaterial)
+                VStack(spacing: 10) {
+                    Button { Task { await store.acknowledge(alert) } } label: {
+                        Label(acknowledged ? "Acknowledged" : (alert.response_id == nil ? "Acknowledge message" : "Mark dispatch as read"), systemImage: acknowledged ? "checkmark.circle.fill" : "checkmark.circle")
+                            .frame(maxWidth: .infinity).padding(.vertical, 10)
+                    }.buttonStyle(.borderedProminent).disabled(store.busy || acknowledged)
+                    if acknowledged {
+                        Text("Read receipt sent to the command center.").font(.footnote).foregroundStyle(.secondary)
+                    } else if alert.response_id != nil {
+                        Text("This confirms you have read the dispatch. Update your trip status in Respond.").font(.footnote).foregroundStyle(.secondary)
+                    }
+                }.padding(20).background(.regularMaterial)
             }.navigationTitle("Command-center alert").navigationBarTitleDisplayMode(.inline)
                 .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Done") { dismiss() } } }
         }
