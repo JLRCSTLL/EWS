@@ -81,6 +81,7 @@ test("operator-to-driver dispatch: validation, scoped alerts, chat photos, hospi
   );
   const pushed = [],
     routing = {
+      search: async query => [{ id: 'test-place', name: query, ...point, address: 'TEST ONLY place', type: 'mall', area: false }],
       hospitals: async () => [],
       route: async (origin, destination) => ({
         coordinates: [
@@ -178,6 +179,15 @@ test("operator-to-driver dispatch: validation, scoped alerts, chat photos, hospi
     name: basePoint.label,
     location: basePoint,
   });
+  assert.equal((await req('driver', '/response-places?q=TEST+mall')).status, 403);
+  assert.equal((await req('operator', '/response-places?q=x')).status, 400);
+  const places = await ok('operator', '/response-places?q=TEST+mall');
+  assert.equal(places.places[0].name, 'TEST mall');
+  assert.equal(places.places[0].lat, point.lat);
+  assert.equal((await ok('operator', '/state')).dispatchPlaceSearchReady, true);
+  assert.equal((await ok('operator', '/state')).responseDirectoryDeleteReady, true);
+  assert.equal((await req('driver', `/response-facilities/${base.id}`, {}, 'DELETE')).status, 403);
+  assert.equal((await req('operator', '/response-facilities/invalid-id', {}, 'DELETE')).status, 404);
   const hospital = await ok("operator", "/response-facilities", {
     kind: "hospital",
     name: "TEST ONLY receiving hospital",
@@ -374,6 +384,10 @@ test("operator-to-driver dispatch: validation, scoped alerts, chat photos, hospi
     version: incident.version,
     hospitalId: hospital.id,
   });
+  await ok('operator', `/response-facilities/${hospital.id}`, {}, 'DELETE');
+  assert.equal((await ok('operator', '/state')).responseFacilities.some(f => f.id === hospital.id), false);
+  assert.equal((await req('operator', `/response-facilities/${hospital.id}`, {}, 'DELETE')).status, 404);
+  assert.equal((await ok('other', '/state?view=public')).responseIncidents[0].hospital.label, 'TEST ONLY receiving hospital');
   const stale = incident.version - 1;
   assert.equal(
     (
@@ -408,7 +422,11 @@ test("operator-to-driver dispatch: validation, scoped alerts, chat photos, hospi
     { version: incident.version, status: "returning" },
     "PATCH",
   );
-  assert.deepEqual((await ok("other", path + "/route")).destination, basePoint);
+  await ok('operator', `/response-facilities/${base.id}`, {}, 'DELETE');
+  assert.equal((await ok('operator', '/state')).responseFacilities.length, 0);
+  assert.deepEqual((await ok("other", path + "/route")).destination, basePoint, 'deleting a directory entry preserves the active return route');
+  const directoryLogs = (await ok('operator', '/audit?category=operations')).entries.filter(entry => entry.action === 'Directory entry deleted');
+  assert.equal(directoryLogs.length, 2);
   incident = await ok(
     "other",
     path + "/status",

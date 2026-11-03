@@ -1,4 +1,5 @@
 import { distanceMeters } from "../src/app/lib/response.ts";
+import { createPlaceLookup } from "./place-lookup.mjs";
 const fail = (message) => {
   throw Object.assign(new Error(message), {
     status: 503,
@@ -49,6 +50,7 @@ export function createResponseRouting({
     return job;
   }
   return {
+    search: createPlaceLookup({ fetcher }),
     async route(origin, destination) {
       return scheduled(async () => {
         const coordinates = [origin, destination]

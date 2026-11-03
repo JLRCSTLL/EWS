@@ -8,6 +8,7 @@ import {
   distanceMeters,
 } from "../src/app/lib/response.ts";
 import { createResponseRouting } from "./response-routing.mjs";
+import { placeQuery } from "./place-lookup.mjs";
 const uuid =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const fail = (status, message) => {
@@ -79,7 +80,7 @@ export async function responseState(db, user, operatorView) {
         )
       ).rows
     : [];
-  return { responseIncidents, responseFacilities, responderReady: true };
+  return { responseIncidents, responseFacilities, responderReady: true, dispatchPlaceSearchReady: true, responseDirectoryDeleteReady: true };
 }
 export async function normalizeResponsePhoto(photo) {
   if (photo === undefined || photo === null) return null;
@@ -182,6 +183,25 @@ export function responseRoutes(
     );
     changed();
     res.status(201).json({ id });
+  });
+  app.get('/api/response-places', async (req, res) => {
+    operator(req);
+    rateLimit(req, 'response-place-search', 30, 60000);
+    res.json({ places: await routing.search(placeQuery(req.query.q)) });
+  });
+  app.delete('/api/response-facilities/:id', async (req, res) => {
+    operator(req);
+    rateLimit(req, 'response-facility-delete', 30);
+    if (!uuid.test(req.params.id)) fail(404, 'Directory entry not found.');
+    await db.transaction(async tx => {
+      const result = await tx.query('delete from eligtas.response_facilities where id=$1 returning id', [req.params.id]);
+      if (!result.rows.length) fail(404, 'This directory entry has already been removed. Refresh the directory.');
+      // Dispatches store destination snapshots; removing a directory entry must not change a driver's route.
+      await tx.query('insert into eligtas.audit(id,actor_id,action,target_id) values ($1,$2,$3,$4)',
+        [randomUUID(), req.user.id, 'response_facility_deleted', req.params.id]);
+    });
+    changed();
+    res.json({ ok: true });
   });
   app.post("/api/responses", async (req, res) => {
     operator(req);

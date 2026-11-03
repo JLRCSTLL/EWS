@@ -1,6 +1,7 @@
 import { isOperator } from './auth.mjs';
 
 const actions = {
+  response_facility_deleted: ['operations', 'Directory entry deleted'],
   response_reported: ['requests','Emergency call recorded'], response_validated: ['requests','Emergency validated'], response_rejected: ['requests','Emergency not validated'],
   response_assigned: ['operations','Driver dispatched'], response_en_route: ['operations','Unit en route'], response_on_scene: ['operations','Unit arrived on scene'],
   response_hospital_selected: ['operations','Receiving hospital selected'], response_to_hospital: ['operations','Transport to hospital started'],

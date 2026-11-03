@@ -4,7 +4,7 @@ This pilot connects the command-center **Dispatch** desk to the mobile **Respond
 
 ## Operator workflow
 
-1. Open **Dispatch → Directory** and save the response base and any locally verified receiving hospitals. Pin the entrance/access point and provide a clear name.
+1. Open **Dispatch → Directory** and save the response base and any locally verified receiving hospitals. Use **Search for a location** to find a named mall, office, building, hospital or administrative area. Select a result, refine the pin to the entrance/access point, and provide a clear name.
 2. Select **Record emergency call**. Enter the requested service, priority, relevant notes and exact emergency location. An existing assistance request can be selected as the source.
 3. Record validation findings and choose **Confirm emergency** or **Reject report**. Unvalidated reports cannot be assigned.
 4. Choose an on-duty registered responder, unit call sign and return base, then **Assign & send navigation**. Only that responder receives the dispatch alert. A responder can have one active dispatch at a time.
@@ -27,6 +27,34 @@ After arrival on scene, open **Chat**, attach a selected JPEG/PNG/WebP photo, re
 Choose **Navigate to hospital**, review nearby mapped hospitals, confirm receiving capability with dispatch, and select a facility. This saves the destination, advances the transport stage, and activates its route. **Return to base** activates the saved base route. **Confirm back at base** completes the dispatch. Return without hospital transport is also available from the scene.
 
 ## Navigation limits and data providers
+
+### Location search and directory maintenance
+
+Both **Directory** and **Record emergency call** have inline place search. Press
+Search or Enter, then choose a matching name/address. Search does not submit the
+emergency form. Selecting a result fills the coordinates and location label;
+manual coordinates and map pin placement remain available. Region, barangay,
+city and province results represent a location within an area, so refine the pin
+to the specific emergency or entrance. This does not create a geofence.
+
+Each saved directory entry has **Delete → Confirm delete**. Only approved
+operators can delete entries. Removal is audited, updates other operators' lists,
+and removes the destination from future choices. Existing incidents retain their
+saved hospital/base coordinates, routes and history.
+
+The search proxy uses [Photon's API](https://github.com/komoot/photon/blob/master/docs/api-v1.md)
+with Philippine results, explicit searches, a bounded request queue, one provider
+request per 1.1 seconds, concurrent-query deduplication and a ten-minute cache.
+Only the entered search text goes to the provider; account details, device GPS,
+patient information and incident notes are not included. Map coverage varies.
+The [public Photon service](https://github.com/komoot/photon#demo-server) is for
+moderate use and has no availability guarantee. Set the server-only
+`PLACE_SEARCH_URL` to a supported/self-hosted Photon endpoint for operational use.
+
+Deploy the API and verify `/api/config` returns `dispatchPlaceSearchReady: true`
+and `responseDirectoryDeleteReady: true` before using these controls in production.
+
+### Route and hospital data
 
 - Road routing uses OSRM's driving profile. Route geometry is never replaced by an invented straight-line route when routing fails. A navigation-app link remains available.
 - Travel time is an estimate without live traffic, emergency-vehicle privileges, flooded-road closures, or verified road accessibility. It is not a guarantee of safe passage.

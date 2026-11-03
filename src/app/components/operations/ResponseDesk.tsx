@@ -9,6 +9,7 @@ import {
   Plus,
   Radio,
   Tent,
+  Trash2,
   X,
 } from "lucide-react";
 import { api, useLive } from "../../lib/live-service";
@@ -21,23 +22,29 @@ import {
 } from "../../lib/response";
 import { ResponseMap } from "../public/ResponseMap";
 import { ResponseChat } from "../public/ResponseChat";
+import { DispatchPlaceSearch } from "./DispatchPlaceSearch";
 import "../../../styles/responder.css";
 import "../../../styles/response-desk.css";
 const emptyPoint = { lat: 14.578, lng: 121.113, label: "" };
 function PointPicker({
   point,
   onChange,
+  directory = false,
+  searchReady,
 }: {
   point: ResponsePoint;
   onChange: (p: ResponsePoint) => void;
+  directory?: boolean;
+  searchReady: boolean;
 }) {
   return (
     <div className="dispatch-point">
+      <DispatchPlaceSearch enabled={searchReady} onSelect={place => onChange({ lat: place.lat, lng: place.lng, label: directory ? place.name : place.label })} />
       <label>
-        Location description
+        {directory ? 'Destination name' : 'Location description'}
         <input
           required
-          maxLength={180}
+          maxLength={directory ? 120 : 180}
           value={point.label}
           onChange={(e) => onChange({ ...point, label: e.target.value })}
           placeholder="Road, landmark and barangay"
@@ -110,7 +117,8 @@ export function ResponseDesk({
     [kind, setKind] = useState("base"),
     [requestId, setRequestId] = useState(""),
     [draftId, setDraftId] = useState(() => crypto.randomUUID()),
-    [cancel, setCancel] = useState(false);
+    [cancel, setCancel] = useState(false),
+    [deleteFacilityId, setDeleteFacilityId] = useState<string | null>(null);
   const incident =
     incidents.find((r) => r.id === id) ||
     incidents.find(
@@ -179,6 +187,8 @@ export function ResponseDesk({
             onClick={() => {
               setMode("directory");
               setPoint({ ...emptyPoint });
+              setDraftId(crypto.randomUUID());
+              setDeleteFacilityId(null);
               setError("");
             }}
           >
@@ -369,7 +379,7 @@ export function ResponseDesk({
                   placeholder="Relevant situation, access instructions and caller observations"
                 />
               </label>
-              <PointPicker point={point} onChange={setPoint} />
+              <PointPicker key={draftId} point={point} onChange={setPoint} searchReady={!!state.dispatchPlaceSearchReady} />
               <button className="dispatch-accent" disabled={busy}>
                 Save for validation
                 <ArrowRight size={16} />
@@ -393,22 +403,35 @@ export function ResponseDesk({
               </p>
               <div className="dispatch-facilities">
                 {facilities.map((f) => (
-                  <div key={f.id}>
+                  <div key={f.id} className="dispatch-facility">
                     {f.kind === "base" ? (
                       <Tent size={18} />
                     ) : (
                       <Hospital size={18} />
                     )}
-                    <span>
+                    <span className="dispatch-facility-info">
                       <strong>{f.name}</strong>
                       <small>
                         {f.kind} · {f.location.lat.toFixed(5)},{" "}
                         {f.location.lng.toFixed(5)}
                       </small>
                     </span>
+                    <button type="button" className="dispatch-facility-delete" aria-label={`Delete ${f.name}`} disabled={busy || !state.responseDirectoryDeleteReady}
+                      title={state.responseDirectoryDeleteReady ? undefined : 'Directory editing is temporarily unavailable'}
+                      onClick={() => { setDeleteFacilityId(f.id); setError(''); }}><Trash2 size={15} />Delete</button>
+                    {deleteFacilityId === f.id && <div className="dispatch-delete-confirm" role="group" aria-label={`Confirm deletion of ${f.name}`}>
+                      <p>Delete <strong>{f.name}</strong> from the directory? Existing dispatches keep their saved destination.</p>
+                      <div><button type="button" className="dispatch-danger" disabled={busy} onClick={() => void run(async () => {
+                        await live.mutate(`/response-facilities/${f.id}`, {}, 'DELETE');
+                        if (base === f.id) setBase('');
+                        setDeleteFacilityId(null);
+                      })}>{busy ? 'Deleting…' : 'Confirm delete'}</button>
+                        <button type="button" disabled={busy} onClick={() => setDeleteFacilityId(null)}>Keep entry</button></div>
+                    </div>}
                   </div>
                 ))}
               </div>
+              {!facilities.length && <p className="dispatch-caption">No directory entries yet. Search for a location below to add your first destination.</p>}
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
@@ -419,6 +442,7 @@ export function ResponseDesk({
                       location: point,
                     });
                     setPoint({ ...emptyPoint });
+                    setDraftId(crypto.randomUUID());
                   });
                 }}
               >
@@ -433,7 +457,7 @@ export function ResponseDesk({
                     <option value="hospital">Receiving hospital</option>
                   </select>
                 </label>
-                <PointPicker point={point} onChange={setPoint} />
+                <PointPicker key={draftId} point={point} onChange={setPoint} directory searchReady={!!state.dispatchPlaceSearchReady} />
                 <button className="dispatch-accent" disabled={busy}>
                   <Plus size={16} />
                   Save destination
