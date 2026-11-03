@@ -52,11 +52,12 @@ test('shared lookup deduplicates concurrent searches, caches results and limits 
 test('provider errors are not mistaken for no results and a failed search can be retried', async () => {
   let calls = 0;
   const search = createPlaceLookup({ intervalMs: 0, fetcher: async () => ++calls === 1 ? new Response('', { status: 503 }) : response([]) });
-  await assert.rejects(search('Cainta'), { status: 503 });
+  await assert.rejects(search('Cainta'), { status: 503, publicMessage: 'Place search is temporarily unavailable. Try again or pin the location on the map.', code: 'PLACE_SEARCH_UPSTREAM_503' });
   assert.deepEqual(await search('Cainta'), []);
   assert.equal(calls, 2);
   await assert.rejects(createPlaceLookup({ intervalMs: 0, fetcher: async () => new Response('not json') })('Cainta'), { status: 503 });
   await assert.rejects(createPlaceLookup({ intervalMs: 0, fetcher: async () => new Response('x'.repeat(512 * 1024 + 1)) })('Cainta'), { status: 503 });
+  await assert.rejects(createPlaceLookup({ intervalMs: 0, fetcher: async () => { throw Object.assign(new Error('private provider detail'), { cause: { code: 'ETIMEDOUT' } }); } })('Cainta'), { status: 503, publicMessage: 'Place search could not connect. Try again or pin the location on the map.', code: 'PLACE_SEARCH_ETIMEDOUT' });
 });
 test('lookup queue spaces provider calls and rejects excessive pending searches', async () => {
   const starts = [];

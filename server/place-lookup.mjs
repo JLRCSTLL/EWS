@@ -1,4 +1,4 @@
-const fail = (status, message) => { throw Object.assign(new Error(message), { status }); };
+const fail = (status, message, code = 'PLACE_SEARCH_FAILED') => { throw Object.assign(new Error(message), { status, publicMessage: message, code }); };
 const clean = (value, max) => typeof value === 'string' ? value.replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, max) : '';
 export function placeQuery(value) {
   if (typeof value !== 'string') fail(400, 'Enter a place name to search.');
@@ -30,7 +30,7 @@ export function photonPlaces(data) {
   return places;
 }
 async function readPlaces(response) {
-  if (!response.ok) fail(503, 'Place search is temporarily unavailable. Try again or pin the location on the map.');
+  if (!response.ok) fail(503, 'Place search is temporarily unavailable. Try again or pin the location on the map.', `PLACE_SEARCH_UPSTREAM_${response.status}`);
   let size = 0;
   const chunks = [];
   for await (const chunk of response.body) {
@@ -68,7 +68,8 @@ export function createPlaceLookup({ fetcher = fetch, endpoint = process.env.PLAC
         return places;
       } catch (error) {
         if (error.status) throw error;
-        fail(503, 'Place search could not connect. Try again or pin the location on the map.');
+        const reason = String(error.cause?.code || error.name || 'NETWORK').replace(/[^A-Z0-9_]/gi, '').slice(0, 50);
+        fail(503, 'Place search could not connect. Try again or pin the location on the map.', `PLACE_SEARCH_${reason}`);
       }
     });
     queue = work.catch(() => {});
