@@ -1,4 +1,4 @@
-# This project deploys the web interface; /api is forwarded to Render.
+# Deploy the interface and place-search gateway; other APIs stay on Render.
 .git
 .local-data
 .idea
@@ -10,7 +10,9 @@ security-reports
 android
 ios
 desktop
-server
+server/*
+!server/place-lookup.mjs
+!server/place-search-gateway.mjs
 tests
 docs
 *.apk
