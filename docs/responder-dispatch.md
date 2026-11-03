@@ -49,7 +49,15 @@ Only the entered search text goes to the provider; account details, device GPS,
 patient information and incident notes are not included. Map coverage varies.
 The [public Photon service](https://github.com/komoot/photon#demo-server) is for
 moderate use and has no availability guarantee. Set the server-only
-`PLACE_SEARCH_URL` to a supported/self-hosted Photon endpoint for operational use.
+`PLACE_SEARCH_URL` on the geocoding host to a supported/self-hosted Photon endpoint for operational use.
+
+Hosted lookups run in the existing Vercel deployment because the Render service
+cannot connect to the public Photon host. Every lookup checks the session and
+current operator role with Render's `/api/response-places/authorize` endpoint,
+which returns only an approval flag and imposes a shared 30-search/minute limit.
+The session cookie travels only between the application's existing Render and
+Vercel hosts, never to Photon. Authorization is checked again for cached results.
+Render-hosted pages use this same gateway. Local development calls Photon directly.
 
 Deploy the API and verify `/api/config` returns `dispatchPlaceSearchReady: true`
 and `responseDirectoryDeleteReady: true` before using these controls in production.

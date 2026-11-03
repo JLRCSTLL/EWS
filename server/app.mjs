@@ -13,6 +13,7 @@ import { auditRoutes } from './audit.mjs';
 import { normalizeProfile } from './profile.mjs';
 import { alertAudioRoutes } from './alert-audio.mjs';
 import { responseRoutes, responseState } from './responses.mjs';
+import { createHostedPlaceLookup } from './place-search-gateway.mjs';
 
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const fail = (status, message) => { throw Object.assign(new Error(message), { status }); };
@@ -112,7 +113,7 @@ export function createApp(db, { push, routing, production = process.env.NODE_ENV
   });
   accountRoutes(app, db, { rateLimit, changed: events.changed, production });
   alertAudioRoutes(app, db, rateLimit);
-  responseRoutes(app, db, { changed: events.changed, push, rateLimit, routing });
+  responseRoutes(app, db, { changed: events.changed, push, rateLimit, routing, hostedPlaceSearch: production ? createHostedPlaceLookup() : undefined });
   auditRoutes(app, db);
   app.get('/api/state', async (req, res) => {
     const operator = isOperator(req.user) && req.query.view !== 'public';

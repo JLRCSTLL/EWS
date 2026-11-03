@@ -180,6 +180,9 @@ test("operator-to-driver dispatch: validation, scoped alerts, chat photos, hospi
     location: basePoint,
   });
   assert.equal((await req('driver', '/response-places?q=TEST+mall')).status, 403);
+  assert.equal((await req('driver', '/response-places/authorize')).status, 403);
+  assert.equal((await req('missing-session', '/response-places/authorize')).status, 401);
+  assert.deepEqual(await ok('operator', '/response-places/authorize'), { ok: true });
   assert.equal((await req('operator', '/response-places?q=x')).status, 400);
   const places = await ok('operator', '/response-places?q=TEST+mall');
   assert.equal(places.places[0].name, 'TEST mall');

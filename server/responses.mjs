@@ -125,7 +125,7 @@ export async function normalizeResponsePhoto(photo) {
 export function responseRoutes(
   app,
   db,
-  { changed, push, rateLimit, routing = createResponseRouting() },
+  { changed, push, rateLimit, routing = createResponseRouting(), hostedPlaceSearch },
 ) {
   const signal = (row) => {
     changed(row.assigned_id || undefined);
@@ -184,10 +184,17 @@ export function responseRoutes(
     changed();
     res.status(201).json({ id });
   });
+  app.get('/api/response-places/authorize', (req, res) => {
+    operator(req);
+    // A shared limit covers all Vercel instances, including cache hits.
+    rateLimit({ ip: 'shared-place-provider' }, 'response-place-gateway', 30, 60000);
+    res.json({ ok: true });
+  });
   app.get('/api/response-places', async (req, res) => {
     operator(req);
     rateLimit(req, 'response-place-search', 30, 60000);
-    res.json({ places: await routing.search(placeQuery(req.query.q)) });
+    const query = placeQuery(req.query.q);
+    res.json({ places: hostedPlaceSearch ? await hostedPlaceSearch(query, req.get('cookie')) : await routing.search(query) });
   });
   app.delete('/api/response-facilities/:id', async (req, res) => {
     operator(req);
