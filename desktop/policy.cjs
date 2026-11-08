@@ -2,7 +2,7 @@
 
 const PRODUCTION_URL = 'https://ews-kappa.vercel.app/';
 const SHELL_URL = 'tanoviq://desktop/';
-const TOOLBAR_HEIGHT = 48;
+const TOOLBAR_HEIGHT = 36;
 
 function parseUrl(value) {
   try { return new URL(value); } catch { return null; }

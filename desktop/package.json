@@ -1,7 +1,7 @@
 {
   "name": "tanoviq-command-center",
   "productName": "AGILA Command Center",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "AGILA geospatial intelligence, life safety, and alerts.",
   "author": "AGILA",
   "private": true,
