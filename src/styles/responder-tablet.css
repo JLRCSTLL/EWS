@@ -1,10 +1,11 @@
 /* One responder workflow, adapted to the available window rather than a device name. */
 .rsp-tablet-header, .rsp-tablet-rail, .rsp-tablet-status, .rsp-tablet-summary { display: none; }
 .rsp-tablet-receipt { display: none; }
-.el-app.el-responder { height: 100dvh; min-height: 0; overflow: hidden; }
+.el-app.el-responder:has(.rsp-workspace) { height: 100dvh; min-height: 0; overflow: hidden; }
 .el-app.el-responder > main.el-main { width: 100%; max-width: none; min-height: 0; }
 .el-app.el-responder .rsp-workspace { max-width: none; min-height: 0; container: responder / size; }
 .el-responder .el-connection-error { position: fixed; z-index: 15; top: 8px; right: 8px; width: min(420px, calc(100% - 16px)); margin: 0; }
+.el-app.el-responder:has(.rsp-workspace) > main > .el-notice { position: fixed; z-index: 15; top: 8px; right: 8px; width: min(420px, calc(100% - 16px)); margin: 0; }
 .rsp-unread-dot { width: 6px; height: 6px; flex-shrink: 0; border-radius: 50%; background: #f1b59a; }
 .rsp-brand > img { width: 28px; height: 28px; object-fit: contain; flex-shrink: 0; }
 .rsp-route-warning { display: flex; align-items: center; gap: 5px; padding: 0; min-height: 26px; border: 0; background: transparent; color: #f1c4a7; text-align: left; font-size: 11px; }
@@ -132,8 +133,8 @@
 }
 
 @media (min-width: 900px) and (min-height: 500px) {
-  .el-app.el-responder { height: 100dvh; min-height: 0; overflow: hidden; }
-  .el-app.el-responder > main.el-main { height: 100%; }
+  .el-app.el-responder:has(.rsp-workspace) { height: 100dvh; min-height: 0; overflow: hidden; }
+  .el-app.el-responder:has(.rsp-workspace) > main.el-main { height: 100%; }
   .el-app.el-responder .rsp-view-navigation .rsp-bottom-sheet { display: flex; flex-direction: column; gap: clamp(4px, 1dvh, 10px); padding: clamp(14px, 2dvh, 22px); }
   .rsp-view-navigation .rsp-dispatch-receipt { display: none; }
   .rsp-view-navigation .rsp-receipt-confirmed { margin: 0; font-size: 10px; }
