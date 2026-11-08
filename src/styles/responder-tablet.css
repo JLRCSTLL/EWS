@@ -6,6 +6,7 @@
 .el-app.el-responder .rsp-workspace { max-width: none; min-height: 0; container: responder / size; }
 .el-responder .el-connection-error { position: fixed; z-index: 15; top: 8px; right: 8px; width: min(420px, calc(100% - 16px)); margin: 0; }
 .rsp-unread-dot { width: 6px; height: 6px; flex-shrink: 0; border-radius: 50%; background: #f1b59a; }
+.rsp-brand > img { width: 28px; height: 28px; object-fit: contain; flex-shrink: 0; }
 .rsp-route-warning { display: flex; align-items: center; gap: 5px; padding: 0; min-height: 26px; border: 0; background: transparent; color: #f1c4a7; text-align: left; font-size: 11px; }
 .rsp-idle-location { display: flex; align-items: center; gap: 6px; color: #d2d2d2; font-size: 11px; margin: 12px 0; }
 .rsp-duty-button { width: 100%; font-size: 12px; }
