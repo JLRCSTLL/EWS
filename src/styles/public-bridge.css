@@ -4,7 +4,7 @@
 .ops-public-intro > div { flex: 1; }
 .ops-public-intro strong { font-size: 13px; font-weight: 500; }
 .ops-public-intro p { color: #bbb; font-size: 11px; line-height: 1.7; margin: 6px 0 0; }
-.ops-public-intro > a { display: flex; gap: 7px; align-items: center; color: #d5e9dc; font-size: 11px; text-decoration: none; flex-shrink: 0; }
+.ops-public-intro > a { display: flex; gap: 7px; align-items: center; color: #e4e4e4; font-size: 11px; text-decoration: none; flex-shrink: 0; }
 .ops-public-summary { display: flex; gap: 12px; margin: 18px 0 25px; }
 .ops-public-summary > span { flex: 1; border: 1px solid #ffffff20; border-radius: 9px; padding: 14px; color: #bbb; font-size: 10px; }
 .ops-public-summary strong { display: block; color: #f0f0f0; font-size: 28px; font-weight: 300; margin-bottom: 6px; }
@@ -18,13 +18,13 @@
 .ops-public-request > small { display: block; color: #a1a1a1; font-size: 9px; }
 .ops-public-request .ops-public-note { padding: 10px; background: #ffffff07; border-radius: 7px; overflow-wrap: anywhere; }
 .ops-public-status { color: #dfc293; font-size: 9px; border: 1px solid #dfc29340; padding: 5px 7px; border-radius: 5px; }
-.ops-public-status.is-assigned, .ops-public-status.is-acknowledged { color: #aac8e8; border-color: #aac8e840; }
-.ops-public-status.is-resolved { color: #b0d3bf; border-color: #b0d3bf40; }
+.ops-public-status.is-assigned, .ops-public-status.is-acknowledged { color: #c4c4c4; border-color: #c4c4c440; }
+.ops-public-status.is-resolved { color: #cacaca; border-color: #cacaca40; }
 .ops-public-status.is-cancelled { color: #aaa; border-color: #ffffff25; }
 .ops-public-request-actions { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 14px; }
 .ops-public-request-actions button, .ops-public-checkins button { display: inline-flex; align-items: center; gap: 6px; }
 .ops-public-request-actions button:disabled, .ops-public-checkins button:disabled { opacity: .4; cursor: default; }
-.ops-public-checkins > div { display: flex; align-items: center; gap: 12px; padding: 13px; border-bottom: 1px solid #ffffff16; color: #b5d1bf; }
+.ops-public-checkins > div { display: flex; align-items: center; gap: 12px; padding: 13px; border-bottom: 1px solid #ffffff16; color: #cacaca; }
 .ops-public-checkins > div > span { flex: 1; }
 .ops-public-checkins strong { font-size: 11px; font-weight: 500; }
 .ops-public-checkins small { display: block; color: #aaa; font-size: 9px; margin-top: 5px; }
@@ -35,7 +35,7 @@
 .ops-public-acknowledgments summary { cursor: pointer; }
 .ops-public-acknowledgments p { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 12px; border-bottom: 1px solid #ffffff12; font-size: 10px; }
 .ops-public-acknowledgments small { color: #999; font-size: 9px; }
-.ops-public-sidebar { display: flex; align-items: center; gap: 10px; padding: 13px; color: #d0ded5; border: 1px solid #ffffff25; border-radius: 9px; background: #303030f5; }
+.ops-public-sidebar { display: flex; align-items: center; gap: 10px; padding: 13px; color: #dadada; border: 1px solid #ffffff25; border-radius: 9px; background: #303030f5; }
 .ops-public-sidebar > span { flex: 1; text-align: left; }
 .ops-public-sidebar strong { display: block; font-size: 11px; font-weight: 400; }
 .ops-public-sidebar small { display: block; color: #aaa; font-size: 9px; margin-top: 5px; }

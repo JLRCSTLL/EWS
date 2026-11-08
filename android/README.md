@@ -1,4 +1,4 @@
-# Mobile Phone Android pilot 0.7.0
+# AGILA Android pilot 0.9.0
 
 An installable Android app (Android 8+) for the existing personnel service.
 The public interface loads from `https://ews-kappa.vercel.app/#/public` in an
@@ -7,8 +7,9 @@ Firebase Cloud Messaging, safe external links, Android back navigation, and
 location permission. Accounts and consented locations use the existing Render
 API through the same HTTPS origin. No separate account system is introduced.
 
-Pilot 0.7.0 (version code 9) adds custom alert audio and the Mobile Phone display
-name. It retains the notification/location improvements below
+Pilot 0.9.0 (version code 12) adds the AGILA display name, eagle launcher icon,
+branded native loading screen, and matte charcoal native alert/offline surfaces.
+It retains custom alert audio and the notification/location improvements below
 and the existing pilot signing identity. Its hosted interface uses the same Groups
 and command-center 1.1 service. Publishing web/API changes is separate from APK
 installation; see the [deployment guide](../README.md#deployment).
@@ -194,14 +195,14 @@ Reference: [Android notification channels](https://developer.android.com/develop
 [FCM Android delivery](https://firebase.google.com/docs/cloud-messaging/android/receive-messages),
 [background service restrictions](https://developer.android.com/develop/background-work/services/fgs/restrictions-bg-start).
 
-## Map and receipt update 0.8.1
+## Map and receipt update 0.9.0
 
 The responder map centers GPS and navigation within the visible area above the
 bottom card (or beside it in landscape). Open a dispatch in Alerts and tap
 **Mark dispatch as read**, or acknowledge it from the responder details. A
 successful receipt reduces the unread badge without changing the trip status.
 These interface changes are hosted; reopen an installed app to load them.
-Version 0.8.1 uses version code 11 and the existing pilot signing identity so it
+Version 0.9.0 uses version code 12 and the existing pilot signing identity so it
 can update the previous pilot without uninstalling it.
 
 ## Responder update 0.8.0

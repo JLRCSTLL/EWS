@@ -1,9 +1,9 @@
 {
   "name": "tanoviq-command-center",
-  "productName": "Command Center Platform",
-  "version": "1.1.4",
-  "description": "Windows command center for situational awareness and response.",
-  "author": "TANOVIQ",
+  "productName": "AGILA Command Center",
+  "version": "1.2.0",
+  "description": "AGILA geospatial intelligence, life safety, and alerts.",
+  "author": "AGILA",
   "private": true,
   "main": "main.cjs",
   "scripts": {
@@ -19,8 +19,8 @@
   },
   "build": {
     "appId": "ph.tanoviq.commandcenter",
-    "productName": "Command Center Platform",
-    "copyright": "Copyright © 2026 TANOVIQ",
+    "productName": "AGILA Command Center",
+    "copyright": "Copyright © 2026 AGILA",
     "asar": true,
     "directories": {
       "output": "release",
@@ -31,7 +31,8 @@
       "policy.cjs",
       "preload.cjs",
       "shell/**",
-      "assets/**",
+      "assets/agila.ico",
+      "assets/agila-mark.png",
       "package.json"
     ],
     "win": {
@@ -39,24 +40,24 @@
         "nsis",
         "portable"
       ],
-      "icon": "assets/tanoviq.ico",
-      "executableName": "Command Center Platform",
+      "icon": "assets/agila.ico",
+      "executableName": "AGILA Command Center",
       "requestedExecutionLevel": "asInvoker"
     },
     "nsis": {
-      "artifactName": "Command-Center-Platform-Setup-${version}-${arch}.${ext}",
+      "artifactName": "AGILA-Command-Center-Setup-${version}-${arch}.${ext}",
       "oneClick": false,
       "perMachine": false,
       "allowElevation": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Command Center Platform",
+      "shortcutName": "AGILA Command Center",
       "deleteAppDataOnUninstall": false,
       "runAfterFinish": true
     },
     "portable": {
-      "artifactName": "Command-Center-Platform-Portable-${version}-${arch}.${ext}"
+      "artifactName": "AGILA-Command-Center-Portable-${version}-${arch}.${ext}"
     }
   }
 }

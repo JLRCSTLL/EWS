@@ -1,4 +1,4 @@
-# Command Center Platform for Windows
+# AGILA Command Center for Windows
 
 An installable Windows 10/11 x64 command-center client. It opens the existing
 command-center web application at `https://ews-kappa.vercel.app/` in a dedicated,
@@ -6,13 +6,13 @@ sandboxed desktop window. The website uses the same shared API and database as
 the Android app. This is an online client; it does not install a second server or
 database and does not provide offline broadcasts.
 
-The desktop display name is temporarily **Command Center Platform**. The mobile app is displayed as Mobile Phone. The application ID, protocol, and existing Windows session directory remain unchanged so the rename preserves saved sign-ins and window preferences.
+The desktop display name is **AGILA Command Center**. The mobile app is displayed as **AGILA**. The application ID, protocol, and existing Windows session directory remain unchanged so the rename preserves saved sign-ins and window preferences.
 
 ## Install and use
 
-1. Run `Command-Center-Platform-Setup-1.1.4-x64.exe`. The assisted installer installs
+1. Run `AGILA-Command-Center-Setup-1.2.0-x64.exe`. The assisted installer installs
    for your Windows user and offers Start menu and desktop shortcuts.
-2. Open **Command Center Platform**. The loading screen remains visible while the
+2. Open **AGILA Command Center**. The loading screen remains visible while the
    command interface loads. A connection failure shows a retry screen and retries
    every 15 seconds.
 3. Select **Personnel**, then sign in with your existing account.
@@ -54,6 +54,18 @@ already-installed clients without replacing their installer.
 of operator authorization, fresh GPS, alert receipt, or physical alarm playback.
 The app does not remain running in the notification area after it is closed.
 Phone background alarms still depend on the existing Android/FCM setup.
+
+### AGILA identity, matte glass, and local areas (1.2.0)
+
+The native toolbar and splash use neutral gray accents. The hosted command-center
+widgets and mobile interface share a matte dark-gray glass theme while the map
+imagery retains its natural colors.
+
+Search a region or province, then open **Choose local areas** in the geofence
+card. Filter cities/municipalities or barangays, browse smaller areas with the
+chevron, and **Save selected** to add separate geofences. Existing areas remain
+saved. The list supports further pages without a fixed geofence-count limit.
+Boundaries are indicative source data and saved to this workstation profile.
 
 ### Layout update (1.1.4)
 
@@ -142,13 +154,13 @@ and the [NSIS installer documentation](https://www.electron.build/nsis/).
 
 ## Logo and splash
 
-`assets/tanoviq-dark.png` is a dark-interface adaptation of the user-provided
-**TANOVIQ Geospatial Radar Logo.png**, generated using the built-in image tool.
-The source upload is unchanged. The final prompt asked for the same logo geometry
-and TANOVIQ wordmark, a charcoal background, silver outlines and letters, and
-preserved teal/orange accents, with clean edges and no extra symbols or text.
-The Windows ICO contains scaled copies of this artwork. During the temporary
-Command Center Platform rename, the splash uses a simple radar mark and the
-temporary name instead of the TANOVIQ wordmark. Its CSS animation supports
-reduced-motion preferences and never shows an invented loading percentage.
-It appears on startup, reload, and connection recovery.
+AGILA uses the supplied eagle/A identity in white on charcoal, with matte gray
+surfaces and locally bundled app assets. The native splash displays the acronym
+expansion, a connection status, and a progress indicator without an invented
+loading percentage. The header logo has explicit dimensions to prevent overflow
+before styles load. Reduced-motion preferences are respected.
+
+The vector source, icon generation, and attribution are documented in
+[the brand asset guide](../public/brand/README.md). Map imagery retains its original
+colors. The application ID, native protocol, and existing workstation data path
+retain their historical names to preserve upgrades and saved sessions.

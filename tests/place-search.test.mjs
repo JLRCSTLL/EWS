@@ -37,7 +37,7 @@ test('all levels are queried; partial failures are exposed and ambiguous results
     return new Response(JSON.stringify({features:[{properties:String(url).includes('/2/query') ? {OBJECTID:2,CITYMUN:'San Juan',PROVINCE:'Metro Manila'} : {OBJECTID:3,BRGY_NAME:'San Juan',CITYMUN:'Cainta',PROVINCE:'Rizal'}}]}),{status:200});
   });
   const result = await searchPlaces('San Juan','all');
-  assert.equal(requests.length,3);
+  assert.equal(requests.length,4);
   assert.equal(result.partial,true);
   assert.equal(result.places.length,2);
   assert.notEqual(result.places[0].level,result.places[1].level);

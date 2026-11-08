@@ -5,7 +5,7 @@ import UIKit
 @main struct TANOVIQApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var delegate
     @StateObject private var store = AppStore()
-    var body: some Scene { WindowGroup { RootView().environmentObject(store).tint(.teal) } }
+    var body: some Scene { WindowGroup { RootView().environmentObject(store).tint(Color(white: 0.85)).preferredColorScheme(.dark) } }
 }
 private enum AppTab: Hashable { case home, responder, alerts, duty, account }
 struct RootView: View {
@@ -69,7 +69,7 @@ struct RootView: View {
 }
 struct SplashView: View {
     var body: some View {
-        VStack(spacing: 24) { Image(systemName: "iphone.radiowaves.left.and.right").font(.system(size: 64)).foregroundStyle(.teal).accessibilityHidden(true); Text("Mobile Phone").font(.largeTitle.bold()); ProgressView("Connecting to your command center") }
+        VStack(spacing: 24) { Image("AgilaMark").resizable().scaledToFit().frame(width: 140, height: 126).accessibilityHidden(true); Text("AGILA").font(.system(size: 36, weight: .heavy)).tracking(6); Text("ADVANCED GEOSPATIAL INTELLIGENCE\nFOR LIFE SAFETY AND ALERTS").font(.system(size: 9, weight: .medium)).tracking(1.6).multilineTextAlignment(.center).foregroundStyle(.secondary); ProgressView("Connecting to your command center").tint(.white) }
             .padding(32).frame(maxWidth: .infinity, maxHeight: .infinity).background(Color(uiColor: .systemGroupedBackground))
     }
 }
@@ -83,8 +83,8 @@ struct SignInView: View {
         NavigationStack {
             Form {
                 Section { VStack(alignment: .leading, spacing: 12) {
-                    Image(systemName: "dot.radiowaves.left.and.right").font(.largeTitle).foregroundStyle(.teal).accessibilityHidden(true)
-                    Text("Mobile Phone").font(.largeTitle.bold())
+                    Image("AgilaMark").resizable().scaledToFit().frame(width: 60, height: 54).accessibilityHidden(true)
+                    Text("AGILA").font(.largeTitle.bold())
                     Text("Your connection to the command center. Alerts, duty location, and help in one place.").foregroundStyle(.secondary)
                 }.padding(.vertical, 18).listRowBackground(Color.clear) }
                 Section(registering ? "Create your account" : "Welcome back") {
@@ -96,12 +96,12 @@ struct SignInView: View {
                 Section {
                     Button { Task { await store.signIn(username: username, password: password, name: registering ? name : nil); password = "" } } label: {
                         HStack { Spacer(); if store.busy { ProgressView() }; Text(registering ? "Create account" : "Sign in").fontWeight(.semibold); Spacer() }.padding(.vertical, 8)
-                    }.buttonStyle(.borderedProminent).disabled(store.busy || username.isEmpty || password.isEmpty || (registering && name.isEmpty))
+                    }.buttonStyle(.borderedProminent).tint(Color(white: 0.38)).disabled(store.busy || username.isEmpty || password.isEmpty || (registering && name.isEmpty))
                     Button(registering ? "Already registered? Sign in" : "Create an account") { registering.toggle() }.frame(maxWidth: .infinity)
                 }.listRowBackground(Color.clear)
                 if !store.error.isEmpty { Section { Label(store.error, systemImage: "exclamationmark.circle").foregroundStyle(.red) } }
                 Section { Text("Location is shared only while you are on duty. iPhone permission settings control notifications, background location, and Live Activities.").font(.footnote).foregroundStyle(.secondary) }
-            }.navigationTitle("Mobile Phone")
+            }.navigationTitle("AGILA")
                 .toolbar {
                     if registering {
                         ToolbarItem(placement: .topBarLeading) {
@@ -132,7 +132,7 @@ struct HomeView: View {
                     VStack(alignment: .leading, spacing: 16) {
                         HStack { PriorityLabel(priority: latest.priority); Spacer(); Text("UNREAD").font(.caption2.bold()).foregroundStyle(.secondary) }
                         Text(latest.content).font(.title3.weight(.semibold)).lineLimit(5)
-                        HStack { Text(latest.date, style: .relative).font(.caption).foregroundStyle(.secondary); Spacer(); Button("Read alert", systemImage: "arrow.up.right") { openAlert(latest) }.buttonStyle(.borderedProminent) }
+                        HStack { Text(latest.date, style: .relative).font(.caption).foregroundStyle(.secondary); Spacer(); Button("Read alert", systemImage: "arrow.up.right") { openAlert(latest) }.buttonStyle(.borderedProminent).tint(Color(white: 0.38)) }
                     }.card()
                 } else {
                     VStack(alignment: .leading, spacing: 12) { Label("You're up to date", systemImage: "checkmark.message").font(.title3.bold()); Text("No unread messages. This is your inbox status, not a declaration that your area is safe.").foregroundStyle(.secondary) }.card()
@@ -143,7 +143,7 @@ struct HomeView: View {
                     Button("Manage duty", action: openDuty).buttonStyle(.bordered)
                 }.card()
                 if !store.error.isEmpty { Label(store.error, systemImage: "wifi.exclamationmark").font(.footnote).foregroundStyle(.red).card() }
-                Text("Mobile Phone · Alerts and assistance").font(.caption).foregroundStyle(.secondary).padding(.vertical, 8)
+                Text("AGILA · Alerts and assistance").font(.caption).foregroundStyle(.secondary).padding(.vertical, 8)
             }.padding(20)
         }.background(Color(uiColor: .systemGroupedBackground)).navigationTitle("Overview")
             .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Refresh", systemImage: "arrow.clockwise") { Task { await store.refresh() } } } }
@@ -161,7 +161,7 @@ struct InboxView: View {
             ForEach(alerts) { alert in
                 Button { openAlert(alert) } label: {
                     VStack(alignment: .leading, spacing: 10) {
-                        HStack { PriorityLabel(priority: alert.priority); Spacer(); if alert.read_at == nil { Text("Unread").font(.caption.bold()).foregroundStyle(.teal) } }
+                        HStack { PriorityLabel(priority: alert.priority); Spacer(); if alert.read_at == nil { Text("Unread").font(.caption.bold()).foregroundStyle(.primary) } }
                         Text(alert.content).foregroundStyle(.primary).lineLimit(3)
                         Text(alert.date, style: .date).font(.caption).foregroundStyle(.secondary)
                     }.padding(.vertical, 8)
@@ -192,7 +192,7 @@ struct AlertDetailView: View {
                     Button { Task { await store.acknowledge(alert) } } label: {
                         Label(acknowledged ? "Acknowledged" : (alert.response_id == nil ? "Acknowledge message" : "Mark dispatch as read"), systemImage: acknowledged ? "checkmark.circle.fill" : "checkmark.circle")
                             .frame(maxWidth: .infinity).padding(.vertical, 10)
-                    }.buttonStyle(.borderedProminent).disabled(store.busy || acknowledged)
+                    }.buttonStyle(.borderedProminent).tint(Color(white: 0.38)).disabled(store.busy || acknowledged)
                     if acknowledged {
                         Text("Read receipt sent to the command center.").font(.footnote).foregroundStyle(.secondary)
                     } else if alert.response_id != nil {

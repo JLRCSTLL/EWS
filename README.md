@@ -1,8 +1,10 @@
-# Command Center Platform and Mobile Phone
+# AGILA
 
-**See Risk Before It Strikes.**
+**Eyes on hazards. Ahead of disaster.**
 
-Tanaw + Vision + IQ. TANOVIQ is a thesis and pilot project for Philippine command
+**AGILA — Advanced Geospatial Intelligence for Life Safety and Alerts.**
+
+A pilot platform for Philippine command
 centers: a shared operations map, on-duty personnel locations, group or
 geofence-targeted alerts, and a mobile inbox for the people receiving them.
 
@@ -13,16 +15,17 @@ clearly separated from connected accounts and alerts.
 | Client | Purpose | Current build |
 | --- | --- | --- |
 | [Command center](https://ews-kappa.vercel.app/) | Browser interface for approved operators | Web |
-| [Mobile Phone](https://ews-kappa.vercel.app/#/public) | Register, receive alerts, share location while on duty, request help | Mobile web / PWA |
-| [Windows](desktop/README.md) | Dedicated command-center window, splash and desktop controls | 1.1.4, x64 installer / portable |
-| [Android](android/README.md) | Mobile interface with native notifications, alarm controls and on-duty GPS | 0.8.1 pilot, version code 11 |
+| [AGILA](https://ews-kappa.vercel.app/#/public) | Register, receive alerts, share location while on duty, request help | Mobile web / PWA |
+| [Windows](desktop/README.md) | Dedicated command-center window, splash and desktop controls | 1.2.0, x64 installer / portable |
+| [Android](android/README.md) | Mobile interface with native notifications, alarm controls and on-duty GPS | 0.9.0 pilot, version code 12 |
 | [iPhone](ios/README.md) | SwiftUI app, APNs and Live Activity implementation | Development; no signed IPA or TestFlight release |
 
 Windows and Android load the hosted interface. Rebuilding an installer does not
 publish web or API changes. Native code updates require installing the new package.
 
-The personnel interface uses a floating glass navigation bar, rounded controls,
-larger alert text, and solid message cards. **Account → Glass appearance** adjusts
+The command-center and personnel interfaces use matte dark-gray glass with soft
+borders, a blurred backdrop, rounded controls, and readable message cards. Map
+imagery keeps its natural colors. **Account → Glass appearance** adjusts
 navigation tint on that device. Reduced-motion and reduced-transparency preferences
 are respected. This is an iOS 27-inspired design implemented for Android/web,
 not Apple's native Liquid Glass renderer.
@@ -35,9 +38,15 @@ not Apple's native Liquid Glass renderer.
   records remain under **Groups → Existing operation assignments**.
 - **Live Operations Map:** view consented on-duty locations, freshness and
   accuracy; locate shared phones; use colored satellite or street imagery.
-- **Boundary search:** search any supported Philippine barangay, city/municipality
-  or province in the oval header bar. Press Enter and select a result if the name
+- **Boundary search:** search any supported Philippine region, province,
+  city/municipality or barangay in the oval header bar. Press Enter and select a result if the name
   is ambiguous. The actual boundary previews on the map without opening a modal.
+- **Local areas:** open **Choose local areas** on a region, province, or municipality
+  preview or saved boundary. Choose the area type, filter the list, and use the
+  chevron to browse smaller areas. Select areas across pages, then **Save selected**
+  to add each as its own geofence. Existing saved areas are retained and duplicate
+  selections are skipped. A failed boundary download leaves the whole batch unsaved
+  so it can be retried. Island parts are combined into one entry per named area.
 - **Saved geofences:** save the preview, then search another location to add more.
   All saved areas stay on the map. There is no fixed geofence-count limit; available
   browser storage is the practical limit. Saves are local to that browser/desktop
@@ -79,7 +88,8 @@ See [the command-center 1.1 guide](docs/command-center-1.1.md) for detailed usag
 
 Search uses [GEODATA Philippine Administrative Boundaries](https://services7.arcgis.com/poQdgvLD6DHnbpsT/arcgis/rest/services/Philippine_Administrative_Boundaries/FeatureServer).
 The provider's indicative 2015/2020 source data may not reflect later administrative
-changes. Search can return multiple places with the same name; include the
+changes; newer regions absent from that dataset cannot be offered. Regional
+outlines combine the source province boundaries. Search can return multiple places with the same name; include the
 municipality/province to narrow results. Complex coastlines may be simplified,
 with the tolerance disclosed in the preview. Separate islands and polygon holes
 remain distinct in rendering and recipient matching. Confirm boundaries locally
@@ -330,7 +340,7 @@ The original interface attribution is retained in [ATTRIBUTIONS.md](ATTRIBUTIONS
 
 ### Shared interface and presentation
 
-The desktop interface is temporarily named **Command Center Platform**; the personnel app and demonstration phone are named **Mobile Phone**. Both use the charcoal glass material and typography in `src/styles/command-theme.css`. Mobile navigation remains sized for touch, and alert text uses a solid surface for readability. The emergency-profile registration form is shared by mobile and command-center account creation. Internal package identifiers and stored account sessions retain their existing names so installed updates remain compatible.
+The desktop interface is temporarily named **AGILA Command Center**; the personnel app and demonstration phone are named **AGILA**. Both use the charcoal glass material and typography in `src/styles/command-theme.css`. Mobile navigation remains sized for touch, and alert text uses a solid surface for readability. The emergency-profile registration form is shared by mobile and command-center account creation. Internal package identifiers and stored account sessions retain their existing names so installed updates remain compatible.
 
 Select **Demo** in the web command center to choose **Quick overview** (7 chapters), **Standard tour** (12 chapters), or **Full workflow** (all 17 chapters). Standard tour at **0.5× Slow** is the default. At that speed the tours take approximately 5, 9, and 12 minutes, respectively. The full workflow adds emergency-profile sharing, groups and leaders, exposure review, CCTV, and Logs to the core map, alert, and mobile navigation story.
 

@@ -1,5 +1,7 @@
 import { ArrowUpRight, Check, Crosshair, PenLine, Plus, Trash2, Undo2, X } from 'lucide-react';
 import { formatGeofenceArea, getGeofenceError, type AlertGeofence, type GeofenceGeometry, type GeofenceShape } from '../../lib/geofencing';
+import { BoundaryAreaPicker } from './BoundaryAreaPicker';
+import type { BoundarySelection } from '../../lib/place-search';
 
 interface Props {
   saved: AlertGeofence | null;
@@ -20,11 +22,13 @@ interface Props {
   onRename: (name: string) => void;
   onFocus: () => void;
   onBroadcast: () => void;
+  onSaveBoundaries: (boundaries: BoundarySelection[]) => number | null;
 }
 
 export function GeofenceTools(props: Props) {
   const { saved, draft } = props;
   const error = draft ? getGeofenceError(draft) : null;
+  const boundary = draft || saved;
   return <section className="ops-geofence-panel ops-glass" aria-label="Geofence tools">
     <div className="ops-card-heading"><h2><PenLine size={14} />Alert geofence</h2><button className="ops-small-icon" onClick={props.onClose} aria-label="Close geofence tools"><X size={14} /></button></div>
     {!draft && <div className="ops-fence-picker"><label>Saved areas ({props.areas.length})<select aria-label="Selected geofence" value={saved?.id || ''} onChange={event => event.target.value ? props.onSelect(event.target.value) : props.onClear()}><option value="">All areas · no selection</option>{props.areas.map(area => <option key={area.id} value={area.id}>{area.name || 'Unnamed area'}</option>)}</select></label><button onClick={props.onNew} aria-label="Draw a new geofence"><Plus size={15} /></button></div>}
@@ -55,6 +59,8 @@ export function GeofenceTools(props: Props) {
       {saved.source && <p className="ops-fence-hint"><a href={saved.source.url} target="_blank" rel="noreferrer">{saved.source.label}</a><br />{saved.source.note}</p>}
       <button className="ops-fence-broadcast" onClick={props.onBroadcast} disabled={!saved.name.trim()}>Send alert to this area<ArrowUpRight size={14} /></button>
     </>}
+    {boundary?.source && ['region','province','municipality'].includes(boundary.source.level) &&
+      <BoundaryAreaPicker key={boundary.source.recordId} geometry={boundary} areas={props.areas} onSave={props.onSaveBoundaries}/>}
     {!draft && !saved && <p className="ops-fence-hint">Choose a saved area or draw a new boundary. Population counts update as you draw.</p>}
   </section>;
 }

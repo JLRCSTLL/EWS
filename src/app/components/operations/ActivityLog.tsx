@@ -62,7 +62,7 @@ export function ActivityLog({ demoLogs, liveMode, onSignIn }: { demoLogs: AuditL
   const exportPage = () => {
     const url = URL.createObjectURL(new Blob([activityCsv(entries)], { type: 'text/csv;charset=utf-8;' }));
     const link = document.createElement('a'); link.href = url;
-    link.download = `TANOVIQ-${liveMode ? 'activity' : 'demo'}-logs-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.download = `AGILA-${liveMode ? 'activity' : 'demo'}-logs-${new Date().toISOString().slice(0, 10)}.csv`;
     link.click(); window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
   return <section className="activity-log" aria-label="Command-center activity logs">

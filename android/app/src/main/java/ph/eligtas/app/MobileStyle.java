@@ -9,10 +9,10 @@ import android.widget.Button;
 
 /** Shared, readable native surfaces for cached alerts and connection recovery. */
 final class MobileStyle {
-    static final int BACKGROUND = 0xfff1f5f4;
-    static final int INK = 0xff172d2b;
-    static final int MUTED = 0xff576d68;
-    static final int ACCENT = 0xff087e71;
+    static final int BACKGROUND = 0xff161616;
+    static final int INK = 0xfff5f5f5;
+    static final int MUTED = 0xffbdbdbd;
+    static final int ACCENT = 0xffdedede;
     private MobileStyle() {}
 
     static int dp(Context context, int value) {
@@ -36,10 +36,10 @@ final class MobileStyle {
         button.setMinimumHeight(dp(context, 52));
         button.setPadding(dp(context, 20), dp(context, 12), dp(context, 20), dp(context, 12));
         button.setBackgroundTintList(null);
-        button.setBackground(new RippleDrawable(ColorStateList.valueOf(primary ? 0x28ffffff : 0x18087e71),
-            surface(context, primary ? ACCENT : 0xffe8f1ec, 28, primary ? 0xff087266 : 0xffceddd4), null));
+        button.setBackground(new RippleDrawable(ColorStateList.valueOf(primary ? 0x28000000 : 0x18ffffff),
+            surface(context, primary ? ACCENT : 0xff2b2b2b, 28, primary ? 0xffeeeeee : 0xff484848), null));
         button.setTextColor(new ColorStateList(new int[][]{new int[]{-android.R.attr.state_enabled}, new int[]{}},
-            new int[]{primary ? 0xffcce1db : MUTED, primary ? 0xffffffff : 0xff225f52}));
+            new int[]{0xff888888, primary ? 0xff161616 : INK}));
         button.setElevation(0);
     }
 }

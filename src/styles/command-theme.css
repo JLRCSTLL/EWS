@@ -1,37 +1,37 @@
 /* Shared visual language for the command center and personnel app. */
 .ops-app, .ops-dialog, .ops-popover, .el-app, .el-auth, .el-alarm-dialog {
   --tan-font: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
-  --tan-background: #1b211e;
-  --tan-text: #f0f4f1;
-  --tan-muted: #c0cbc5;
-  --tan-faint: #a7b5ae;
-  --tan-accent: #b4daca;
-  --tan-line: #e5f8ef45;
-  --tan-glass: linear-gradient(105deg, #edf5ed14, #edf5ed05), #3039349e;
-  --tan-glass-hover: linear-gradient(105deg, #edf5ed20, #edf5ed0a), #303934b8;
-  --tan-glass-filter: blur(22px) saturate(.75);
-  --tan-glass-shadow: inset 0 1px 0 #ffffff20, 0 4px 16px #0002;
-  --tan-surface: #29312d;
+  --tan-background: #1c1c1c;
+  --tan-text: #f3f3f3;
+  --tan-muted: #c8c8c8;
+  --tan-faint: #b2b2b2;
+  --tan-accent: #d1d1d1;
+  --tan-line: #ffffff22;
+  --tan-glass: #282828dc;
+  --tan-glass-hover: #323232e6;
+  --tan-glass-filter: blur(30px) saturate(0);
+  --tan-glass-shadow: inset 0 1px 0 #ffffff08, 0 8px 24px #0003;
+  --tan-surface: #2f2f2f;
   --tan-control: #ffffff09;
-  --tan-primary: #c9dfd4;
-  --tan-primary-ink: #192c23;
-  --tan-success: #ade1c6;
+  --tan-primary: #dadada;
+  --tan-primary-ink: #272727;
+  --tan-success: #d4d4d4;
   --tan-warning: #f4c58e;
   --tan-danger: #ffb9b4;
 }
 
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .ops-app, .ops-dialog, .ops-popover, .el-app, .el-auth, .el-alarm-dialog {
-    --tan-glass: #29312d;
-    --tan-glass-hover: #36423b;
+    --tan-glass: #2f2f2f;
+    --tan-glass-hover: #3f3f3f;
     --tan-glass-filter: none;
   }
 }
 @media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
   .ops-app, .ops-dialog, .ops-popover, .el-app, .el-auth, .el-alarm-dialog {
-    --tan-glass: #29312d;
-    --tan-glass-hover: #36423b;
+    --tan-glass: #2f2f2f;
+    --tan-glass-hover: #3f3f3f;
     --tan-glass-filter: none;
-    --tan-line: #a7b5ae;
+    --tan-line: #b2b2b2;
   }
 }

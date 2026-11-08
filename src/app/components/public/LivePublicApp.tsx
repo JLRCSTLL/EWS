@@ -1,3 +1,4 @@
+import { BrandLogo, LoadingScreen } from '../BrandLogo';
 import { useEffect, useRef, useState, type FormEvent, type CSSProperties } from 'react';
 import { Ambulance, Navigation, ArrowDownToLine, ArrowRight, Bell, Check, ChevronRight, HeartHandshake, Home, LocateFixed, LogOut, MapPin, RefreshCw, ShieldCheck, UserRound, Wifi, WifiOff } from 'lucide-react';
 import { api, useLive } from '../../lib/live-service';
@@ -33,7 +34,7 @@ function InstallApp() {
     return () => { window.removeEventListener('beforeinstallprompt', ready); window.removeEventListener('appinstalled', done); };
   }, []);
   if (installed || isAndroidApp()) return null;
-  return <><button className="el-install" onClick={async () => { if (prompt) { await prompt.prompt(); setPrompt(null); } else setHelp(value => !value); }}><ArrowDownToLine size={17} /><span>Keep Mobile Phone close<small>Add to your home screen</small></span><ChevronRight size={17} /></button>{help && <p className="el-notice">On iPhone, open this page in Safari, tap Share, then Add to Home Screen. On Android, open your browser menu and choose Install app or Add to Home screen.</p>}</>;
+  return <><button className="el-install" onClick={async () => { if (prompt) { await prompt.prompt(); setPrompt(null); } else setHelp(value => !value); }}><ArrowDownToLine size={17} /><span>Keep AGILA close<small>Add to your home screen</small></span><ChevronRight size={17} /></button>{help && <p className="el-notice">On iPhone, open this page in Safari, tap Share, then Add to Home Screen. On Android, open your browser menu and choose Install app or Add to Home screen.</p>}</>;
 }
 
 function PushSettings() {
@@ -42,7 +43,7 @@ function PushSettings() {
   async function toggle() {
     setBusy(true); setNote('');
     try {
-      if (!('serviceWorker' in navigator) || !('PushManager' in window)) throw new Error('For iPhone notifications, first add Mobile Phone to your Home Screen and open it there. Your inbox works while this page is open.');
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) throw new Error('For iPhone notifications, first add AGILA to your Home Screen and open it there. Your inbox works while this page is open.');
       const permission = await Notification.requestPermission();
       if (permission !== 'granted') throw new Error('Notifications are blocked. You can allow them in browser settings. Your inbox still works.');
       const worker = await navigator.serviceWorker.ready;
@@ -80,7 +81,7 @@ export default function LivePublicApp() {
   useEffect(() => { receipts.current.clear(); }, [state?.user.id]);
   useEffect(() => {
     const route = () => { setPage(currentPage()); setSelected(null); setNotice(''); window.scrollTo(0,0); };
-    window.addEventListener('hashchange',route); document.title = 'Mobile Phone · Personnel operations';
+    window.addEventListener('hashchange',route); document.title = 'AGILA · Personnel operations';
     const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]'); const previous = meta?.content;
     if (meta) meta.content = '#1b211e';
     if ('serviceWorker' in navigator) void navigator.serviceWorker.register('/sw.js').catch(() => {});
@@ -106,10 +107,10 @@ export default function LivePublicApp() {
   const openAlert = (alert: LiveAlert) => { if (page !== 'alerts') { location.hash = '#/public/alerts'; setTimeout(() => setSelected(alert.id),0); } else setSelected(alert.id); };
   const locationCard = user && <DutyCard key={user.id} />;
   const alertCard = (alert: LiveAlert) => <button key={alert.id} className={`el-alert-card priority-${alert.priority}`} onClick={() => openAlert(alert)}><span className="el-alert-icon"><Bell size={20} /></span><span><span className="el-alert-meta">{alert.priority} priority · {at(alert.created_at)}{!alert.read_at && <i aria-label="Unread" />}</span><strong>{alertLabel(alert)}</strong><p>{alert.content}</p></span><ChevronRight size={17} /></button>;
-  return <div className={"el-app" + (page === "responder" ? " el-responder" : "")} data-embedded-responder={embeddedResponder || undefined} data-native-android={isAndroidApp() || undefined} style={{ '--el-nav-count': responderMode ? 4 : 5, '--el-glass-alpha': (0.62 + glassTint * .0036).toFixed(2) } as CSSProperties}><a className="el-skip" href="#public-main" onClick={e => { e.preventDefault(); document.getElementById('public-main')?.focus(); }}>Skip to content</a><header className="el-header"><a href="#/public" className="el-brand"><span>Mobile Phone<small>Connected to command center</small></span></a><div className={`el-connection ${connected ? 'is-connected' : ''}`} role="status" aria-label={connected ? 'Connected' : connection === 'connecting' ? 'Connecting' : 'Reconnecting'}>{connected ? <Wifi size={14} /> : <WifiOff size={14} />}<span>{connected ? 'Connected' : connection === 'connecting' ? 'Connecting' : 'Reconnecting'}</span></div>{user && <a href="#/public/account" className="el-avatar" aria-label="Your account">{user.name.charAt(0).toUpperCase()}</a>}</header>
+  return <div className={"el-app" + (page === "responder" ? " el-responder" : "")} data-embedded-responder={embeddedResponder || undefined} data-native-android={isAndroidApp() || undefined} style={{ '--el-nav-count': responderMode ? 4 : 5, '--el-glass-alpha': (0.62 + glassTint * .0036).toFixed(2) } as CSSProperties}><a className="el-skip" href="#public-main" onClick={e => { e.preventDefault(); document.getElementById('public-main')?.focus(); }}>Skip to content</a><header className="el-header"><a href="#/public" className="el-brand"><BrandLogo compact caption="Mobile response" /></a><div className={`el-connection ${connected ? 'is-connected' : ''}`} role="status" aria-label={connected ? 'Connected' : connection === 'connecting' ? 'Connecting' : 'Reconnecting'}>{connected ? <Wifi size={14} /> : <WifiOff size={14} />}<span>{connected ? 'Connected' : connection === 'connecting' ? 'Connecting' : 'Reconnecting'}</span></div>{user && <a href="#/public/account" className="el-avatar" aria-label="Your account">{user.name.charAt(0).toUpperCase()}</a>}</header>
     <main id="public-main" className="el-main" tabIndex={-1}>
       {!connected && initialized && <div className="el-notice el-connection-error" role="status"><WifiOff size={19} /><span>{live.error || 'You are offline. Updates will resume when connected.'} {state ? 'Showing the last saved update.' : ''}</span><button onClick={() => void live.refresh()} aria-label="Retry connection"><RefreshCw size={18} /></button></div>}
-      {!initialized ? <p className="el-loading">Connecting to your community…</p> : !user || recoveryCode ? embeddedResponder ? <div className="rsp-standby"><h1>Reconnect your account</h1><p>Return to the native Account tab and sign in again to reconnect responder navigation.</p></div> : <><AuthPanel welcomeIcon /><InstallApp /><p className="el-pilot-note">Mobile Phone · Personnel access</p></> : <>
+      {!initialized ? <LoadingScreen mobile /> : !user || recoveryCode ? embeddedResponder ? <div className="rsp-standby"><h1>Reconnect your account</h1><p>Return to the native Account tab and sign in again to reconnect responder navigation.</p></div> : <><AuthPanel welcomeIcon /><InstallApp /><p className="el-pilot-note">AGILA · Personnel access</p></> : <>
         <AlertAlarm key={user.id} userId={user.id} alerts={alerts} onOpen={openAlert} settings={page === 'account'} />
         {notice && <div className="el-notice" role="status">{notice}<button onClick={() => setNotice('')} aria-label="Dismiss message">×</button></div>}
         {page === 'responder' && (state.responderReady ? <ResponderMobile /> : <div className="rsp-standby"><Ambulance/><h1>Responder navigation</h1><p>The connected service is being updated. Dispatch navigation will appear here when the update is ready.</p><a href="#/public">Return home</a></div>)}

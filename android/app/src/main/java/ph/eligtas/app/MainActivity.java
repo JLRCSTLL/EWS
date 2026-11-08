@@ -46,6 +46,7 @@ public final class MainActivity extends ComponentActivity {
     private WebView web;
     private LinearLayout offline;
     private ProgressBar progress;
+    private LinearLayout splash;
     private GeolocationPermissions.Callback locationCallback;
     private String locationOrigin;
     private JavaScriptReplyProxy sharingReply;
@@ -102,7 +103,7 @@ public final class MainActivity extends ComponentActivity {
             else view.setPadding(insets.getSystemWindowInsetLeft(),insets.getSystemWindowInsetTop(),insets.getSystemWindowInsetRight(),insets.getSystemWindowInsetBottom());
             return insets;
         });
-        web = new WebView(this); root.addView(web, new FrameLayout.LayoutParams(-1,-1));
+        web = new WebView(this); web.setBackgroundColor(MobileStyle.BACKGROUND); root.addView(web, new FrameLayout.LayoutParams(-1,-1));
         WebSettings settings = web.getSettings(); settings.setJavaScriptEnabled(true); settings.setDomStorageEnabled(true);
         settings.setAllowFileAccess(false); settings.setAllowContentAccess(false); settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
         settings.setGeolocationEnabled(true); settings.setMediaPlaybackRequiresUserGesture(true);
@@ -110,7 +111,15 @@ public final class MainActivity extends ComponentActivity {
         CookieManager.getInstance().setAcceptThirdPartyCookies(web, false);
         WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG);
         progress = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
+        progress.setProgressTintList(android.content.res.ColorStateList.valueOf(MobileStyle.ACCENT));
         root.addView(progress, new FrameLayout.LayoutParams(-1,6));
+        splash = new LinearLayout(this); splash.setOrientation(LinearLayout.VERTICAL); splash.setGravity(android.view.Gravity.CENTER); splash.setBackgroundColor(MobileStyle.BACKGROUND);
+        android.widget.ImageView logo = new android.widget.ImageView(this); logo.setImageResource(R.drawable.ic_launcher); logo.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO); splash.addView(logo,new LinearLayout.LayoutParams(MobileStyle.dp(this,160),MobileStyle.dp(this,160)));
+        TextView brand = new TextView(this); brand.setText("AGILA"); brand.setTextSize(32); brand.setTextColor(MobileStyle.INK); brand.setLetterSpacing(.18f); brand.setTypeface(android.graphics.Typeface.create("sans-serif-black",android.graphics.Typeface.NORMAL)); splash.addView(brand);
+        TextView expansion = new TextView(this); expansion.setText("ADVANCED GEOSPATIAL INTELLIGENCE\nFOR LIFE SAFETY AND ALERTS"); expansion.setTextSize(9); expansion.setLetterSpacing(.12f); expansion.setTextColor(MobileStyle.MUTED); expansion.setGravity(android.view.Gravity.CENTER); expansion.setPadding(20,24,20,40); splash.addView(expansion);
+        ProgressBar loading = new ProgressBar(this); loading.setIndeterminateTintList(android.content.res.ColorStateList.valueOf(MobileStyle.ACCENT)); splash.addView(loading,new LinearLayout.LayoutParams(MobileStyle.dp(this,22),MobileStyle.dp(this,22)));
+        TextView opening = new TextView(this); opening.setText("Connecting to your command center"); opening.setTextColor(MobileStyle.MUTED); opening.setTextSize(12); opening.setPadding(0,24,0,0); splash.addView(opening);
+        root.addView(splash,new FrameLayout.LayoutParams(-1,-1));
         offline = new LinearLayout(this); offline.setOrientation(LinearLayout.VERTICAL); offline.setGravity(android.view.Gravity.CENTER); int offlinePad = MobileStyle.dp(this,28); offline.setPadding(offlinePad,offlinePad,offlinePad,offlinePad); offline.setBackgroundColor(MobileStyle.BACKGROUND);
         TextView heading = new TextView(this); heading.setText(R.string.offline_title); heading.setTextSize(28); heading.setTextColor(MobileStyle.INK); heading.setGravity(android.view.Gravity.CENTER); offline.addView(heading);
         TextView description = new TextView(this); description.setText(R.string.offline_description); description.setTextSize(16); description.setTextColor(MobileStyle.MUTED); description.setGravity(android.view.Gravity.CENTER); description.setPadding(0,offlinePad,0,offlinePad); offline.addView(description);
@@ -127,7 +136,8 @@ public final class MainActivity extends ComponentActivity {
             }
             @Override public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) { if (request.isForMainFrame()) showOffline(); }
             @Override public void onReceivedHttpError(WebView view, WebResourceRequest request, WebResourceResponse error) { if (request.isForMainFrame() && error.getStatusCode() >= 400) showOffline(); }
-            @Override public void onPageFinished(WebView view, String url) { CookieManager.getInstance().flush(); }
+            @Override public void onPageCommitVisible(WebView view, String url) { splash.setVisibility(View.GONE); }
+            @Override public void onPageFinished(WebView view, String url) { CookieManager.getInstance().flush(); splash.setVisibility(View.GONE); }
         });
         web.setWebChromeClient(new WebChromeClient() {
             @Override public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> callback, FileChooserParams params) {
@@ -157,8 +167,8 @@ public final class MainActivity extends ComponentActivity {
         getOnBackPressedDispatcher().addCallback(this,new OnBackPressedCallback(true) { @Override public void handleOnBackPressed() { goBack(); } });
         loadPublic(); openNotification(getIntent());
     }
-    private void loadPublic() { offline.setVisibility(View.GONE); web.setVisibility(View.VISIBLE); web.loadUrl(BuildConfig.APP_ORIGIN + "/#/public"); }
-    private void showOffline() { offline.setVisibility(View.VISIBLE); web.setVisibility(View.GONE); progress.setVisibility(View.GONE); }
+    private void loadPublic() { offline.setVisibility(View.GONE); splash.setVisibility(View.VISIBLE); web.setVisibility(View.VISIBLE); web.loadUrl(BuildConfig.APP_ORIGIN + "/#/public"); }
+    private void showOffline() { splash.setVisibility(View.GONE); offline.setVisibility(View.VISIBLE); web.setVisibility(View.GONE); progress.setVisibility(View.GONE); }
     private void goBack() { if (web.canGoBack()) web.goBack(); else finish(); }
     @Override protected void onNewIntent(Intent intent) { super.onNewIntent(intent); setIntent(intent); openNotification(intent); }
     private void openNotification(Intent intent) {
@@ -251,7 +261,7 @@ public final class MainActivity extends ComponentActivity {
                 case "test": {
                     if (!AlarmSettings.prefs(this).getBoolean("enabled",false)) throw new IllegalStateException();
                     JSONObject alert = new JSONObject().put("id",UUID.randomUUID().toString()).put("userId",AlarmSettings.prefs(this).getString("user",""))
-                        .put("body","TEST ONLY — Mobile Phone alarm sound check. No message was sent.").put("priority","critical").put("createdAt",Instant.now().toString()).put("test",true);
+                        .put("body","TEST ONLY — AGILA alarm sound check. No message was sent.").put("priority","critical").put("createdAt",Instant.now().toString()).put("test",true);
                     reply(proxy,id,new JSONObject().put("playing",AlertDelivery.deliver(this,alert,true)).put("alarmId",alert.getString("id")),null); break;
                 }
                 case "stop": stopService(new Intent(this,EmergencyAlarmService.class)); reply(proxy,id,new JSONObject().put("ok",true),null); break;
@@ -275,7 +285,7 @@ public final class MainActivity extends ComponentActivity {
         permissionSetupRunning = true;
         AlarmSettings.prefs(this).edit().putBoolean("duty_setup_shown",true).apply();
         new AlertDialog.Builder(this).setTitle("Duty location & emergency alerts")
-            .setMessage("Mobile Phone shares your location with approved operators only after you start duty, including while the screen is locked. End duty stops tracking. High and critical alerts use full alarm volume even with a silent ringer. Android notification permission and DND alarm exceptions are still required.")
+            .setMessage("AGILA shares your location with approved operators only after you start duty, including while the screen is locked. End duty stops tracking. High and critical alerts use full alarm volume even with a silent ringer. Android notification permission and DND alarm exceptions are still required.")
             .setPositiveButton("Set up permissions",(dialog,which) -> {
                 if (!LocationShareService.permitted(this)) requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.ACCESS_COARSE_LOCATION},106);
                 else setupNotificationPermission();
@@ -304,7 +314,7 @@ public final class MainActivity extends ComponentActivity {
         AlarmSettings.channels(this);
         if (!manager.isNotificationPolicyAccessGranted()) {
             new AlertDialog.Builder(this).setTitle("Emergency alarm permissions")
-                .setMessage("Allow Mobile Phone Do Not Disturb access, then allow alarms and Emergency alerts in the DND modes you use. Emergency alarm volume is enabled automatically. Android still controls these permissions; total-silence modes can block sound.")
+                .setMessage("Allow AGILA Do Not Disturb access, then allow alarms and Emergency alerts in the DND modes you use. Emergency alarm volume is enabled automatically. Android still controls these permissions; total-silence modes can block sound.")
                 .setPositiveButton("Open alarm permissions",(dialog,which)->startActivity(new Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS)))
                 .setNegativeButton("Not now",null).show();
         }

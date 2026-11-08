@@ -4,7 +4,8 @@ export interface GeofenceGeometry {
   shape: GeofenceShape; points: GeofencePoint[];
   /** Imported administrative geometry: polygons, each containing an exterior ring and any holes. */
   polygons?: GeofencePoint[][][];
-  source?: { label: string; url: string; recordId: string; level: string; note: string };
+  source?: { label: string; url: string; recordId: string; level: string; note: string;
+    name?: string; region?: string; province?: string; municipality?: string };
 }
 export interface AlertGeofence extends GeofenceGeometry { id: string; name: string }
 

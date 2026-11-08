@@ -1,0 +1,36 @@
+.ops-area-picker { margin-top: 16px; border-top: 1px solid #ffffff26; padding-top: 12px; }
+.ops-area-picker summary { display: flex; align-items: center; gap: 9px; cursor: pointer; min-height: 42px; list-style: none; color: #f3f3f3; }
+.ops-area-picker summary::-webkit-details-marker { display: none; }
+.ops-area-picker summary > span { flex: 1; font-size: 12px; font-weight: 550; }
+.ops-area-picker summary small { display: block; font-size: 10px; font-weight: 400; color: #bdbdbd; line-height: 1.5; margin-top: 3px; }
+.ops-area-picker[open] summary > svg:last-child { transform: rotate(90deg); }
+.ops-area-picker-body { display: grid; gap: 11px; padding-top: 12px; min-width: 0; }
+.ops-area-picker-body label { display: grid; gap: 6px; font-size: 11px; color: #d0d0d0; }
+.ops-area-picker-body :is(input:not([type=checkbox]), select) { width: 100%; min-width: 0; background: #1e1e1eaa; color: #eee; border: 1px solid #ffffff2e; border-radius: 8px; padding: 9px; font: inherit; }
+.ops-area-picker-body option { background: #282828; }
+.ops-area-picker-body input[type=checkbox] { width: 15px; height: 15px; flex: 0 0 15px; accent-color: #dadada; margin: 0; }
+.ops-area-picker-body button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 32px; padding: 6px 8px; background: #ffffff0a; border: 1px solid #ffffff26; border-radius: 8px; color: #eee; font-size: 10px; }
+.ops-area-picker-body button:hover:not(:disabled) { background: #ffffff18; border-color: #ffffff55; }
+.ops-area-picker-body button:disabled { opacity: .45; cursor: default; }
+.ops-area-scope { display: flex; align-items: center; gap: 9px; }
+.ops-area-scope > span { min-width: 0; }
+.ops-area-scope strong { font-size: 12px; font-weight: 550; overflow-wrap: anywhere; }
+.ops-area-scope small { display: block; font-size: 8px; letter-spacing: 1.2px; color: #aaa; margin-bottom: 4px; }
+.ops-area-filter { display: flex; gap: 6px; }
+.ops-area-filter button { flex: 0 0 34px; }
+.ops-area-list { max-height: 240px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: #777 transparent; }
+.ops-area-list > div { display: flex; align-items: center; gap: 8px; padding: 8px 6px; border-bottom: 1px solid #ffffff12; border-radius: 7px; }
+.ops-area-list > div.is-selected { background: #ffffff0c; }
+.ops-area-list label { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; cursor: pointer; }
+.ops-area-list label > span { min-width: 0; }
+.ops-area-list strong { color: #f0f0f0; font-size: 11px; font-weight: 500; line-height: 1.45; display: block; overflow-wrap: anywhere; }
+.ops-area-list small { color: #bdbdbd; font-size: 9px; line-height: 1.5; display: block; margin-top: 3px; }
+.ops-area-list > div > button { width: 30px; flex-shrink: 0; background: transparent; border-color: transparent; }
+.ops-area-picker-body [role=status] { display: flex; align-items: center; gap: 7px; font-size: 10px; line-height: 1.6; color: #ddd; }
+.ops-area-error { font-size: 11px; line-height: 1.6; color: #ffcdc7; }
+.ops-area-error button { margin-top: 8px; }
+.ops-area-more { width: 100%; }
+.ops-area-save { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; padding-top: 10px; border-top: 1px solid #ffffff1f; }
+.ops-area-save > span { margin-right: auto; font-size: 10px; color: #ccc; }
+.ops-area-save > button:last-child { background: #dedede; border-color: #eee; color: #202020; font-weight: 600; }
+.ops-area-picker summary:focus-visible { outline: 2px solid #dedede; outline-offset: 4px; border-radius: 6px; }

@@ -1,0 +1,32 @@
+@font-face { font-family: Montserrat; font-style: normal; font-weight: 100 900; font-display: swap; src: url('/fonts/Montserrat-Variable.ttf') format('truetype'); }
+.agila-logo { display: inline-flex; align-items: center; gap: 12px; min-width: 0; color: #fff; }
+.agila-logo .agila-mark { display: block; width: 42px; height: 38px; object-fit: contain; flex: 0 0 auto; }
+.agila-logo-type { display: flex; flex-direction: column; align-items: flex-start; gap: 7px; min-width: 0; }
+.agila-logo .agila-wordmark { display: block; width: 117px; height: 19px; object-fit: contain; }
+.agila-logo-caption { display: block; font: 450 8px/1.4 Montserrat, sans-serif; letter-spacing: 1.4px; text-transform: uppercase; color: #c6c6c6; white-space: nowrap; }
+.ops-brand.gsam-brand { min-width: 228px; }
+.ops-brand.gsam-brand .agila-logo { margin: 0; }
+.ops-brand.gsam-brand .agila-mark { display: block; }
+.agila-logo-compact { gap: 9px; }
+.agila-logo-compact .agila-mark { width: 30px; height: 29px; }
+.agila-logo-compact .agila-wordmark { width: 92px; height: 15px; }
+.agila-logo-compact .agila-logo-caption { font-size: 7px; letter-spacing: 1px; }
+.el-header .el-brand { display: flex; align-items: center; }
+.el-welcome-icon img { width: 40px; height: 37px; object-fit: contain; }
+.rsp-brand > img { width: 35px; height: 32px; object-fit: contain; flex-shrink: 0; }
+.presentation-mobile-header .agila-demo-wordmark { width: 79px; height: 15px; object-fit: contain; display: block; margin-bottom: 5px; }
+.agila-loading-screen { position: fixed; inset: 0; isolation: isolate; overflow: hidden; display: grid; place-items: center; background: #111; color: #fff; font-family: Montserrat, sans-serif; min-height: 280px; padding: max(24px,env(safe-area-inset-top)) 24px max(24px,env(safe-area-inset-bottom)); }
+.agila-loading-content { display: flex; flex-direction: column; align-items: center; text-align: center; max-width: 440px; }
+.agila-loading-mark { display: block; width: clamp(100px,18vw,160px); height: auto; margin-bottom: 24px; }
+.agila-loading-wordmark { width: clamp(150px,25vw,220px); height: auto; }
+.agila-expansion { margin: 20px 0 38px; color: #bfbfbf; text-transform: uppercase; letter-spacing: 2px; font-size: 9px; line-height: 1.9; font-weight: 500; }
+.agila-loading-track { width: 150px; height: 2px; border-radius: 2px; background: #ffffff18; overflow: hidden; }
+.agila-loading-track span { width: 40%; height: 100%; display: block; background: #ddd; animation: agila-loading 1.8s ease-in-out infinite; }
+.agila-loading-status { color: #9d9d9d; font-size: 11px; margin-top: 18px; line-height: 1.6; }
+.agila-loading-edition { position: absolute; bottom: max(26px,env(safe-area-inset-bottom)); letter-spacing: 3px; color: #777; font-size: 8px; }
+.agila-loading-contours { position: absolute; z-index: -1; width: 140%; height: 55%; bottom: -30%; left: -20%; border-radius: 50%; border: 1px solid #ffffff08; box-shadow: 0 -18px 0 1px #ffffff03,0 -40px 0 1px #ffffff03,0 -67px 0 1px #ffffff03,0 -100px 0 1px #ffffff03,0 -140px 0 1px #ffffff03; transform: rotate(-12deg); pointer-events: none; }
+.ops-geofence-panel { scrollbar-width: thin; scrollbar-color: #666 transparent; }
+.ops-app .ops-brand, .el-app .el-brand, .el-app h1, .el-app h2 { font-family: Montserrat, Inter, sans-serif; }
+@keyframes agila-loading { from { transform: translateX(-110%); } to { transform: translateX(360%); } }
+@media (prefers-reduced-motion: reduce) { .agila-loading-track span { animation: none; width: 100%; opacity: .6; } }
+@media (max-width: 600px) { .ops-brand.gsam-brand { min-width: 0; } .ops-brand .agila-logo-caption { display: none; } }

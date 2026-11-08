@@ -14,7 +14,7 @@ export interface TourCue {
 }
 
 export const presentationSteps: { id: string; label: string; title: string; description: string; cues: TourCue[] }[] = [
-  { id: 'welcome', label: 'Welcome', title: 'Command Center Platform in action',
+  { id: 'welcome', label: 'Welcome', title: 'AGILA Command Center in action',
     description: 'Follow the cursor from the command center to the mobile app and back. This web presentation loops automatically with sample data. Press Esc to return to your workspace.',
     cues: [{ target: '.ops-brand', label: 'Your emergency command center', duration: 4000 }] },
   { id: 'profile', label: 'Emergency profile', title: 'Know how to help',
@@ -98,7 +98,7 @@ export const presentationSteps: { id: string; label: string; title: string; desc
   { id: 'mobile-alert', label: 'Mobile app · alerts', title: 'Now, on the phone',
     description: 'See the mobile experience after an alert: open the notification, read the instructions, and acknowledge it. The operator sees the read receipt immediately in this simulation.',
     cues: [
-      { target: '[data-demo="mobile-home-screen"]', label: 'Meet the Mobile Phone mobile app', duration: 3200 },
+      { target: '[data-demo="mobile-home-screen"]', label: 'Meet the AGILA mobile app', duration: 3200 },
       { target: '[data-demo="mobile-notification"]', kind: 'click', label: 'Open the sample flood notification', duration: 2400 },
       { target: '[data-demo="mobile-alert-message"]', label: 'Read the command center’s instructions', duration: 4200 },
       { target: '[data-demo="mobile-acknowledge"]', kind: 'click', label: 'Confirm that the alert has been read', duration: 2300 },

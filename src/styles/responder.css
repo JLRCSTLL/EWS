@@ -1,6 +1,6 @@
 .el-app.el-responder {
-  background: #171d20;
-  color: #eff5f5;
+  background: #1c1c1c;
+  color: #f4f4f4;
   min-height: 100dvh;
 }
 .el-responder > .el-header {
@@ -13,17 +13,17 @@
   outline: none;
 }
 .el-responder .el-bottom-nav {
-  background: rgba(28, 36, 39, 0.94);
+  background: rgba(35, 35, 35, 0.94);
   border-color: #ffffff24;
-  color: #bbc9cc;
+  color: #c6c6c6;
   box-shadow: 0 12px 38px #0007;
 }
 .el-responder .el-bottom-nav a {
-  color: #aebcbe;
+  color: #b9b9b9;
 }
 .el-responder .el-bottom-nav a.is-active {
-  background: #8ae4cd22;
-  color: #a3efdc;
+  background: #cfcfcf22;
+  color: #dddddd;
 }
 .el-responder[data-embedded-responder] > .el-bottom-nav {
   display: none;
@@ -33,7 +33,7 @@
   height: calc(100dvh - 94px - env(safe-area-inset-bottom, 0px));
   min-height: 610px;
   overflow: hidden;
-  background: #293331;
+  background: #313131;
   isolation: isolate;
 }
 .el-responder[data-embedded-responder] .rsp-workspace {
@@ -43,32 +43,32 @@
   position: absolute;
   inset: 0;
   z-index: 0;
-  background: #293331;
+  background: #313131;
 }
 .rsp-map .leaflet-control-attribution {
   font-size: 8px;
-  background: #161d20dc;
-  color: #aebcbe;
+  background: #1c1c1cdc;
+  color: #b9b9b9;
 }
 .rsp-map .leaflet-control-attribution a {
-  color: #aebcbe;
+  color: #b9b9b9;
 }
 .rsp-map-shade {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: linear-gradient(#101a1bcc, transparent 36%, #101a1b40);
+  background: linear-gradient(#181818cc, transparent 36%, #18181840);
   z-index: 1;
 }
 .rsp-glass {
-  background: linear-gradient(130deg, #344043e8, #1e282bea);
-  border: 1px solid #e2f2f230;
+  background: linear-gradient(130deg, #3e3e3ee8, #262626ea);
+  border: 1px solid #efefef30;
   box-shadow:
     0 10px 36px #0004,
     inset 0 1px #ffffff0c;
-  backdrop-filter: blur(22px) saturate(115%);
-  -webkit-backdrop-filter: blur(22px) saturate(115%);
-  color: #f2f8f7;
+  backdrop-filter: blur(24px) saturate(0);
+  -webkit-backdrop-filter: blur(24px) saturate(0);
+  color: #f7f7f7;
 }
 .rsp-topbar {
   position: absolute;
@@ -89,7 +89,7 @@
   align-items: center;
 }
 .rsp-brand svg {
-  color: #a9eddb;
+  color: #dddddd;
 }
 .rsp-brand span {
   display: grid;
@@ -99,7 +99,7 @@
 .rsp-kicker {
   font-size: 9px;
   letter-spacing: 1.7px;
-  color: #acbfc1;
+  color: #bbbbbb;
   font-weight: 600;
 }
 .rsp-brand strong {
@@ -111,11 +111,11 @@
   align-items: center;
   gap: 6px;
   font-size: 10px;
-  background: #152022dd;
+  background: #1e1e1edd;
   border: 1px solid #ffffff20;
   border-radius: 30px;
   padding: 8px 10px;
-  color: #c1cccc;
+  color: #cacaca;
 }
 .rsp-live-pill i,
 .rsp-status i {
@@ -127,7 +127,7 @@
 }
 .rsp-live-pill.is-online i,
 .rsp-status i {
-  background: #8de4c9;
+  background: #d0d0d0;
 }
 .rsp-guidance {
   position: absolute;
@@ -149,22 +149,22 @@
 .rsp-guidance small {
   font-size: 9px;
   letter-spacing: 1.2px;
-  color: #acc3c4;
+  color: #bebebe;
 }
 .rsp-guidance p {
   margin: 0;
   font-size: 11px;
-  color: #bed0d0;
+  color: #cccccc;
 }
 .rsp-turn {
   flex-shrink: 0;
   display: grid;
   place-items: center;
-  background: #95e6cc22;
+  background: #d3d3d322;
   border-radius: 15px;
   width: 52px;
   min-height: 58px;
-  color: #a3eedb;
+  color: #dddddd;
 }
 .rsp-map-actions {
   position: absolute;
@@ -181,13 +181,13 @@
   height: 42px;
   border-radius: 15px;
   border: 1px solid #ffffff25;
-  background: #303b3d;
+  background: #393939;
   color: inherit;
   cursor: pointer;
   flex-shrink: 0;
 }
 .rsp-icon-button.is-active {
-  color: #a2f1d7;
+  color: #dedede;
 }
 .rsp-bottom-sheet {
   position: absolute;
@@ -200,12 +200,12 @@
   max-height: 60%;
   overflow: auto;
   scrollbar-width: thin;
-  scrollbar-color: #6d8583 transparent;
+  scrollbar-color: #808080 transparent;
 }
 .rsp-sheet-handle {
   width: 32px;
   height: 3px;
-  background: #c6d4d452;
+  background: #d1d1d152;
   border-radius: 3px;
   margin: 1px auto 8px;
 }
@@ -224,7 +224,7 @@
   gap: 7px;
   padding: 9px 6px;
   border-radius: 12px;
-  color: #adc0c2;
+  color: #bcbcbc;
   background: none;
   font-size: 11px;
   flex: 1;
@@ -232,7 +232,7 @@
 }
 .rsp-view-tabs button.is-active {
   background: #ffffff10;
-  color: #d8fff4;
+  color: #f6f6f6;
 }
 .rsp-incident-heading {
   display: flex;
@@ -244,7 +244,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: #a1e6d0;
+  color: #d6d6d6;
   font-size: 11px;
 }
 .rsp-priority {
@@ -285,17 +285,17 @@
   align-items: center;
   gap: 4px;
   font-size: 9px;
-  color: #a9bcbf;
+  color: #b8b8b8;
   line-height: 1.7;
 }
 .rsp-caption {
   font-size: 10px !important;
   line-height: 1.6 !important;
-  color: #afc1c3 !important;
+  color: #bdbdbd !important;
   margin: 7px 0 !important;
 }
 .rsp-caption a {
-  color: #a5edd9;
+  color: #dcdcdc;
   text-decoration: underline;
 }
 .rsp-status-actions {
@@ -312,18 +312,18 @@
   min-height: 45px;
   padding: 11px 14px;
   border-radius: 14px;
-  border: 1px solid #c7f3e633;
+  border: 1px solid #e9e9e933;
   font: 600 12px/1.5 inherit;
   cursor: pointer;
   text-decoration: none;
 }
 .rsp-primary {
-  background: #a3e6d2;
-  color: #183d34;
+  background: #d6d6d6;
+  color: #343434;
 }
 .rsp-secondary {
-  background: #d4ebeb10;
-  color: #d8e9e9;
+  background: #e6e6e610;
+  color: #e5e5e5;
 }
 .rsp-primary:disabled,
 .rsp-secondary:disabled,
@@ -337,7 +337,7 @@
   align-items: center;
   width: 100%;
   min-height: 37px;
-  color: #cce7e1;
+  color: #e1e1e1;
   background: none;
   border: 0;
   font-size: 11px;
@@ -351,7 +351,7 @@
   display: flex;
   justify-content: center;
   gap: 4px;
-  color: #9fbdba;
+  color: #b6b6b6;
   font-size: 10px;
   text-decoration: none;
   margin-top: 5px;
@@ -377,10 +377,10 @@
   overflow: auto;
   font-size: 12px;
   line-height: 1.7;
-  color: #c9d8d9;
+  color: #d5d5d5;
 }
 .rsp-details h2 {
-  color: #f0f8f5;
+  color: #f6f6f6;
 }
 .rsp-details p {
   white-space: pre-wrap;
@@ -391,7 +391,7 @@
 }
 .rsp-details dt {
   font-size: 10px;
-  color: #9ab3b5;
+  color: #aeaeae;
 }
 .rsp-details dd {
   margin: 3px 0;
@@ -415,7 +415,7 @@
   height: 7px;
   width: 7px;
   border-radius: 50%;
-  background: #92d8c1;
+  background: #c7c7c7;
   margin: 7px 0;
 }
 .rsp-timeline strong {
@@ -425,7 +425,7 @@
 }
 .rsp-timeline small {
   font-size: 10px;
-  color: #a2b9b8;
+  color: #b4b4b4;
 }
 .rsp-hospital-picker {
   position: absolute;
@@ -434,7 +434,7 @@
   border-radius: 25px;
   padding: 21px;
   overflow: auto;
-  background: #253033f5;
+  background: #2e2e2ef5;
 }
 .rsp-hospital-picker header {
   display: flex;
@@ -450,7 +450,7 @@
 .rsp-hospital-picker p {
   font-size: 12px;
   line-height: 1.7;
-  color: #b2c5c6;
+  color: #c1c1c1;
 }
 .rsp-hospital-option {
   display: flex;
@@ -461,7 +461,7 @@
   border: 0;
   border-top: 1px solid #ffffff15;
   background: none;
-  color: #e1efec;
+  color: #ececec;
   padding: 16px 0;
   cursor: pointer;
 }
@@ -475,7 +475,7 @@
 .rsp-hospital-option small {
   display: block;
   font-size: 10px;
-  color: #a4bcba;
+  color: #b7b7b7;
   margin-top: 5px;
 }
 .rsp-hospital-icon {
@@ -485,18 +485,18 @@
   place-items: center;
   background: #ffffff0b;
   border-radius: 12px;
-  color: #8cdec7;
+  color: #cbcbcb;
 }
 .rsp-chat {
   display: flex;
   flex-direction: column;
   min-height: 0;
   flex: 1;
-  color: #e3eded;
+  color: #ebebeb;
 }
 .rsp-chat-privacy {
   font-size: 10px;
-  color: #abc0c1;
+  color: #bcbcbc;
   display: flex;
   gap: 6px;
   line-height: 1.5;
@@ -524,15 +524,15 @@
 }
 .rsp-message.is-own {
   align-self: flex-end;
-  background: #82c3af1c;
-  border-color: #92d5be25;
+  background: #b4b4b41c;
+  border-color: #c5c5c525;
   border-radius: 16px 16px 3px 16px;
 }
 .rsp-message header {
   display: flex;
   gap: 13px;
   justify-content: space-between;
-  color: #a3bfbd;
+  color: #b9b9b9;
   font-size: 9px;
 }
 .rsp-message p {
@@ -543,7 +543,7 @@
 }
 .rsp-message time {
   font-size: 9px;
-  color: #95abaa;
+  color: #a6a6a6;
 }
 .rsp-message-photo {
   background: none;
@@ -562,7 +562,7 @@
 .rsp-photo-expired,
 .rsp-chat-empty {
   font-size: 12px;
-  color: #a6bbbb;
+  color: #b7b7b7;
   line-height: 1.6;
 }
 .rsp-chat-form {
@@ -582,11 +582,11 @@
   min-height: 45px;
   max-height: 100px;
   resize: vertical;
-  background: #0d161b42;
+  background: #14141442;
   border: 1px solid #ffffff25;
   border-radius: 13px;
   padding: 12px;
-  color: #ecf6f3;
+  color: #f4f4f4;
   font: inherit;
   font-size: 12px;
 }
@@ -610,13 +610,13 @@
 .rsp-photo-preview button {
   background: none;
   border: 0;
-  color: #d6e8e3;
+  color: #e4e4e4;
 }
 .rsp-photo-viewer {
   position: fixed;
   inset: 0;
   z-index: 3000;
-  background: #080e12f5;
+  background: #0d0d0df5;
   display: grid;
   place-items: center;
   padding: 55px 15px;
@@ -640,7 +640,7 @@
 .rsp-standby > svg {
   width: 60px;
   height: 60px;
-  color: #9ce5d0;
+  color: #d4d4d4;
   margin: 28px 0;
 }
 .rsp-standby h1 {
@@ -652,7 +652,7 @@
 .rsp-standby p {
   font-size: 13px;
   line-height: 1.8;
-  color: #acc0c0;
+  color: #bcbcbc;
 }
 .rsp-history button {
   display: flex;
@@ -661,7 +661,7 @@
   gap: 12px;
   width: 100%;
   padding: 16px;
-  color: #dfeeea;
+  color: #ebebeb;
   background: #ffffff09;
   border: 1px solid #ffffff15;
   border-radius: 15px;
@@ -670,7 +670,7 @@
 }
 .rsp-history small {
   display: block;
-  color: #a6beb8;
+  color: #b8b8b8;
   font-size: 11px;
   margin-top: 5px;
 }
@@ -687,37 +687,37 @@
   place-items: center;
   width: 38px;
   height: 38px;
-  border: 2px solid #d4fff1;
+  border: 2px solid #f5f5f5;
   border-radius: 14px;
-  background: #13584b;
+  background: #484848;
   box-shadow:
-    0 0 0 5px #73e6c62b,
+    0 0 0 5px #cbcbcb2b,
     0 5px 18px #0007;
   color: white;
 }
 .rsp-destination-marker {
   display: grid;
   place-items: center;
-  background: #d8f6ed;
-  border: 4px solid #225b4c;
+  background: #efefef;
+  border: 4px solid #4e4e4e;
   border-radius: 50%;
-  box-shadow: 0 0 0 5px #a0e5d749;
-  color: #1b5146;
+  box-shadow: 0 0 0 5px #d5d5d549;
+  color: #454545;
   font-weight: 700;
 }
 .rsp-workspace button:focus-visible,
 .rsp-workspace a:focus-visible,
 .rsp-chat button:focus-visible {
-  outline: 2px solid #b1ffe5;
+  outline: 2px solid #ededed;
   outline-offset: 3px;
 }
 .rsp-launch {
   display: flex;
   gap: 13px;
   align-items: center;
-  color: #dff7ee;
-  background: #24483b5c;
-  border: 1px solid #84bca540;
+  color: #f1f1f1;
+  background: #3f3f3f5c;
+  border: 1px solid #aeaeae40;
   padding: 18px;
   border-radius: 20px;
   text-decoration: none;
@@ -732,7 +732,7 @@
 .rsp-launch small {
   display: block;
   font-size: 11px;
-  color: #a8c2b7;
+  color: #bcbcbc;
   margin-top: 5px;
 }
 @media (min-width: 700px) {
@@ -803,7 +803,7 @@
 }
 @media (prefers-reduced-transparency: reduce) {
   .rsp-glass {
-    background: #273235;
+    background: #303030;
     backdrop-filter: none;
   }
 }
@@ -822,7 +822,7 @@
 }
 .rsp-chat-heading p {
   font-size: 10px;
-  color: #b2c7c4;
+  color: #c2c2c2;
   margin: 0;
 }
 .rsp-messages {
@@ -837,8 +837,8 @@
 }
 .rsp-message.is-mine {
   align-self: flex-end;
-  background: #82c3af1c;
-  border-color: #92d5be25;
+  background: #b4b4b41c;
+  border-color: #c5c5c525;
   border-radius: 16px 16px 3px 16px;
 }
 .rsp-message > div {
@@ -846,7 +846,7 @@
   gap: 12px;
   justify-content: space-between;
   font-size: 10px;
-  color: #adc9c1;
+  color: #c2c2c2;
 }
 .rsp-message > div strong {
   font-weight: 500;
@@ -874,8 +874,8 @@
 .rsp-chat-compose textarea {
   width: 100%;
   resize: vertical;
-  background: #101b1e55;
-  color: #edf8f2;
+  background: #19191955;
+  color: #f5f5f5;
   border: 1px solid #ffffff30;
   border-radius: 13px;
   padding: 10px;
@@ -887,15 +887,15 @@
   grid-column: 1/-1;
   font-size: 9px;
   line-height: 1.6;
-  color: #a6bfba;
+  color: #b9b9b9;
 }
 .rsp-send {
   width: 42px;
   height: 44px;
   border: 0;
   border-radius: 14px;
-  background: #a3e6d2;
-  color: #1c483c;
+  background: #d6d6d6;
+  color: #3e3e3e;
   display: grid;
   place-items: center;
   cursor: pointer;
@@ -919,14 +919,14 @@
 .rsp-text-button {
   background: none;
   border: 0;
-  color: #b5e9d9;
+  color: #dddddd;
   cursor: pointer;
 }
 .rsp-photo-view {
   position: fixed;
   inset: 0;
   z-index: 4000;
-  background: #0a1116f7;
+  background: #101010f7;
   display: grid;
   place-items: center;
   padding: 60px 20px;
@@ -940,7 +940,7 @@
   right: 20px;
   top: 20px;
   color: white;
-  background: #344549;
+  background: #424242;
   border: 0;
   padding: 12px;
   border-radius: 14px;
@@ -959,12 +959,12 @@
 .rsp-vehicle {
   display: grid;
   place-items: center;
-  background: #ebfff8;
-  border: 3px solid #458d78;
+  background: #fafafa;
+  border: 3px solid #7c7c7c;
   border-radius: 17px;
-  color: #184f40;
+  color: #424242;
   box-shadow:
-    0 0 0 6px #a2f0d735,
+    0 0 0 6px #dedede35,
     0 5px 15px #0008;
 }
 .rsp-vehicle svg {
@@ -972,18 +972,18 @@
   height: 30px;
 }
 .rsp-destination {
-  border: 4px solid #dcfff1;
-  background: #347963;
+  border: 4px solid #f7f7f7;
+  background: #696969;
   border-radius: 50%;
   box-shadow:
-    0 0 0 5px #97dfc750,
+    0 0 0 5px #cecece50,
     0 3px 14px #0008;
 }
 .rsp-destination span {
   display: block;
   width: 6px;
   height: 6px;
-  background: #e2fff5;
+  background: #f8f8f8;
   border-radius: 50%;
   margin: 7px;
 }
@@ -999,7 +999,7 @@
 .rsp-modal-overlay {
   position: fixed;
   inset: 0;
-  background: #0a1218a6;
+  background: #111111a6;
   z-index: 2500;
   backdrop-filter: blur(5px);
 }
@@ -1016,7 +1016,7 @@
 }
 .rsp-photo-view {
   z-index: 2600;
-  color: #e8f2ee;
+  color: #f0f0f0;
 }
 
 .el-app.el-responder > .el-main {
@@ -1027,15 +1027,15 @@
   display: none;
 }
 .el-app.el-responder .el-bottom-nav {
-  background: rgba(28, 36, 39, 0.94);
+  background: rgba(35, 35, 35, 0.94);
   border-color: #ffffff24;
 }
 .el-app.el-responder .el-bottom-nav a {
-  color: #b9cece;
+  color: #cacaca;
 }
 .el-app.el-responder .el-bottom-nav a.is-active {
-  background: #8ae4cd22;
-  color: #a3efdc;
+  background: #cfcfcf22;
+  color: #dddddd;
 }
 .el-app.el-responder {
   padding-bottom: 0;

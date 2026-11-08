@@ -1,6 +1,8 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import './styles/index.css';
+import './styles/agila-brand.css';
+import { LoadingScreen } from './app/components/BrandLogo';
 import { LiveProvider } from './app/lib/live-service';
 
 const CommandApp = lazy(() => import('./app/App'));
@@ -14,7 +16,7 @@ function Root() {
     return () => { window.removeEventListener('hashchange', sync); window.removeEventListener('popstate', sync); };
   }, []);
   const demo = new URLSearchParams(location.search).get('demo') === '1';
-  return <Suspense fallback={<div style={{ padding: 32, fontFamily: 'Inter, sans-serif', color: '#6380a5' }}>Loading {publicView ? 'Mobile Phone' : 'Command Center Platform'}…</div>}>{publicView ? demo ? <DemoPublicApp /> : <PublicApp /> : <CommandApp />}</Suspense>;
+  return <Suspense fallback={<LoadingScreen mobile={publicView} />}>{publicView ? demo ? <DemoPublicApp /> : <PublicApp /> : <CommandApp />}</Suspense>;
 }
 createRoot(document.getElementById('root')!).render(<LiveProvider><Root /></LiveProvider>);
 

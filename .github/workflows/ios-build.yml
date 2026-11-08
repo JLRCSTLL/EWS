@@ -1,4 +1,4 @@
-name: Mobile Phone iPhone build
+name: AGILA iPhone build
 
 on:
   push:
@@ -73,7 +73,7 @@ jobs:
           xcrun simctl ui "$SIMULATOR_ID" appearance dark
           sleep 1
           xcrun simctl io "$SIMULATOR_ID" screenshot --display=1 build/evidence/iphone-dark.png
-          ditto -c -k --sequesterRsrc --keepParent build/DerivedData/Build/Products/Debug-iphonesimulator/TANOVIQ.app build/Mobile-Phone-iPhone-Simulator.zip
+          ditto -c -k --sequesterRsrc --keepParent build/DerivedData/Build/Products/Debug-iphonesimulator/TANOVIQ.app build/AGILA-iPhone-Simulator.zip
       - name: Compile unsigned iPhone device archive
         run: |
           set -euo pipefail
@@ -82,17 +82,17 @@ jobs:
             -derivedDataPath build/DeviceDerivedData CODE_SIGNING_ALLOWED=NO archive \
             2>&1 | tee build/evidence/archive.log
           python3 scripts/verify-bundle-version.py build/TANOVIQ.xcarchive/Products/Applications/TANOVIQ.app
-          ditto -c -k --sequesterRsrc --keepParent build/TANOVIQ.xcarchive build/Mobile-Phone-iPhone-Unsigned-Archive.zip
+          ditto -c -k --sequesterRsrc --keepParent build/TANOVIQ.xcarchive build/AGILA-iPhone-Unsigned-Archive.zip
           printf '%s\n' 'Simulator zip: runs in an iPhone Simulator on a Mac.' \
             'Unsigned archive: compiled for iPhone hardware, requires Apple signing before installation.' \
             'No IPA or TestFlight release has been produced.' > build/READ-ME.txt
-          shasum -a 256 build/Mobile-Phone-iPhone-*.zip > build/SHA256SUMS.txt
+          shasum -a 256 build/AGILA-iPhone-*.zip > build/SHA256SUMS.txt
       - name: Save compiled iPhone packages
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: Mobile-Phone-iPhone-build
+          name: AGILA-iPhone-build
           path: |
-            ios/build/Mobile-Phone-iPhone-*.zip
+            ios/build/AGILA-iPhone-*.zip
             ios/build/READ-ME.txt
             ios/build/SHA256SUMS.txt
           if-no-files-found: error
@@ -108,6 +108,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: Mobile-Phone-iPhone-build-evidence
+          name: AGILA-iPhone-build-evidence
           path: ios/build/evidence/
           retention-days: 7

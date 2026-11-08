@@ -254,7 +254,7 @@ export function ResponderMobile() {
         <ResponseMap position={position} satellite={satellite} follow={follow} recenterKey={recenterKey} onFollowChange={setFollow} insets={mapInsets} />
         <div className="rsp-map-shade" />
         <header className="rsp-topbar" data-map-occlusion="top">
-          <div className="rsp-glass rsp-brand"><Ambulance size={23}/><span><small>MOBILE PHONE</small><strong>Responder</strong></span></div>
+          <div className="rsp-glass rsp-brand"><img src="/brand/agila-mark-white.svg" alt="" /><span><small>AGILA</small><strong>Responder</strong></span></div>
           <span className={"rsp-live-pill " + (live.connection === "connected" ? "is-online" : "")} role="status"><i/>{live.connection === "connected" ? "Connected" : "Reconnecting"}</span>
         </header>
         <div className="rsp-idle-label" data-map-occlusion="top"><span><Radio size={14}/>{user.onDuty ? "WAITING FOR DISPATCH" : "YOUR RESPONSE MAP"}</span><p>{position ? fresh ? "Your shared position" : "Last shared position" : "Regional overview · no location shared"}</p></div>
@@ -295,7 +295,7 @@ export function ResponderMobile() {
           <Ambulance size={22} />
           <span>
             <small>RESPONDER</small>
-            <strong>{incident.unit || "Mobile Phone"}</strong>
+            <strong>{incident.unit || "AGILA"}</strong>
           </span>
         </div>
         <span

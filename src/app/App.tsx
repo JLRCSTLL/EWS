@@ -572,12 +572,12 @@ export default function App() {
         <div className="flex flex-wrap items-center justify-between gap-3 px-2 sm:px-4">
           <div className="order-1 flex min-w-0 flex-1 items-center gap-3">
             <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-white/15 bg-white/[0.02]">
-              <Shield className="h-5 w-5 text-white/90" />
+              <img src="/brand/agila-mark-white.svg" width="26" height="24" alt="" />
               <span className="nothing-signal-dot absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-[#ff443a]" />
             </div>
             <div className="min-w-0">
               <button onClick={() => setWorkspaceMode(false)} className="text-left" aria-label="Back to live overview">
-                <span className="block truncate text-base font-mono tracking-[0.22em] text-zinc-100 sm:text-lg">Command Center Platform</span>
+                <span className="block truncate text-base font-mono tracking-[0.22em] text-zinc-100 sm:text-lg">AGILA Command Center</span>
                 <span className="text-[10px] text-zinc-400">← Live overview</span>
               </button>
             </div>

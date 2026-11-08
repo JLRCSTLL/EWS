@@ -1,3 +1,4 @@
+import { BrandLogo } from '../BrandLogo';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Activity, ArrowUpRight, Bell, ChevronDown, ChevronRight,
@@ -44,7 +45,8 @@ import { ConnectedOperations, ConnectedSidebar } from './ConnectedOperations';
 import { GroupsWorkspace } from './GroupsWorkspace';
 import { PlaceSearch } from './PlaceSearch';
 import { CommandNotifications } from './CommandNotifications';
-import type { BoundaryPlace } from '../../lib/place-search';
+import type { BoundaryPlace, BoundarySelection } from '../../lib/place-search';
+import { addBoundaryGeofences } from '../../lib/boundary-selection';
 import { useLive } from '../../lib/live-service';
 import { asResident, openRequest } from '../../lib/live-model';
 import { usePublicDemo } from '../../lib/public-demo-store';
@@ -108,7 +110,7 @@ const sectionDescriptions: Record<Exclude<Section, null>, string> = {
   broadcast: 'Demo broadcasts reach matching public profiles in this browser. No real notifications are sent.',
   users: 'Review the existing operator directory and access roles.',
   help: 'A clearer view of your emergency operations.',
-  public: 'Two-way presentation updates from the Mobile Phone app.',
+  public: 'Two-way presentation updates from the AGILA app.',
   connected: 'Preferred names, on-duty locations, and consent-based contact access.',
   groups: 'Manage members, assign leaders, and send alerts to the teams you create.',
 };
@@ -274,7 +276,7 @@ export function OperationsDashboard({ auditLogs, messages, onSendMessage, onOpen
     window.addEventListener('hashchange', syncView);
     return () => { window.removeEventListener('popstate', syncView); window.removeEventListener('hashchange', syncView); };
   }, []);
-  useEffect(() => { document.title = activeView === 'cctv' ? 'CCTV Monitoring — Command Center Platform' : 'Command Center Platform — Emergency Operations'; }, [activeView]);
+  useEffect(() => { document.title = activeView === 'cctv' ? 'CCTV Monitoring — AGILA Command Center' : 'AGILA Command Center — Emergency Operations'; }, [activeView]);
   const openView = (view: 'map' | 'cctv') => {
     const hash = view === 'cctv' ? '#/cctv' : '';
     if (tourIndex === null && window.location.hash !== hash) window.history.pushState(null, '', `${window.location.pathname}${window.location.search}${hash}`);
@@ -319,6 +321,18 @@ export function OperationsDashboard({ auditLogs, messages, onSendMessage, onOpen
     if (tourIndex === null) toast.success('Geofence saved on this workstation.');
   };
 
+  const saveBoundaries = (boundaries: BoundarySelection[]): number | null => {
+    try {
+      const result = addBoundaryGeofences(visibleGeofences, boundaries);
+      if (tourIndex === null) localStorage.setItem(GEOFENCE_STORAGE_KEY, JSON.stringify(result.areas));
+      updateAreas(result.areas); setShowGeofences(true);
+      if (result.added) toast.success(`${result.added} individual geofence${result.added === 1 ? '' : 's'} saved on this workstation.`);
+      return result.added;
+    } catch (error) {
+      toast.error(error instanceof DOMException && error.name === 'QuotaExceededError' ? 'Unable to save these areas. Local storage is full.' : error instanceof Error ? error.message : 'Unable to save the selected areas.');
+      return null;
+    }
+  };
   const previewBoundary = (place: BoundaryPlace, geometry: GeofenceGeometry) => {
     setShowGeofences(true);
     openView('map'); setSection(null); setSelection(null); setAlertsVisible(false);
@@ -390,9 +404,9 @@ export function OperationsDashboard({ auditLogs, messages, onSendMessage, onOpen
       simulationPaused={simulationPaused || activeView === 'cctv' || (tourIndex !== null && !tourPlaying)} simulationSpeed={tourIndex !== null ? tourSpeed : 1} simulationReplay={simulationReplay} onSimulationTick={setSimulationElapsed}
       onGeofenceMove={(index, point) => setFenceDraft((current) => current ? { ...current, points: current.points.map((previous, i) => i === index ? point : previous) } : current)} />
     <header className="ops-header">
-      <button className="ops-brand gsam-brand" onClick={() => { openView('map'); clearMapSelection(); mapRef.current?.reset(); }} aria-label="Command Center Platform home">
+      <button className="ops-brand gsam-brand" onClick={() => { openView('map'); clearMapSelection(); mapRef.current?.reset(); }} aria-label="AGILA Command Center home">
 
-        <span>Command Center Platform<span className="ops-brand-caption">Situational awareness & response</span></span>
+        <BrandLogo caption="Command Center" />
       </button>
       <nav className="ops-nav" aria-label="Main navigation">
         <button data-demo="nav-map" className={activeView === 'map' && !section ? 'is-active' : ''} aria-current={activeView === 'map' && !section ? 'page' : undefined} onClick={() => openView('map')}>Live overview<span className="ops-live-dot" /></button>
@@ -437,6 +451,7 @@ export function OperationsDashboard({ auditLogs, messages, onSendMessage, onOpen
       </div>
 
       {fenceEditor && <GeofenceTools saved={alertGeofence} draft={fenceDraft} areas={visibleGeofences} draftName={draftName}
+        onSaveBoundaries={saveBoundaries}
         onSelect={selectFence} onNew={() => drawFence('polygon')}
         onClear={clearMapSelection}
         onDraw={(shape) => setFenceDraft({ shape, points: [] })} onSave={saveFence} onCenterPoint={() => mapRef.current?.addCenterPoint()}
@@ -505,13 +520,13 @@ export function OperationsDashboard({ auditLogs, messages, onSendMessage, onOpen
       onOpenArea={id => { openView('map'); setSelectedFenceId(id); setFenceDraft(null); setFenceEditor(true); setSelection(null); requestAnimationFrame(() => mapRef.current?.focusGeofence()); }}
       onPreviewAlert={id => { setSelectedFenceId(id); reviewRecipients(); }} />}
 
-    <footer className="ops-footer"><div><ShieldCheck size={12} /><span>Command Center Platform</span><span className="ops-footer-separator">/</span><span>{liveView ? 'Connected pilot' : 'Demo workspace'}</span></div><div className="ops-map-legend">{liveView ? <><span><i className="ops-legend-team" />Shared device locations</span><span>Boundaries are alert areas</span></> : <><span><i className="ops-legend-incident" />Incidents</span><span><i className="ops-legend-team" />Responders</span><span><i className="ops-legend-site" />Facilities</span></>}</div><div><OperationsClock /><button className="ops-small-icon" aria-label="Help and keyboard shortcuts" onClick={() => setSection('help')}><CircleHelp size={14} /></button></div></footer>
+    <footer className="ops-footer"><div><ShieldCheck size={12} /><span>AGILA Command Center</span><span className="ops-footer-separator">/</span><span>{liveView ? 'Connected pilot' : 'Demo workspace'}</span></div><div className="ops-map-legend">{liveView ? <><span><i className="ops-legend-team" />Shared device locations</span><span>Boundaries are alert areas</span></> : <><span><i className="ops-legend-incident" />Incidents</span><span><i className="ops-legend-team" />Responders</span><span><i className="ops-legend-site" />Facilities</span></>}</div><div><OperationsClock /><button className="ops-small-icon" aria-label="Help and keyboard shortcuts" onClick={() => setSection('help')}><CircleHelp size={14} /></button></div></footer>
 
     <Dialog open={section !== null} modal={tourIndex === null} onOpenChange={(open) => { if (!open && tourIndex === null) setSection(null); }}><DialogContent className={`ops-dialog${section === 'help' ? ' ops-dialog--compact' : ''}${section === 'broadcast' ? ' ops-dialog--broadcast' : ''}${section === 'groups' ? ' ops-dialog--groups' : ''}`}
       onInteractOutside={event => { if (tourIndex !== null) event.preventDefault(); }}
       onOpenAutoFocus={event => { if (tourIndex !== null) event.preventDefault(); }}
       onCloseAutoFocus={(event) => { event.preventDefault(); if (tourIndex === null) document.getElementById('operations-place-search')?.focus({ preventScroll: true }); }}>
-      <DialogHeader><div className="ops-eyebrow">Command Center Platform / {liveView ? 'CONNECTED OPERATIONS' : 'DEMO OPERATIONS'}</div><DialogTitle>{section ? sectionTitles[section] : ''}</DialogTitle><DialogDescription>{liveView && (section === 'public' || section === 'broadcast') ? 'Live updates from registered accounts. Actual receipts appear when personnel open or read their messages.' : section ? sectionDescriptions[section] : ''}</DialogDescription></DialogHeader>
+      <DialogHeader><div className="ops-eyebrow">AGILA Command Center / {liveView ? 'CONNECTED OPERATIONS' : 'DEMO OPERATIONS'}</div><DialogTitle>{section ? sectionTitles[section] : ''}</DialogTitle><DialogDescription>{liveView && (section === 'public' || section === 'broadcast') ? 'Live updates from registered accounts. Actual receipts appear when personnel open or read their messages.' : section ? sectionDescriptions[section] : ''}</DialogDescription></DialogHeader>
       {section === 'groups' && (tourIndex !== null ? <PresentationGroups key={`${tourRun}-${tourIndex}`} onBroadcast={team => { setPresentationTeam(team); setSection('broadcast'); }} /> : <GroupsWorkspace onBroadcast={groupBroadcast} />)}
       {section === 'connected' && (tourIndex !== null ? <PresentationPersonnel key={`${tourRun}-${tourIndex}`} /> : <ConnectedOperations onLocate={locatePhone} onShowLocations={() => locatePhone()} locationsVisible={liveView && showResidents} />)}
       {section === 'incidents' && <><div className="ops-incident-toolbar"><div className="ops-dialog-search"><Search size={16} /><input aria-label="Filter incidents" placeholder="Search incidents…" value={incidentQuery} onChange={(event) => setIncidentQuery(event.target.value)} /></div><select aria-label="Incident category" value={filter} onChange={(event) => changeFilter(event.target.value as IncidentFilter)}><option value="all">All events</option><option value="priority">Critical &amp; high priority</option><option value="critical">Critical priority</option><option value="flood">Flood</option><option value="typhoon">Typhoon</option></select></div><div className="ops-incident-list">{getIncidents(region, filter, incidentQuery).map((event) => <button key={event.id} onClick={() => locate({ kind: 'incident', id: event.id })}><IncidentIcon event={event} /><span><strong>{event.title}</strong><small>{event.location} · {formatRelativeTime(event.createdAt)}</small><p>{event.description}</p></span><span className={`ops-severity-pill severity-${event.severity}`}>{event.severity}</span><ArrowUpRight size={15} /></button>)}{!getIncidents(region, filter, incidentQuery).length && <p className="ops-empty">No matching incidents. Adjust your search or event filter.</p>}</div></>}
@@ -521,7 +536,7 @@ export function OperationsDashboard({ auditLogs, messages, onSendMessage, onOpen
       {section === 'users' && <div className="ops-legacy-panels"><UserManagement /></div>}
       {section === 'public' && (liveView ? <ConnectedOperations tab="inbox" onLocate={locatePhone} /> : <PublicActivityPanel state={publicState} onLocate={point => { openView('map'); setSelection(null); setFenceEditor(false); setAlertsVisible(false); requestAnimationFrame(() => mapRef.current?.focusPoint(point)); }} />)}
       {section === 'broadcast' && presentationTeam && tourIndex !== null ? <PresentationGroupBroadcast team={presentationTeam} /> : section === 'broadcast' && <><div className="ops-dialog-tabs" role="group" aria-label="Broadcast view"><button className={broadcastTab === 'compose' ? 'is-active' : ''} aria-pressed={broadcastTab === 'compose'} onClick={() => setBroadcastTab('compose')}><Send size={14} />Compose broadcast</button><button className={broadcastTab === 'history' ? 'is-active' : ''} aria-pressed={broadcastTab === 'history'} onClick={() => setBroadcastTab('history')}>Delivery history<span>{liveView ? live.state?.alerts.length || 0 : messages.length}</span></button></div>{liveView ? <ConnectedOperations key={`${broadcastTab}-${broadcastGroup}-${teamGroupId||''}`} initialTeamGroupId={teamGroupId} tab={broadcastTab} areas={visibleGeofences} selectedId={selectedFenceId} initialGroup={broadcastGroup} initialActiveOnly={broadcastActiveOnly} onSelectArea={setSelectedFenceId} onLocate={locatePhone} /> : broadcastTab === 'compose' ? <AudienceBroadcastPanel key={tourIndex === null ? 'operator' : 'presentation'} presentationMode={tourIndex !== null} areas={visibleGeofences} selectedId={selectedFenceId} initialGroup={broadcastGroup} initialActiveOnly={broadcastActiveOnly} onSelectArea={setSelectedFenceId} onSendMessage={onSendMessage} onHistory={() => setBroadcastTab('history')} /> : <div className="ops-legacy-panels"><MessageHistory messages={messages} /></div>}</>}
-      {section === 'help' && <div className="ops-help"><p>Use <strong>Layers</strong> to adjust the map, or switch between satellite and street views. Select <strong>Geofence</strong> to draw a polygon, rectangle, or circle, save the area, and prepare an alert. Undo removes the last point; drag handles to edit. Keyboard users can pan the focused map with arrow keys and use <strong>Add center point</strong>.</p><p><kbd>Ctrl / ⌘ K</kbd> focuses place search. Search any Philippine barangay, city, municipality, or province, then save its mapped boundary. Map controls support keyboard navigation. Press <kbd>Esc</kbd> to dismiss details.</p>
+      {section === 'help' && <div className="ops-help"><p>Use <strong>Layers</strong> to adjust the map, or switch between satellite and street views. Select <strong>Geofence</strong> to draw a polygon, rectangle, or circle, save the area, and prepare an alert. Undo removes the last point; drag handles to edit. Keyboard users can pan the focused map with arrow keys and use <strong>Add center point</strong>.</p><p><kbd>Ctrl / ⌘ K</kbd> focuses place search. Search a supported Philippine region, province, city, municipality, or barangay, then save its mapped boundary. Use <strong>Choose local areas</strong> in the geofence card to browse and save individual municipalities or barangays inside a larger area. Map controls support keyboard navigation. Press <kbd>Esc</kbd> to dismiss details.</p>
         <p className="ops-help-note">{liveView ? 'Sign in through Personnel with approved operator access to view shared locations and send alerts. Review the recipients before broadcasting.' : 'This view uses sample operational data. Demo broadcasts and audit changes stay in this browser.'}</p>
         {demoAvailable && <><p><strong>Workspace</strong> opens the original customizable sample dashboard, widget library, and layout presets.</p><button className="ops-secondary-button" onClick={onOpenWorkspace}><LayoutGrid size={15} />Open workspace<ArrowUpRight size={14} /></button></>}
       </div>}

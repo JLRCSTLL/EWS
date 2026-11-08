@@ -1,4 +1,4 @@
-# Mobile Phone for iPhone — 0.1.0
+# AGILA for iPhone — 0.3.0
 
 This is the native SwiftUI iPhone app. The repository includes a GitHub-hosted
 Mac build workflow, so compilation does not require a Mac on the Windows host.
@@ -38,14 +38,14 @@ xcrun simctl launch booted ph.tanoviq.app
 - Build with **Xcode 27 / iOS 27 SDK** for Apple's refined Liquid Glass appearance.
   Native TabView, NavigationStack, toolbars, forms and sheets adopt the current
   platform styling. A single duty control uses regular Liquid Glass on iOS 26+;
-  emergency message surfaces stay opaque and readable. System tint preferences,
-  light/dark mode, Dynamic Type and Reduce Transparency are respected. Minimum
+  emergency message surfaces stay opaque and readable. The AGILA identity uses a dark monochrome appearance. Dynamic Type and
+  Reduce Transparency are respected. Minimum
   deployment target is iOS 17.2, with standard controls on older releases.
 - Four native tabs: Overview, Alerts, Duty and Account. Registration/sign-in use
   the same command-center accounts, preferred names and recipient-scoped inbox.
   There is no mobile button that grants or opens command-center access.
 - The home-screen display name, initial loading, notification text and Live
-  Activity use **Mobile Phone**. Internal target and bundle identifiers remain
+  Activity use **AGILA**. Internal target and bundle identifiers remain
   unchanged for update compatibility.
 - Ordinary APNs **visible** notifications carry the message and category actions.
   Delivery does not depend on a suspended app fetching its inbox. Expand/hold a

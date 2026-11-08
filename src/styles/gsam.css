@@ -36,16 +36,16 @@
 .gsam-project-list small {
   grid-column: 2;
   text-transform: capitalize;
-  color: #bac6d5;
+  color: #c5c5c5;
 }
 .gsam-project-list .is-selected,
 .gsam-group-directory .is-selected {
-  border-color: #a8c8e8 !important;
-  background: #38536b55 !important;
+  border-color: #c4c4c4 !important;
+  background: #4f4f4f55 !important;
 }
 .gsam-form-panel,
 .gsam-task-form {
-  background: #20262dec;
+  background: #252525ec;
   border: 1px solid #ffffff24;
   border-radius: 12px;
   padding: 20px;
@@ -61,7 +61,7 @@
   display: flex;
   justify-content: space-between;
   gap: 20px;
-  background: #27313b;
+  background: #303030;
   padding: 22px;
   border-radius: 12px;
 }
@@ -78,7 +78,7 @@
 .gsam-kicker {
   font-size: 10px;
   letter-spacing: 0.16em;
-  color: #b5cfe6;
+  color: #cbcbcb;
 }
 .gsam-metrics {
   display: flex;
@@ -91,13 +91,13 @@
   border: 1px solid #ffffff1c;
   border-radius: 10px;
   padding: 15px;
-  color: #b3c1d0;
+  color: #bfbfbf;
   font-size: 11px;
 }
 .gsam-metrics strong {
   display: block;
   font-size: 28px;
-  color: #f0f4f8;
+  color: #f3f3f3;
 }
 .gsam-task-board {
   display: grid;
@@ -105,7 +105,7 @@
   gap: 12px;
 }
 .gsam-task-board > section {
-  background: #11182080;
+  background: #17171780;
   border: 1px solid #ffffff18;
   border-radius: 10px;
   padding: 12px;
@@ -119,7 +119,7 @@
   justify-content: space-between;
 }
 .gsam-task-board article {
-  background: #303944;
+  background: #383838;
   border: 1px solid #ffffff1b;
   border-radius: 8px;
   padding: 13px;
@@ -132,7 +132,7 @@
 .gsam-task-board small {
   display: block;
   font-size: 10px;
-  color: #b7c5d4;
+  color: #c3c3c3;
   margin-top: 5px;
 }
 .gsam-task-board select {
@@ -151,7 +151,7 @@
   border: 1px solid #ffffff24;
   border-radius: 11px;
   overflow: hidden;
-  background: #293139;
+  background: #303030;
 }
 .gsam-group-directory article.is-archived {
   opacity: 0.65;
@@ -177,12 +177,12 @@
   overflow-wrap: anywhere;
 }
 .gsam-group-select code {
-  color: #b9d5ef;
+  color: #d1d1d1;
   margin-top: 3px;
 }
 .gsam-group-select small {
   font-size: 10px;
-  color: #afbdcc;
+  color: #bbbbbb;
 }
 .gsam-group-select > b {
   font-size: 23px;
@@ -211,7 +211,7 @@
 }
 .gsam-member small {
   display: block;
-  color: #b5c3d2;
+  color: #c1c1c1;
   font-size: 11px;
 }
 .gsam-personnel-list {
@@ -221,7 +221,7 @@
 .gsam-personnel-list > article {
   border: 1px solid #ffffff26;
   border-radius: 11px;
-  background: #252c34;
+  background: #2b2b2b;
   padding: 17px;
 }
 .gsam-person-heading {
@@ -247,7 +247,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px 25px;
-  color: #becbda;
+  color: #c9c9c9;
   font-size: 12px;
   padding-top: 8px;
 }
@@ -280,7 +280,7 @@
   display: flex;
   gap: 6px;
   padding: 5px;
-  background: #171d24;
+  background: #1c1c1c;
   border: 1px solid #ffffff25;
   border-radius: 11px;
   margin-bottom: 16px;
@@ -291,8 +291,8 @@
   border: 0 !important;
 }
 .gsam-mode-switch button[aria-pressed="true"] {
-  background: #586f8555 !important;
-  color: #e0efff !important;
+  background: #6c6c6c55 !important;
+  color: #ededed !important;
 }
 .gsam-group-picker {
   max-height: 220px;
@@ -314,7 +314,7 @@
 }
 .gsam-group-picker small {
   display: block;
-  color: #afbed0;
+  color: #bcbcbc;
   font-size: 11px;
 }
 .gsam-group-picker b {
@@ -329,7 +329,7 @@
 }
 .gsam-recipient small {
   display: block;
-  color: #aabdd0;
+  color: #bababa;
   font-size: 10px;
 }
 .gsam-recipient > span {
@@ -346,26 +346,26 @@
   gap: 12px;
 }
 .gsam-mobile-assignments article {
-  border: 1px solid #dce5ef;
+  border: 1px solid #e4e4e4;
   border-radius: 12px;
   padding: 15px;
 }
 .gsam-mobile-assignments small {
   display: block;
-  color: #62738d;
+  color: #717171;
   margin: 6px 0;
 }
 .gsam-mobile-assignments select {
   width: 100%;
   padding: 10px;
-  border: 1px solid #d9e3ee;
+  border: 1px solid #e2e2e2;
   border-radius: 8px;
-  color: #283f5c;
+  color: #3c3c3c;
   background: white;
 }
 .gsam-privacy-request {
   padding: 16px;
-  border: 1px solid #dae4f0;
+  border: 1px solid #e3e3e3;
   border-radius: 12px;
   margin: 12px 0;
 }
@@ -378,7 +378,7 @@
   font-size: 13px;
 }
 .gsam-privacy-request small {
-  color: #61738c;
+  color: #717171;
   display: block;
   margin: 8px 0;
 }
@@ -388,8 +388,8 @@
   padding: 12px;
   margin: 12px 0;
   background: #fff;
-  color: #29415c;
-  border: 1px solid #d8e2ef;
+  color: #3e3e3e;
+  border: 1px solid #e1e1e1;
   border-radius: 10px;
 }
 .gsam-duty-actions {
@@ -401,7 +401,7 @@
   display: grid;
   gap: 8px;
   font-size: 12px;
-  color: #526987;
+  color: #666666;
   margin: 12px 0;
 }
 .ops-brand.gsam-brand {
@@ -431,8 +431,8 @@
 }
 .gsam-on-duty-pill {
   font-size: 10px;
-  color: #b5dec7;
-  border: 1px solid #b5dec744;
+  color: #d4d4d4;
+  border: 1px solid #d4d4d444;
   padding: 4px 8px;
   border-radius: 20px;
 }

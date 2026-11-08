@@ -24,3 +24,9 @@ official legal boundaries. Map imagery and boundary data are separate services.
 ## Responder navigation
 
 Road directions use [OSRM](https://project-osrm.org/docs/v5.24.0/api/) with OpenStreetMap road data. Nearby hospital listings use [OpenStreetMap](https://www.openstreetmap.org/copyright) via [Overpass API](https://wiki.openstreetmap.org/wiki/Overpass_API). Data attribution remains on the map. These services do not establish hospital capacity, receiving capability, emergency access privileges or safe passage.
+
+## AGILA identity and typography
+
+The monochrome eagle/A identity is a code-native adaptation of the brand board supplied by the project owner. Assets and generation source are in `public/brand/` and `scripts/generate-brand-assets.mjs`.
+
+Montserrat is locally bundled from the Google Fonts repository under the SIL Open Font License. The license is included at `public/fonts/Montserrat-OFL.txt`.
