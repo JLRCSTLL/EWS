@@ -6,7 +6,7 @@ import UserNotifications
 enum AlertActions {
     static func dismiss(_ id: String, userID: String) async {
         guard SecureStore.value("userID") == userID else { return }
-        for activity in Activity<TANOVIQAlertAttributes>.activities where activity.attributes.alertID == id && activity.attributes.userID == userID {
+        for activity in Activity<AGILAAlertAttributes>.activities where activity.attributes.alertID == id && activity.attributes.userID == userID {
             await activity.end(nil, dismissalPolicy: .immediate)
         }
         let center = UNUserNotificationCenter.current()

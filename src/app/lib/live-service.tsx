@@ -1,21 +1,12 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { LiveState } from './live-model';
 import { android, isAndroidApp, prepareAndroidLocation, type AndroidLocationStatus } from './android';
-
-export class ApiError extends Error { constructor(message: string, public status: number) { super(message); } }
-export async function api(path: string, body?: unknown, method = body === undefined ? 'GET' : 'POST') {
-  const response = await fetch(`/api${path}`, { method, credentials: 'include', cache: 'no-store',
-    headers: body !== undefined ? { 'Content-Type': 'application/json' } : undefined,
-    body: body !== undefined ? JSON.stringify(body) : undefined, signal: AbortSignal.timeout(20000) });
-  let data;
-  try { data = await response.json(); } catch { throw new ApiError('The shared service is not available yet. Please try again shortly.', response.status); }
-  if (!response.ok) throw new ApiError(data.error || 'The request could not be completed.', response.status);
-  return data;
-}
+import { api, ApiError, ReadReconnect } from './api-client';
+export { api, ApiError } from './api-client';
 type Connection = 'connecting' | 'connected' | 'offline' | 'unavailable';
 interface Service {
-  state: LiveState | null; connection: Connection; error: string; initialized: boolean;
-  refresh: () => Promise<void>; mutate: (path: string, body?: unknown, method?: string) => Promise<any>;
+  state: LiveState | null; connection: Connection; error: string; initialized: boolean; retryAt: number;
+  refresh: (afterWrite?: boolean) => Promise<void>; mutate: (path: string, body?: unknown, method?: string) => Promise<any>;
   logout: () => Promise<void>; locationStatus: string; sharingOnDevice: boolean;
   locationNow: string;
   startLocation: () => Promise<void>; stopLocation: () => Promise<void>;
@@ -30,24 +21,29 @@ export function LiveProvider({ children }: { children: ReactNode }) {
   const [connection, setConnection] = useState<Connection>('connecting');
   const [initialized, setInitialized] = useState(false);
   const [error, setError] = useState('');
+  const [retryAt, setRetryAt] = useState(0);
+  const reconnect = useRef(new ReadReconnect());
   const [recoveryCode, setRecoveryCode] = useState('');
   const [sharingOnDevice, setSharing] = useState(false);
   const [locationStatus, setLocationStatus] = useState('Location sharing is off');
   const [locationNow, setLocationNow] = useState(() => new Date().toISOString());
   const epoch = useRef(0), refreshWork = useRef<Promise<void> | null>(null), locationEpoch = useRef(0);
   const pendingLocation = useRef<Promise<unknown> | null>(null);
-  const refresh = useCallback((): Promise<void> => {
+  const refresh = useCallback((afterWrite = false): Promise<void> => {
+    if (afterWrite) { reconnect.current.reset(); setRetryAt(0); }
     if (refreshWork.current) return refreshWork.current;
+    if (!reconnect.current.canRequest() || !navigator.onLine) return Promise.resolve();
     const requestEpoch = epoch.current;
     const job = (async () => {
       try {
         const data = await api('/state' + (location.hash.startsWith('#/public') ? '?view=public' : ''));
         if (requestEpoch !== epoch.current) return;
+        reconnect.current.reset(); setRetryAt(0);
         setState(data); setError(''); setConnection('connected');
       } catch (error) {
         if (requestEpoch !== epoch.current) return;
-        if (error instanceof ApiError && error.status === 401) { setState(null); setConnection('connected'); setError(''); }
-        else { setConnection(navigator.onLine ? 'unavailable' : 'offline'); setError(error instanceof Error ? error.message : 'Connection interrupted.'); }
+        if (error instanceof ApiError && error.kind === 'api' && error.status === 401) { reconnect.current.reset(); setRetryAt(0); setState(null); setConnection('connected'); setError(''); }
+        else { setRetryAt(reconnect.current.failed(error)); setConnection(navigator.onLine ? 'unavailable' : 'offline'); setError(error instanceof Error ? error.message : 'Connection interrupted.'); }
       } finally { if (requestEpoch === epoch.current) setInitialized(true); }
     })();
     refreshWork.current = job;
@@ -62,7 +58,8 @@ export function LiveProvider({ children }: { children: ReactNode }) {
       const next = location.hash.startsWith('#/public');
       if (next !== publicScope) { publicScope = next; epoch.current++; refreshWork.current = null; setState(null); setConnection('connecting'); void refresh(); }
     };
-    const offline = () => setConnection('offline');
+    const offline = () => { setConnection('offline'); setError('Your device is offline. Updates will resume when connected.'); };
+    if (!navigator.onLine) offline();
     const pushed = (event: MessageEvent) => { if (event.data?.type === 'ELIGTAS_ALERT') tick(); };
     const timer = window.setInterval(tick, 5000);
     window.addEventListener('online', tick); window.addEventListener('offline', offline);
@@ -73,7 +70,7 @@ export function LiveProvider({ children }: { children: ReactNode }) {
   const mutate = useCallback(async (path: string, body?: unknown, method?: string) => {
     const result = await api(path, body, method);
     // A read already in progress may predate this write. Finish it, then fetch the saved state.
-    await refreshWork.current; await refresh(); return result;
+    await refreshWork.current; await refresh(true); return result;
   }, [refresh]);
   const userId = state?.user.id;
   useEffect(() => {
@@ -177,5 +174,5 @@ export function LiveProvider({ children }: { children: ReactNode }) {
       if(isAndroidApp())void android('locationStop').catch(()=>{});
     }
   },[state?.user.onDuty,sharingOnDevice,userId]);
-  return <Context.Provider value={{ state, connection, error, initialized, refresh, mutate, logout, locationStatus, locationNow, sharingOnDevice, startLocation, stopLocation, startDuty, endDuty:stopLocation, recoveryCode, setRecoveryCode }}>{children}</Context.Provider>;
+  return <Context.Provider value={{ state, connection, error, initialized, retryAt, refresh, mutate, logout, locationStatus, locationNow, sharingOnDevice, startLocation, stopLocation, startDuty, endDuty:stopLocation, recoveryCode, setRecoveryCode }}>{children}</Context.Provider>;
 }

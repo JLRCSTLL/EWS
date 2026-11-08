@@ -18,6 +18,7 @@ import { MobileAppearance, useGlassTint } from './MobileAppearance';
 import '../../../styles/live-app.css';
 import '../../../styles/mobile-glass.css';
 import '../../../styles/mobile-refinement.css';
+import '../../../styles/responder-tablet.css';
 
 const pages = ['home','alerts','help','map','account','responder'] as const;
 type Page = typeof pages[number];
@@ -83,7 +84,7 @@ export default function LivePublicApp() {
     const route = () => { setPage(currentPage()); setSelected(null); setNotice(''); window.scrollTo(0,0); };
     window.addEventListener('hashchange',route); document.title = 'AGILA · Personnel operations';
     const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]'); const previous = meta?.content;
-    if (meta) meta.content = '#1b211e';
+    if (meta) meta.content = '#1d1d1d';
     if ('serviceWorker' in navigator) void navigator.serviceWorker.register('/sw.js').catch(() => {});
     return () => { window.removeEventListener('hashchange',route); if (meta && previous) meta.content = previous; };
   }, []);

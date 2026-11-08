@@ -9,6 +9,7 @@ import {
 } from "../src/app/lib/response.ts";
 import { createResponseRouting } from "./response-routing.mjs";
 import { placeQuery } from "./place-lookup.mjs";
+import { listResponseFacilities, hospitalCatalogInfo } from './hospital-catalog.mjs';
 const uuid =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const fail = (status, message) => {
@@ -76,11 +77,12 @@ export async function responseState(db, user, operatorView) {
   const responseFacilities = operatorView
     ? (
         await db.query(
-          "select id,kind,name,location from eligtas.response_facilities order by name",
+          "select id,kind,name,location from eligtas.response_facilities where source_ref is null or kind='base' order by name",
         )
       ).rows
     : [];
-  return { responseIncidents, responseFacilities, responderReady: true, dispatchPlaceSearchReady: true, responseDirectoryDeleteReady: true };
+  const counts = operatorView ? (await db.query("select kind,count(*)::int as total from eligtas.response_facilities group by kind")).rows : [];
+  return { responseIncidents, responseFacilities, responseDirectoryCounts: Object.fromEntries(counts.map(r => [r.kind, r.total])), hospitalDirectoryReady: true, responderReady: true, dispatchPlaceSearchReady: true, responseDirectoryDeleteReady: true };
 }
 export async function normalizeResponsePhoto(photo) {
   if (photo === undefined || photo === null) return null;
@@ -140,13 +142,14 @@ export function responseRoutes(
       ...f.location,
       id: f.id,
       label: f.name,
-      source: "Operator directory",
-      emergency: "Confirm receiving availability",
+      source: f.source_ref ? hospitalCatalogInfo.source : "Operator directory",
+      emergency: f.source_data?.emergency === 'no' ? 'No emergency department mapped · confirm with dispatch' : "Confirm receiving capability & availability",
     }));
     let external = [],
       warning = "";
     try {
-      external = await routing.hospitals(row.location);
+      // The bundled directory is immediately usable even if the live map service is down.
+      if (!manual.some(h => h.source === hospitalCatalogInfo.source && distanceMeters(row.location, h) < 50000)) external = await routing.hospitals(row.location);
     } catch (error) {
       warning = error.message;
     }
@@ -184,6 +187,10 @@ export function responseRoutes(
     changed();
     res.status(201).json({ id });
   });
+  app.get('/api/response-facilities', async (req, res) => {
+    operator(req);
+    res.json(await listResponseFacilities(db, req.query));
+  });
   app.get('/api/response-places/authorize', (req, res) => {
     operator(req);
     // A shared limit covers all Vercel instances, including cache hits.
@@ -201,8 +208,9 @@ export function responseRoutes(
     rateLimit(req, 'response-facility-delete', 30);
     if (!uuid.test(req.params.id)) fail(404, 'Directory entry not found.');
     await db.transaction(async tx => {
-      const result = await tx.query('delete from eligtas.response_facilities where id=$1 returning id', [req.params.id]);
+      const result = await tx.query('delete from eligtas.response_facilities where id=$1 returning id,source_ref', [req.params.id]);
       if (!result.rows.length) fail(404, 'This directory entry has already been removed. Refresh the directory.');
+      if (result.rows[0].source_ref) await tx.query('insert into eligtas.response_facility_exclusions(id) values ($1) on conflict do nothing', [req.params.id]);
       // Dispatches store destination snapshots; removing a directory entry must not change a driver's route.
       await tx.query('insert into eligtas.audit(id,actor_id,action,target_id) values ($1,$2,$3,$4)',
         [randomUUID(), req.user.id, 'response_facility_deleted', req.params.id]);

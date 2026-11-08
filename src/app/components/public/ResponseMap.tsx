@@ -119,10 +119,10 @@ export function ResponseMap({
       const line = route.coordinates.map(
         ([lng, lat]) => [lat, lng] as L.LatLngTuple,
       );
-      L.polyline(line, { color: "#102525", weight: 11, opacity: 0.9 }).addTo(
+      L.polyline(line, { color: "#172a45", weight: 11, opacity: 0.9 }).addTo(
         group,
       );
-      L.polyline(line, { color: "#85eed2", weight: 6, opacity: 1 }).addTo(
+      L.polyline(line, { color: "#6daaff", weight: 6, opacity: 1 }).addTo(
         group,
       );
     }

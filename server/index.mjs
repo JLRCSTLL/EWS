@@ -6,8 +6,11 @@ import { setupPush } from './push.mjs';
 import { createApp } from './app.mjs';
 import { readFile, writeFile } from 'node:fs/promises';
 import { randomToken } from './auth.mjs';
+import { seedHospitalCatalog } from './hospital-catalog.mjs';
 
 const db = await openDatabase();
+const hospitalsAdded = await seedHospitalCatalog(db);
+if (hospitalsAdded) console.log(`Saved ${hospitalsAdded} mapped Philippine hospitals to the directory.`);
 const push = await setupPush(db);
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://127.0.0.1:5173,http://localhost:5173,http://127.0.0.1:4173').split(',').map(s => s.trim());
 let bootstrapToken = process.env.BOOTSTRAP_TOKEN;

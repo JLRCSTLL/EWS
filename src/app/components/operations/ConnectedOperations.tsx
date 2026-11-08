@@ -3,6 +3,7 @@ import { AlertAudioPlayer } from '../public/AlertAudioPlayer';
 import { useState } from 'react';
 import { ArrowUpRight, CheckCheck, LocateFixed, Radio, ShieldCheck, Smartphone, Users } from 'lucide-react';
 import { useLive } from '../../lib/live-service';
+import { connectionLabel } from '../../lib/api-client';
 import { asResident, openRequest, alertLabel } from '../../lib/live-model';
 import { getAudience, getExposure, type AudienceGroup } from '../../lib/residents';
 import type { AlertGeofence, GeofenceGeometry, GeofencePoint } from '../../lib/geofencing';
@@ -21,6 +22,7 @@ export function ConnectedOperations({ tab = 'people', areas = [], selectedId, on
 }) {
   const live = useLive();
   const { state, connection, recoveryCode } = live;
+  const retrySeconds = Math.max(0, Math.ceil((live.retryAt - Date.parse(live.locationNow)) / 1000));
   const [error, setError] = useState(''), [notice, setNotice] = useState(''), [busy, setBusy] = useState(false);
   const [unit, setUnit] = useState(''), [setup, setSetup] = useState(false);
   const operator = state && ['operator','admin'].includes(state.user.role);
@@ -31,8 +33,8 @@ export function ConnectedOperations({ tab = 'people', areas = [], selectedId, on
     finally { setBusy(false); }
   }
   return <div className="el-connected">
-    <div className="el-connected-intro"><Smartphone size={24} /><div><strong>Connected personnel</strong><p>Accounts, alerts, and shared locations sync through the shared service.</p></div><span className={connection === 'connected' ? 'is-online' : ''}>{connection === 'connected' ? 'Service connected' : 'Service unavailable'}</span></div>
-    {connection !== 'connected' && <p className="el-connected-notice">{live.error || 'Connecting to the service…'}<button onClick={() => void live.refresh()}>Retry</button></p>}
+    <div className="el-connected-intro"><Smartphone size={24} /><div><strong>Connected personnel</strong><p>Accounts, alerts, and shared locations sync through the shared service.</p></div><span className={connection === 'connected' ? 'is-online' : ''}>{connection === 'connected' ? 'Service connected' : connectionLabel(connection)}</span></div>
+    {connection !== 'connected' && <p className="el-connected-notice" role="status">{live.error || 'Connecting to the service…'}<button disabled={retrySeconds > 0 || connection === 'offline'} onClick={() => void live.refresh()}>{retrySeconds > 0 ? `Retry in ${retrySeconds}s` : 'Retry'}</button></p>}
     {error && <p className="el-connected-error" role="alert">{error}</p>}{notice && <p className="el-connected-notice" role="status">{notice}</p>}
     {!state || recoveryCode ? <AuthPanel commandCenter /> : !operator ? <section className="el-access-pending"><ShieldCheck size={30} /><h3>Welcome, {state.user.name}</h3><p>Your personnel account is ready. An approved operator or the account owner must grant command-center access before you can view shared locations or send alerts.</p><button disabled={busy || state.user.operatorRequested} onClick={() => void run(() => live.mutate('/operator/request',{}),'Your operator access request is pending approval.')}>{state.user.operatorRequested ? 'Operator approval pending' : 'Request operator access'}</button><a href="#/public">Open personnel app <ArrowUpRight size={14} /></a><button className="el-connected-text" onClick={() => setSetup(value => !value)}>Account owner setup</button>{setup && <form onSubmit={e => { e.preventDefault(); const token = new FormData(e.currentTarget).get('token'); void run(() => live.mutate('/operator/bootstrap',{ token }),'Owner account activated.'); }}><label>Owner setup key<input name="token" type="password" autoComplete="off" required /></label><p>Use the BOOTSTRAP_TOKEN from your Render service’s environment. This one-time step activates the first owner; it is unavailable after setup.</p><button disabled={busy}>Activate owner account</button></form>}</section> : <>
       {tab === 'compose' && <GroupBroadcastComposer areas={areas} selectedId={selectedId} onSelectArea={onSelectArea} initialTeamGroupId={initialTeamGroupId} initialGroup={initialGroup} initialActiveOnly={initialActiveOnly} onLocate={onLocate} />}
@@ -59,7 +61,7 @@ export function ConnectedSidebar({ area, draft, onChooseArea, onBroadcast, onPeo
   const audience = getAudience(users,draft || area,{groups:['all'],activeOnly:true},state?.serverTime || new Date().toISOString());
   const groups=state?.teamGroups?.filter(g=>!g.archived)||[],members=state?.memberships||[];
   const duty=operator?state.users.filter(u=>u.onDuty):[];
-  return <aside className="ops-sidebar ops-command-sidebar"><div className="ops-sidebar-heading"><span>ONSITE OPERATIONS</span><span className="ops-demo-badge">{connection==='connected'?'Live service':'Offline'}</span></div><button className="ops-command-scope" onClick={onChooseArea}><LocateFixed size={15}/><span><small>SELECTED GEOFENCE</small><strong>{draft?'Drawing boundary':area?.name||'Choose an area'}</strong></span><ArrowUpRight size={14}/></button>
+  return <aside className="ops-sidebar ops-command-sidebar"><div className="ops-sidebar-heading"><span>ONSITE OPERATIONS</span><span className="ops-demo-badge">{connection==='connected'?'Live service':connectionLabel(connection)}</span></div><button className="ops-command-scope" onClick={onChooseArea}><LocateFixed size={15}/><span><small>SELECTED GEOFENCE</small><strong>{draft?'Drawing boundary':area?.name||'Choose an area'}</strong></span><ArrowUpRight size={14}/></button>
     <section className="ops-glass ops-command-card"><div className="ops-card-heading"><h2><Smartphone size={14}/>Personnel on duty</h2></div><div className="ops-reach-metric"><strong>{operator?duty.length:'—'}</strong><span>on duty<small>{duty.filter(u=>u.location).length} locations · {duty.filter(u=>!u.location).length} awaiting GPS</small></span></div><button className="ops-command-link" onClick={onPeople}>Personnel &amp; privacy<ArrowUpRight size={14}/></button></section>
     <section className="ops-glass ops-command-card"><div className="ops-card-heading"><h2><Users size={14}/>Group directory</h2></div><div className="ops-quick-audience-grid">{groups.slice(0,6).map(group=><button key={group.id} disabled={!operator} onClick={()=>onGroupBroadcast?.(group.id)}><span>#{group.tag}</span><strong>{memberIds(groups,members,[group.id]).size}</strong></button>)}</div>{!groups.length&&<p className="ops-command-note">Create a group and add registered personnel.</p>}<p className="ops-command-note">Group alerts reach members anywhere, including off duty.</p><button className="ops-command-link" onClick={onGroups}>Manage groups<ArrowUpRight size={14}/></button></section>
     <button className="ops-broadcast-button" onClick={()=>onBroadcast('all')}><Radio size={20}/><span><strong>Compose alert</strong><small>Geofence or named groups</small></span></button></aside>;

@@ -13,12 +13,12 @@ import Combine
     private var deviceToken: String? { UserDefaults.standard.string(forKey: "apnsDevice") }
     func observe() {
         guard !observing else { return }; observing = true
-        if let token = Activity<TANOVIQAlertAttributes>.pushToStartToken { liveStartToken = token.hex }
-        Task { for await token in Activity<TANOVIQAlertAttributes>.pushToStartTokenUpdates { liveStartToken = token.hex; await register() } }
-        Task { for await activity in Activity<TANOVIQAlertAttributes>.activityUpdates { observe(activity) } }
-        for activity in Activity<TANOVIQAlertAttributes>.activities { observe(activity) }
+        if let token = Activity<AGILAAlertAttributes>.pushToStartToken { liveStartToken = token.hex }
+        Task { for await token in Activity<AGILAAlertAttributes>.pushToStartTokenUpdates { liveStartToken = token.hex; await register() } }
+        Task { for await activity in Activity<AGILAAlertAttributes>.activityUpdates { observe(activity) } }
+        for activity in Activity<AGILAAlertAttributes>.activities { observe(activity) }
     }
-    private func observe(_ activity: Activity<TANOVIQAlertAttributes>) {
+    private func observe(_ activity: Activity<AGILAAlertAttributes>) {
         guard activityTasks[activity.id] == nil else { return }
         if let token = activity.pushToken { activityTokens[activity.id] = token.hex; Task { await registerActivity(activity) } }
         activityTasks[activity.id] = Task {
@@ -33,7 +33,7 @@ import Combine
         do {
             var options: UNAuthorizationOptions = [.alert, .sound, .badge]
             // Only enable this key after Apple grants the restricted entitlement.
-            if Bundle.main.object(forInfoDictionaryKey: "TANOVIQCriticalAlertsApproved") as? Bool == true { options.insert(.criticalAlert) }
+            if Bundle.main.object(forInfoDictionaryKey: "AGILACriticalAlertsApproved") as? Bool == true { options.insert(.criticalAlert) }
             let granted = try await UNUserNotificationCenter.current().requestAuthorization(options: options)
             guard granted else { status = "Notifications are blocked. Allow AGILA notifications in Settings."; return }
             UIApplication.shared.registerForRemoteNotifications()
@@ -55,10 +55,10 @@ import Combine
                 "token": deviceToken, "environment": environment, "liveStartToken": liveStartToken as Any? ?? NSNull(),
                 "liveEnabled": ActivityAuthorizationInfo().areActivitiesEnabled, "criticalEnabled": settings.criticalAlertSetting == .enabled])
             status = "iPhone push registration connected"
-            for activity in Activity<TANOVIQAlertAttributes>.activities { await registerActivity(activity) }
+            for activity in Activity<AGILAAlertAttributes>.activities { await registerActivity(activity) }
         } catch { status = error.localizedDescription }
     }
-    private func registerActivity(_ activity: Activity<TANOVIQAlertAttributes>) async {
+    private func registerActivity(_ activity: Activity<AGILAAlertAttributes>) async {
         guard let deviceToken, let token = activityTokens[activity.id], SecureStore.value("userID") == activity.attributes.userID else { return }
         do {
             let _: ServerReply = try await API.shared.call("/push/ios/activity", method: "POST", body: ["deviceToken": deviceToken, "token": token, "alertId": activity.attributes.alertID])
@@ -66,7 +66,7 @@ import Combine
     }
     func signOut() async {
         for task in activityTasks.values { task.cancel() }; activityTasks.removeAll(); activityTokens.removeAll()
-        for activity in Activity<TANOVIQAlertAttributes>.activities { await activity.end(nil, dismissalPolicy: .immediate) }
+        for activity in Activity<AGILAAlertAttributes>.activities { await activity.end(nil, dismissalPolicy: .immediate) }
         UNUserNotificationCenter.current().removeAllDeliveredNotifications()
         UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
         status = "Sign in to reconnect notifications"
@@ -75,8 +75,8 @@ import Combine
     func previewLiveActivity() {
         guard let user = SecureStore.value("userID") else { return }
         do {
-            let attributes = TANOVIQAlertAttributes(alertID: "local-preview", userID: user)
-            let content = TANOVIQAlertAttributes.ContentState(priority: "high", message: "LOCAL PREVIEW — No emergency. Expand Dynamic Island to view this sample message.", updatedAt: Date().timeIntervalSince1970, acknowledged: false)
+            let attributes = AGILAAlertAttributes(alertID: "local-preview", userID: user)
+            let content = AGILAAlertAttributes.ContentState(priority: "high", message: "LOCAL PREVIEW — No emergency. Expand Dynamic Island to view this sample message.", updatedAt: Date().timeIntervalSince1970, acknowledged: false)
             _ = try Activity.request(attributes: attributes, content: ActivityContent(state: content, staleDate: Date().addingTimeInterval(60)), pushType: nil)
         } catch { status = error.localizedDescription }
     }
@@ -89,7 +89,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         let center = UNUserNotificationCenter.current(); center.delegate = self
         let read = UNNotificationAction(identifier: "ACKNOWLEDGE", title: "Acknowledge", options: [.authenticationRequired])
         let dismiss = UNNotificationAction(identifier: "DISMISS_ALERT", title: "Dismiss alert", options: [])
-        center.setNotificationCategories([UNNotificationCategory(identifier: "TANOVIQ_ALERT", actions: [read, dismiss], intentIdentifiers: [], options: [.customDismissAction])])
+        center.setNotificationCategories([UNNotificationCategory(identifier: "AGILA_ALERT", actions: [read, dismiss], intentIdentifiers: [], options: [.customDismissAction])])
         Task { @MainActor in PushCoordinator.shared.observe(); DutyLocation.shared.resumeIfActive() }
         return true
     }
@@ -102,7 +102,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completion: @escaping (UNNotificationPresentationOptions) -> Void) {
         let payload = notification.request.content.userInfo
         guard let user = payload["userId"] as? String, user == SecureStore.value("userID") else { completion([]); return }
-        completion([.banner, .list, .sound]); NotificationCenter.default.post(name: .tanoviqAlertChanged, object: nil)
+        completion([.banner, .list, .sound]); NotificationCenter.default.post(name: .agilaAlertChanged, object: nil)
     }
     func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completion: @escaping () -> Void) {
         let payload = response.notification.request.content.userInfo
@@ -113,14 +113,14 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
                 do { try await API.shared.acknowledge(id, userID: user); await AlertActions.dismiss(id, userID: user) }
                 catch {
                     // Preserve the alert, never claim a failed acknowledgment was sent.
-                    let content = UNMutableNotificationContent(); content.title = "Acknowledgment not sent"; content.body = "Reconnect and acknowledge the AGILA message again."; content.userInfo = payload; content.categoryIdentifier = "TANOVIQ_ALERT"
+                    let content = UNMutableNotificationContent(); content.title = "Acknowledgment not sent"; content.body = "Reconnect and acknowledge the AGILA message again."; content.userInfo = payload; content.categoryIdentifier = "AGILA_ALERT"
                     try? await center.add(UNNotificationRequest(identifier: "retry-" + id, content: content, trigger: nil))
                 }
             } else if response.actionIdentifier == "DISMISS_ALERT" || response.actionIdentifier == UNNotificationDismissActionIdentifier {
                 await AlertActions.dismiss(id, userID: user)
             } else {
                 UserDefaults.standard.set(id, forKey: "pendingAlertID")
-                await MainActor.run { NotificationCenter.default.post(name: .tanoviqOpenAlert, object: id) }
+                await MainActor.run { NotificationCenter.default.post(name: .agilaOpenAlert, object: id) }
             }
         }
     }

@@ -419,3 +419,13 @@
     flex-wrap: wrap;
   }
 }
+
+.hospital-directory-search { display: grid; grid-template-columns: minmax(0, 1fr) 170px; gap: 12px; }
+.hospital-directory-search label { min-width: 0; }
+.hospital-directory-search input, .hospital-directory-search select { width: 100%; }
+.hospital-directory-pages { display: flex; align-items: center; gap: 10px; padding: 14px 0 24px; }
+.hospital-directory-pages span { margin-right: auto; font-size: 12px; color: #ccc; }
+.hospital-directory-pages button { min-height: 40px; padding: 8px 14px; border: 1px solid #ffffff30; border-radius: 10px; background: #ffffff09; color: #eee; }
+.hospital-directory-pages button:disabled { opacity: .4; }
+.hospital-directory .dispatch-facility-info a { font-size: 10px; text-decoration: underline; }
+@media(max-width: 600px) { .hospital-directory-search { grid-template-columns: 1fr; } }

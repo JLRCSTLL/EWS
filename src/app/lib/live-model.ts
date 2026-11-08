@@ -30,6 +30,7 @@ export interface LiveRequest {
 export interface LiveState { user: LiveUser; users: LiveUser[]; alerts: LiveAlert[]; requests: LiveRequest[]; serverTime: string;
   responseIncidents?: ResponseIncident[]; responseFacilities?: ResponseFacility[]; responderReady?: boolean;
   dispatchPlaceSearchReady?: boolean; responseDirectoryDeleteReady?: boolean;
+  hospitalDirectoryReady?: boolean; responseDirectoryCounts?: {base?: number; hospital?: number};
   projects: Project[]; teamGroups: TeamGroup[]; memberships: GroupMember[]; tasks: ProjectTask[]; contactRequests: ContactRequest[];
 }
 export const alertLabel = (alert: LiveAlert) => alert.target_label || alert.area?.name || 'Group alert';

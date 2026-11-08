@@ -2,7 +2,7 @@ import SwiftUI
 import MapKit
 import UIKit
 
-@main struct TANOVIQApp: App {
+@main struct AGILAApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var delegate
     @StateObject private var store = AppStore()
     var body: some Scene { WindowGroup { RootView().environmentObject(store).tint(Color(white: 0.85)).preferredColorScheme(.dark) } }
@@ -48,13 +48,13 @@ struct RootView: View {
         .onChange(of: phase) { _, value in
             if value == .active { Task { await store.refresh(); await PushCoordinator.shared.register(); DutyLocation.shared.resumeIfActive(); openPendingAlert() } }
         }
-        .onReceive(NotificationCenter.default.publisher(for: .tanoviqAlertChanged)) { _ in Task { await store.refresh() } }
-        .onReceive(NotificationCenter.default.publisher(for: .tanoviqOpenAlert)) { note in
+        .onReceive(NotificationCenter.default.publisher(for: .agilaAlertChanged)) { _ in Task { await store.refresh() } }
+        .onReceive(NotificationCenter.default.publisher(for: .agilaOpenAlert)) { note in
             pendingAlertID = note.object as? String; tab = .alerts
             Task { await store.refresh(); openPendingAlert() }
         }
         .onOpenURL { url in
-            guard url.scheme == "tanoviq", url.host == "alert", UUID(uuidString: url.lastPathComponent) != nil else { return }
+            guard url.scheme == "agila", url.host == "alert", UUID(uuidString: url.lastPathComponent) != nil else { return }
             pendingAlertID = url.lastPathComponent; tab = .alerts
             Task { await store.refresh(); openPendingAlert() }
         }
@@ -101,7 +101,7 @@ struct SignInView: View {
                 }.listRowBackground(Color.clear)
                 if !store.error.isEmpty { Section { Label(store.error, systemImage: "exclamationmark.circle").foregroundStyle(.red) } }
                 Section { Text("Location is shared only while you are on duty. iPhone permission settings control notifications, background location, and Live Activities.").font(.footnote).foregroundStyle(.secondary) }
-            }.navigationTitle("AGILA")
+            }.navigationTitle("Sign in").navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     if registering {
                         ToolbarItem(placement: .topBarLeading) {

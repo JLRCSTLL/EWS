@@ -16,8 +16,8 @@ clearly separated from connected accounts and alerts.
 | --- | --- | --- |
 | [Command center](https://ews-kappa.vercel.app/) | Browser interface for approved operators | Web |
 | [AGILA](https://ews-kappa.vercel.app/#/public) | Register, receive alerts, share location while on duty, request help | Mobile web / PWA |
-| [Windows](desktop/README.md) | Dedicated command-center window, splash and desktop controls | 1.2.0, x64 installer / portable |
-| [Android](android/README.md) | Mobile interface with native notifications, alarm controls and on-duty GPS | 0.9.0 pilot, version code 12 |
+| [Windows](desktop/README.md) | Dedicated command-center window, splash and desktop controls | 1.3.0, x64 installer / portable |
+| [Android](android/README.md) | Mobile interface with native notifications, alarm controls and on-duty GPS | 0.9.1 pilot, version code 13 |
 | [iPhone](ios/README.md) | SwiftUI app, APNs and Live Activity implementation | Development; no signed IPA or TestFlight release |
 
 Windows and Android load the hosted interface. Rebuilding an installer does not
@@ -29,6 +29,23 @@ imagery keeps its natural colors. **Account → Glass appearance** adjusts
 navigation tint on that device. Reduced-motion and reduced-transparency preferences
 are respected. This is an iOS 27-inspired design implemented for Android/web,
 not Apple's native Liquid Glass renderer.
+
+## Responder tablets and saved hospitals
+
+Android phones and tablets use the same installer. In landscape windows at least
+900 pixels wide, the responder map expands beside the assignment panel, with a
+navigation rail and a status bar. Narrow or portrait windows use the phone layout.
+The navigation overview fits the screen; complete incident details and long chat
+histories remain accessible in their own scrollable panels. Rotation and Android
+multi-window resizing preserve the active WebView and dispatch session.
+
+**Dispatch → Directory** includes 1,837 named Philippine hospitals from the
+[Healthsites / OpenStreetMap catalog](server/data/README.md), snapshot 29 September
+2026. Search by name or available address, filter hospitals or bases, and locate
+an entry on the map. Saved hospital suggestions work without a live directory
+lookup. These are mapped facilities, not confirmed receiving capacity or verified
+vehicle entrances. Deleted catalog entries stay deleted after a restart. Local
+and hosted services seed the catalog on startup after the database migration.
 
 ## What operators can do
 
@@ -51,7 +68,7 @@ not Apple's native Liquid Glass renderer.
   All saved areas stay on the map. There is no fixed geofence-count limit; available
   browser storage is the practical limit. Saves are local to that browser/desktop
   profile, not synchronized between operators. Storage failures are reported.
-  Saved areas use solid teal outlines and explicit labels; the selected area is
+  Saved areas use solid light-gray outlines and explicit labels; the selected area is
   brighter, while unsaved previews use amber dashes. Searching an already-saved
   boundary selects it instead of creating a duplicate draft.
   Press **Escape**, click the empty map, select the same boundary again, or use
@@ -271,7 +288,7 @@ older than 24 hours are cleaned up on subsequent uploads. Deploy the API with
 2. Deploy the API/schema first. For this release, `/api/config` must report
    `groupManagementReady: true`, `boundaryGeofencesReady: true`,
    `registrationProfileReady: true`, `alertAudioReady: true`, and
-   `commandCenterVersion: "1.1.3"`. Verify the deployed commit: deploying the
+   `commandCenterVersion: "1.3.0"`. Verify the deployed commit: deploying the
    latest commit of a stale branch does not deploy `main`.
 3. Deploy the frontend to the existing Vercel `ews` project. Production uses
    `main`; a branch preview does not update the public domain. The
@@ -340,7 +357,7 @@ The original interface attribution is retained in [ATTRIBUTIONS.md](ATTRIBUTIONS
 
 ### Shared interface and presentation
 
-The desktop interface is temporarily named **AGILA Command Center**; the personnel app and demonstration phone are named **AGILA**. Both use the charcoal glass material and typography in `src/styles/command-theme.css`. Mobile navigation remains sized for touch, and alert text uses a solid surface for readability. The emergency-profile registration form is shared by mobile and command-center account creation. Internal package identifiers and stored account sessions retain their existing names so installed updates remain compatible.
+The desktop interface is **AGILA Command Center**; the personnel app and demonstration phone are named **AGILA**. Both use charcoal matte glass and the typography in `src/styles/command-theme.css`. The responder overview adapts to the window, keeping the map, assignment and status controls together. Longer reports, duty settings and conversations open in dedicated panels. The emergency-profile registration form is shared by mobile and command-center account creation. Android keeps its existing package identifier and signing identity for installed updates. Windows migrates a single recognized previous profile into the AGILA profile; ambiguous profiles are left intact. The iOS project uses the AGILA bundle and keychain identifiers.
 
 Select **Demo** in the web command center to choose **Quick overview** (7 chapters), **Standard tour** (12 chapters), or **Full workflow** (all 17 chapters). Standard tour at **0.5× Slow** is the default. At that speed the tours take approximately 5, 9, and 12 minutes, respectively. The full workflow adds emergency-profile sharing, groups and leaders, exposure review, CCTV, and Logs to the core map, alert, and mobile navigation story.
 

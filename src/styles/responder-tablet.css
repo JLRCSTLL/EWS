@@ -1,0 +1,193 @@
+/* One responder workflow, adapted to the available window rather than a device name. */
+.rsp-tablet-header, .rsp-tablet-rail, .rsp-tablet-status, .rsp-tablet-summary { display: none; }
+.rsp-tablet-receipt { display: none; }
+.el-app.el-responder { height: 100dvh; min-height: 0; overflow: hidden; }
+.el-app.el-responder > main.el-main { width: 100%; max-width: none; min-height: 0; }
+.el-app.el-responder .rsp-workspace { max-width: none; min-height: 0; container: responder / size; }
+.el-responder .el-connection-error { position: fixed; z-index: 15; top: 8px; right: 8px; width: min(420px, calc(100% - 16px)); margin: 0; }
+.rsp-unread-dot { width: 6px; height: 6px; flex-shrink: 0; border-radius: 50%; background: #f1b59a; }
+.rsp-route-warning { display: flex; align-items: center; gap: 5px; padding: 0; min-height: 26px; border: 0; background: transparent; color: #f1c4a7; text-align: left; font-size: 11px; }
+.rsp-idle-location { display: flex; align-items: center; gap: 6px; color: #d2d2d2; font-size: 11px; margin: 12px 0; }
+.rsp-duty-button { width: 100%; font-size: 12px; }
+.rsp-duty-button span { font-size: 11px; }
+.rsp-duty-dialog .el-duty-compact { background: transparent; border: 0; padding: 8px 0; box-shadow: none; }
+.rsp-duty-dialog .gsam-duty-actions { display: grid; gap: 8px; }
+.rsp-duty-dialog .gsam-duty-actions button { min-height: 44px; color: #eee; background: #ffffff15; border: 1px solid #ffffff30; border-radius: 12px; padding: 10px; }
+.rsp-duty-dialog .el-section-heading, .rsp-duty-dialog .el-caption { font-size: 12px; }
+
+/* The overview is a compact control surface. Full reports remain in Incident. */
+@media (max-width: 899px), (max-height: 499px) {
+  .el-app.el-responder .rsp-bottom-sheet.is-compact { max-height: calc(100% - var(--rsp-top) - 210px); padding: 10px 12px; }
+  .rsp-bottom-sheet.is-compact .rsp-sheet-toggle { display: none; }
+  .rsp-bottom-sheet.is-compact .rsp-view-tabs { margin-bottom: 6px; padding-bottom: 5px; }
+  .rsp-bottom-sheet.is-compact .rsp-view-tabs button { min-height: 40px; padding: 6px; }
+  .rsp-bottom-sheet.is-compact h2 { margin: 5px 0 7px; font-size: 16px; -webkit-line-clamp: 1; }
+  .rsp-bottom-sheet.is-compact .rsp-trip-metrics { margin: 0; }
+  .rsp-bottom-sheet.is-compact .rsp-trip-metrics strong { font-size: 20px; }
+  .rsp-bottom-sheet.is-compact .rsp-trip-metrics > div:last-child strong { font-size: 12px; line-height: 25px; }
+  .rsp-bottom-sheet.is-compact .rsp-status-actions { margin: 6px 0 0; }
+  .el-app .rsp-bottom-sheet.is-compact .rsp-status-actions .rsp-primary { min-height: 44px; padding: 8px; font-size: 12px; }
+  .rsp-bottom-sheet.is-compact .rsp-trip-options { min-height: 36px; }
+  .rsp-idle-sheet { padding: 16px; max-height: calc(100% - var(--rsp-top) - 170px); }
+  .rsp-idle-heading h1 { font-size: clamp(17px, 3vw, 22px); }
+  .rsp-idle-description { margin: 8px 0; }
+}
+@media (max-width: 499px) and (max-height: 710px) {
+  .rsp-view-navigation .rsp-map-actions { top: calc(var(--rsp-top) + 168px); bottom: auto; }
+  .rsp-bottom-sheet.is-compact .rsp-trip-options { min-height: 32px; }
+  .rsp-bottom-sheet.is-compact .rsp-view-tabs button { min-height: 36px; }
+}
+@media (min-width: 500px) and (max-height: 710px) and (max-width: 899px), (min-width: 500px) and (max-height: 499px) {
+  .el-app.el-responder .rsp-workspace { height: 100dvh; }
+  .el-app.el-responder > .el-bottom-nav { display: none; }
+  .rsp-topbar { right: 53%; }
+  .rsp-topbar .rsp-live-pill { display: none; }
+  .rsp-guidance { right: 53%; padding: 10px; }
+  .rsp-guidance h1 { font-size: 16px; }
+  .rsp-bottom-sheet, .rsp-bottom-sheet.is-expanded, .el-app.el-responder .rsp-bottom-sheet.is-compact, .rsp-idle-sheet { left: 49%; top: 10px; right: 10px; bottom: 10px; max-height: none; }
+  .rsp-idle-label { right: 53%; }
+  .rsp-back, .rsp-idle .rsp-brand { cursor: pointer; }
+}
+@media (min-width: 768px) {
+  .el-app:not(.el-responder) .el-main { max-width: 1120px; padding: 22px 30px 40px; }
+  .el-app:not(.el-responder) .el-header { padding-inline: max(30px, calc((100vw - 1060px) / 2)); }
+  .el-app .mobile-home { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 18px 24px; align-items: start; }
+  .el-app .mobile-home > * { min-width: 0; margin-block: 0; }
+  .el-app .mobile-home > .mobile-welcome, .el-app .mobile-home > .el-section-title, .el-app .mobile-home > .gsam-mobile-assignments { grid-column: 1 / -1; }
+  .el-app .mobile-response-hero { grid-row: span 2; height: 360px; }
+  .el-app .mobile-summary-grid { grid-template-columns: 1fr; }
+  .el-app .el-auth { max-width: 620px; }
+  .el-app .el-bottom-nav { max-width: 620px; }
+  .el-app.el-responder > main.el-main { max-width: none; width: 100%; padding: 0; }
+  .el-app.el-responder .rsp-workspace { max-width: none; }
+}
+@media (min-width: 900px) and (min-height: 500px) {
+  .el-app.el-responder { padding-bottom: 0; --rsp-rail-width: 166px; --rsp-panel-width: clamp(300px, 29vw, 390px); }
+  .el-app.el-responder > .el-bottom-nav { display: none; }
+  .el-app.el-responder > main.el-main > .rsp-workspace { height: 100dvh; min-height: 0; max-width: none; width: auto; margin: 0 0 0 var(--rsp-rail-width); border: 0; }
+  .el-app.el-responder .rsp-topbar { display: none; }
+  .rsp-tablet-header { display: flex; position: fixed; inset: 0 0 auto; height: 88px; align-items: center; gap: 22px; padding: max(14px, env(safe-area-inset-top)) 24px 14px; border-radius: 0; border-width: 0 0 1px; z-index: 7; }
+  .rsp-tablet-logo { flex-shrink: 0; }
+  .rsp-tablet-logo .agila-logo { width: 156px; }
+  .rsp-tablet-connection { display: flex; align-items: center; gap: 8px; font-size: 13px; white-space: nowrap; }
+  .rsp-tablet-connection i { width: 7px; height: 7px; border-radius: 50%; background: #c2a469; }
+  .rsp-tablet-connection i.is-connected { background: #ddd; }
+  .rsp-tablet-header small { display: block; font-size: 10px; color: #bcbcbc; margin-top: 3px; }
+  .rsp-tablet-header time { margin-left: auto; font-size: 18px; text-align: right; white-space: nowrap; }
+  .rsp-assignment-search { position: relative; width: min(34%, 350px); min-width: 180px; }
+  .el-app.el-responder .rsp-assignment-search label { display: flex; flex-direction: row; align-items: center; gap: 8px; margin: 0; padding: 0 12px; border: 1px solid #ffffff30; border-radius: 14px; background: #ffffff06; }
+  .el-app.el-responder .rsp-assignment-search input[type=search] { min-width: 0; width: 100%; min-height: 44px; padding: 8px 0; background: transparent; border: 0; font-size: 12px; }
+  .rsp-assignment-results { position: absolute; right: 0; top: 52px; width: min(380px, 70vw); max-height: 50dvh; overflow: auto; padding: 10px; border-radius: 16px; background: #292929f5; }
+  .rsp-assignment-results > div { display: flex; justify-content: space-between; align-items: center; }
+  .rsp-assignment-results button { background: none; border: 0; color: inherit; min-height: 44px; }
+  .rsp-assignment-results > button { display: block; width: 100%; padding: 12px; text-align: left; border-top: 1px solid #ffffff16; border-radius: 8px; }
+  .rsp-assignment-results > button:hover { background: #ffffff12; }
+  .rsp-assignment-results :is(strong, span) { display: block; font-size: 12px; overflow-wrap: anywhere; }
+  .rsp-assignment-results p { font-size: 12px; padding: 10px; }
+  .rsp-tablet-rail { position: fixed; display: flex; flex-direction: column; left: 0; top: 0; bottom: 0; width: var(--rsp-rail-width); padding: 106px 10px 16px; border-width: 0 1px 0 0; border-radius: 0; z-index: 6; background: #222222f0; }
+  .rsp-tablet-rail nav { display: grid; gap: 8px; }
+  .rsp-tablet-rail nav :is(button, a) { display: flex; align-items: center; gap: 12px; min-height: 52px; width: 100%; border: 1px solid transparent; border-radius: 14px; background: none; color: #ddd; padding: 12px; font-size: 12px; text-align: left; }
+  .rsp-tablet-rail nav :is(button, a):hover, .rsp-tablet-rail nav .is-active { background: #ffffff12; border-color: #ffffff12; color: #fff; }
+  .rsp-tablet-rail svg { flex-shrink: 0; }
+  .rsp-tablet-identity, .rsp-tablet-account { display: flex; gap: 10px; align-items: center; padding: 16px 8px; border-top: 1px solid #ffffff20; }
+  .rsp-tablet-identity { margin-top: auto; }
+  .rsp-tablet-rail strong { display: block; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rsp-tablet-identity > span, .rsp-tablet-account > span { min-width: 0; }
+  .rsp-tablet-rail small { display: block; font-size: 10px; color: #bbb; }
+  .el-app.el-responder .rsp-bottom-sheet, .el-app.el-responder .rsp-bottom-sheet.is-expanded, .el-app.el-responder .rsp-idle-sheet { inset: 104px auto 108px 16px; width: var(--rsp-panel-width); max-height: none; border-radius: 20px; padding: 20px; transform: none; overflow-y: auto; container: responder-panel / size; }
+  .el-app.el-responder .rsp-idle-sheet { bottom: 20px; }
+  .rsp-bottom-sheet .rsp-view-tabs, .rsp-bottom-sheet .rsp-sheet-toggle, .rsp-bottom-sheet .rsp-status-actions, .rsp-bottom-sheet .rsp-trip-options { display: none; }
+  .rsp-bottom-sheet .rsp-trip-metrics { flex-wrap: wrap; gap: 18px; margin-block: 20px; }
+  .rsp-tablet-summary { display: grid; gap: 16px; margin-top: 18px; padding-block: 18px; border-block: 1px solid #ffffff22; }
+  .rsp-tablet-summary > div { display: flex; gap: 12px; font-size: 13px; }
+  .rsp-tablet-summary svg { flex-shrink: 0; margin-top: 3px; }
+  .rsp-tablet-summary small { display: block; font-size: 10px; color: #bbb; margin-bottom: 3px; }
+  .rsp-tablet-summary p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .rsp-tablet-summary button { width: 100%; }
+  .el-app.el-responder .rsp-guidance, .el-app.el-responder .rsp-idle-label { left: calc(var(--rsp-panel-width) + 48px); right: 84px; top: 110px; padding: 14px 18px; }
+  .el-app.el-responder .rsp-guidance h1 { font-size: 18px; }
+  .el-app.el-responder .rsp-map-actions { top: 110px; right: 18px; bottom: auto; left: auto; display: grid; }
+  .rsp-tablet-status { position: absolute; display: flex; gap: 18px; align-items: center; left: 16px; right: 16px; bottom: 16px; z-index: 5; padding: 12px 16px; min-height: 76px; border-radius: 18px; }
+  .rsp-tablet-status > div:first-child { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .rsp-tablet-status strong { font-size: 12px; }
+  .rsp-tablet-status small { display: block; font-size: 9px; color: #bbb; }
+  .rsp-tablet-status-steps { display: flex; gap: 8px; flex: 1; padding: 2px; }
+  .rsp-tablet-status-steps button { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 46px; padding: 10px 14px; border: 1px solid #ffffff45; border-radius: 11px; background: #ffffff0d; color: #fff; white-space: nowrap; font-size: 11px; flex: 1; }
+  .rsp-tablet-status-steps button:disabled { opacity: .45; }
+  .rsp-tablet-status-steps button.is-current { background: #ffffff20; border-color: #eee; opacity: 1; }
+  .el-app.el-responder .rsp-chat { height: 100%; min-height: 0; }
+  .el-app.el-responder .rsp-messages { min-height: 0; }
+  .rsp-map .leaflet-control-attribution { margin-bottom: 100px; }
+  .rsp-idle .rsp-map .leaflet-control-attribution { margin-bottom: 0; }
+}
+@media (min-width: 900px) and (max-width: 1150px) and (min-height: 500px) {
+  .el-app.el-responder { --rsp-rail-width: 134px; --rsp-panel-width: 300px; }
+  .rsp-tablet-header { gap: 14px; padding-inline: 16px; }
+  .rsp-tablet-header time { display: none; }
+  .rsp-assignment-search { margin-left: auto; width: 38%; }
+  .rsp-tablet-status > div:first-child small { display: none; }
+  .rsp-tablet-status > div:first-child { max-width: 85px; }
+  .rsp-tablet-status-steps button { padding-inline: 10px; }
+}
+
+@media (min-width: 900px) and (min-height: 500px) {
+  .el-app.el-responder { height: 100dvh; min-height: 0; overflow: hidden; }
+  .el-app.el-responder > main.el-main { height: 100%; }
+  .el-app.el-responder .rsp-view-navigation .rsp-bottom-sheet { display: flex; flex-direction: column; gap: clamp(4px, 1dvh, 10px); padding: clamp(14px, 2dvh, 22px); }
+  .rsp-view-navigation .rsp-dispatch-receipt { display: none; }
+  .rsp-view-navigation .rsp-receipt-confirmed { margin: 0; font-size: 10px; }
+  .rsp-tablet-receipt { display: flex; align-items: center; gap: 8px; flex-shrink: 0; min-height: 44px; padding: 9px 10px; border: 1px solid #ffffff30; border-radius: 12px; background: #ffffff09; color: #ededed; font-size: 11px; text-align: left; }
+  .rsp-tablet-receipt > span:last-child { display: flex; align-items: center; margin-left: auto; }
+  .rsp-view-navigation .rsp-bottom-sheet h2 { margin: 0; font-size: clamp(16px, 1.6vw, 22px); line-height: 1.3; flex-shrink: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .rsp-tablet-summary { gap: clamp(8px, 1.6dvh, 16px); padding: clamp(8px, 1.8dvh, 18px) 0; margin: 0; min-height: 0; }
+  .rsp-tablet-summary > div { font-size: clamp(11px, 1.03vw, 14px); gap: 8px; }
+  .rsp-tablet-summary > div > span { min-width: 0; overflow-wrap: anywhere; }
+  .rsp-tablet-summary p { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .rsp-tablet-summary .rsp-summary-location p { -webkit-line-clamp: 2; }
+  .rsp-tablet-detail-link { display: flex; align-items: center; justify-content: space-between; border: 0; padding: 8px 0; color: #ddd; background: transparent; min-height: 40px; text-align: left; font-size: 11px; }
+  .rsp-tablet-summary .rsp-tablet-tools { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .rsp-tablet-tools button { min-height: 44px; padding: 8px; font-size: 12px; }
+  .rsp-bottom-sheet .rsp-trip-metrics { margin: auto 0 0; gap: 10px; flex-shrink: 0; }
+  .rsp-bottom-sheet .rsp-trip-metrics strong { font-size: clamp(18px, 2.2vw, 28px); }
+  .rsp-bottom-sheet .rsp-trip-metrics > div:last-child strong { font-size: 12px; }
+  .rsp-tablet-status-steps { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); overflow: visible; gap: 6px; min-width: 0; }
+  .rsp-tablet-status-steps button { white-space: normal; min-width: 0; padding: 8px 6px; font-size: clamp(10px, .9vw, 12px); line-height: 1.2; }
+  .rsp-tablet-status-steps svg { flex-shrink: 0; width: 16px; }
+  .el-responder .el-connection-error { position: fixed; z-index: 15; top: 88px; right: 18px; width: min(420px, 48vw); margin: 0; }
+}
+@media (min-width: 900px) and (max-width: 1150px) and (min-height: 500px) {
+  .el-app.el-responder { --rsp-rail-width: 112px; --rsp-panel-width: 280px; }
+  .rsp-tablet-rail nav :is(button, a) { flex-direction: column; justify-content: center; gap: 5px; padding: 6px; font-size: 10px; }
+  .rsp-tablet-identity, .rsp-tablet-account { padding: 12px 2px; gap: 6px; }
+  .rsp-tablet-status > div:first-child { display: none; }
+}
+@media (min-width: 900px) and (min-height: 500px) and (max-height: 680px) {
+  .rsp-tablet-header { height: 72px; }
+  .rsp-tablet-rail { padding-top: 82px; }
+  .rsp-tablet-rail nav { gap: 2px; }
+  .rsp-tablet-rail nav :is(button, a) { min-height: 44px; }
+  .rsp-tablet-identity, .rsp-tablet-account { padding-block: 8px; }
+  .el-app.el-responder .rsp-bottom-sheet, .el-app.el-responder .rsp-bottom-sheet.is-expanded { top: 84px; bottom: 88px; }
+  .el-app.el-responder .rsp-idle-sheet { top: 84px; }
+  .el-app.el-responder .rsp-guidance, .el-app.el-responder .rsp-idle-label, .el-app.el-responder .rsp-map-actions { top: 84px; }
+  .rsp-tablet-status { bottom: 10px; min-height: 64px; padding: 8px 10px; }
+  .rsp-tablet-summary { gap: 5px; padding-block: 5px; }
+  .rsp-tablet-summary p { -webkit-line-clamp: 2; }
+  .rsp-tablet-summary small { font-size: 9px; }
+  .rsp-view-navigation .rsp-bottom-sheet > .rsp-caption { font-size: 9px!important; margin: 0; }
+}
+
+/* Reduce secondary information before essential controls run out of space. */
+@container responder-panel (max-height: 490px) {
+  .rsp-summary-report { display: none !important; }
+  .rsp-tablet-summary { gap: 6px; padding-block: 6px; }
+}
+@container responder-panel (max-height: 370px) {
+  .rsp-tablet-summary .rsp-tablet-tools { display: none; }
+  .rsp-tablet-receipt { min-height: 36px; padding-block: 6px; }
+  .rsp-tablet-summary .rsp-summary-location p { -webkit-line-clamp: 1; }
+}
+@container responder (max-height: 320px) {
+  .rsp-bottom-sheet.is-compact .rsp-incident-heading { display: none; }
+  .rsp-guidance p, .rsp-idle-description { display: none; }
+}

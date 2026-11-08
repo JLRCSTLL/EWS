@@ -1,10 +1,10 @@
 import XCTest
-@testable import TANOVIQ
+@testable import AGILA
 
 final class AlertContractTests: XCTestCase {
     func testAPNsContentStateDecodesWithActivityKitContract() throws {
         let json = #"{"priority":"critical","message":"TEST ONLY — use the west exit","updatedAt":1792800000,"acknowledged":false}"#
-        let state = try JSONDecoder().decode(TANOVIQAlertAttributes.ContentState.self, from: Data(json.utf8))
+        let state = try JSONDecoder().decode(AGILAAlertAttributes.ContentState.self, from: Data(json.utf8))
         XCTAssertEqual(state.message, "TEST ONLY — use the west exit")
         XCTAssertFalse(state.acknowledged)
     }

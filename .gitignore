@@ -47,7 +47,7 @@ ios/*.xcodeproj/
 ios/build/
 ios/DerivedData/
 ios/App/Info.plist
-ios/App/TANOVIQ.entitlements
+ios/App/AGILA.entitlements
 ios/LiveActivity/Info.plist
 ios/*.xcconfig
 *.p8

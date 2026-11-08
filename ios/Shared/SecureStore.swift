@@ -2,7 +2,7 @@ import Foundation
 import Security
 
 enum SecureStore {
-    private static let service = "ph.tanoviq.private"
+    private static let service = "ph.agila.private"
     static func value(_ name: String) -> String? {
         let query: [String: Any] = [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service,
             kSecAttrAccount as String: name, kSecReturnData as String: true, kSecMatchLimit as String: kSecMatchLimitOne]

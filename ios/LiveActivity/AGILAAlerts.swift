@@ -2,12 +2,12 @@ import SwiftUI
 import WidgetKit
 import ActivityKit
 
-@main struct TANOVIQAlerts: WidgetBundle {
+@main struct AGILAAlerts: WidgetBundle {
     var body: some Widget { AlertLiveActivity() }
 }
 struct AlertLiveActivity: Widget {
     var body: some WidgetConfiguration {
-        ActivityConfiguration(for: TANOVIQAlertAttributes.self) { context in
+        ActivityConfiguration(for: AGILAAlertAttributes.self) { context in
             VStack(alignment: .leading, spacing: 12) {
                 HStack { Label("AGILA", systemImage: "dot.radiowaves.left.and.right").font(.caption.bold()); Spacer(); Text(context.state.priority.uppercased()).font(.caption.bold()).foregroundStyle(.orange) }
                 Text(context.state.message).font(.headline).lineLimit(5)
@@ -17,7 +17,7 @@ struct AlertLiveActivity: Widget {
                     Button(intent: AcknowledgeAlertIntent(alertID: context.attributes.alertID, userID: context.attributes.userID)) { Text("Acknowledge") }.tint(.white).buttonStyle(.bordered)
                 }
             }.padding(16).activityBackgroundTint(Color(red: 0.08, green: 0.11, blue: 0.13)).activitySystemActionForegroundColor(.white).foregroundStyle(.white)
-                .widgetURL(URL(string: "tanoviq://alert/" + context.attributes.alertID))
+                .widgetURL(URL(string: "agila://alert/" + context.attributes.alertID))
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) { Label("AGILA", systemImage: "antenna.radiowaves.left.and.right").font(.caption.bold()).foregroundStyle(.white) }
@@ -38,7 +38,7 @@ struct AlertLiveActivity: Widget {
                 Text("ALERT").font(.caption2.bold()).foregroundStyle(.white)
             } minimal: {
                 Image(systemName: "exclamationmark.shield.fill").foregroundStyle(.orange)
-            }.keylineTint(.mint).widgetURL(URL(string: "tanoviq://alert/" + context.attributes.alertID))
+            }.keylineTint(.white).widgetURL(URL(string: "agila://alert/" + context.attributes.alertID))
         }
     }
 }

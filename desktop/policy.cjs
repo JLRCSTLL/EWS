@@ -1,7 +1,7 @@
 'use strict';
 
 const PRODUCTION_URL = 'https://ews-kappa.vercel.app/';
-const SHELL_URL = 'tanoviq://desktop/';
+const SHELL_URL = 'agila://desktop/';
 const TOOLBAR_HEIGHT = 36;
 
 function parseUrl(value) {
@@ -29,7 +29,7 @@ function isExternalUrl(value) {
 }
 function shellAsset(value) {
   const url = parseUrl(value);
-  if (!url || url.protocol !== 'tanoviq:' || url.host !== 'desktop' || url.username || url.password || url.search) return null;
+  if (!url || url.protocol !== 'agila:' || url.host !== 'desktop' || url.username || url.password || url.search) return null;
   return ({ '/': 'shell/index.html', '/shell.css': 'shell/shell.css', '/shell.js': 'shell/shell.js', '/logo.png': 'assets/agila-mark.png' })[url.pathname] || null;
 }
 function canNotify(permission, origin, base = PRODUCTION_URL) {
@@ -43,7 +43,7 @@ function canRecord(permission, origin, details = {}, base = PRODUCTION_URL) {
 function canSaveActivityLog({ url, filename, mimeType, bytes, pageUrl }, base = PRODUCTION_URL) {
   const download = parseUrl(url);
   return isCommandUrl(pageUrl, base) && !!download && download.protocol === 'blob:' && download.origin === new URL(base).origin &&
-    /^(?:AGILA|TANOVIQ)-(activity|demo)-logs-\d{4}-\d{2}-\d{2}\.csv$/.test(filename) &&
+    /^AGILA-(activity|demo)-logs-\d{4}-\d{2}-\d{2}\.csv$/.test(filename) &&
     typeof mimeType === 'string' && mimeType.split(';')[0].trim().toLowerCase() === 'text/csv' &&
     Number.isSafeInteger(bytes) && bytes > 0 && bytes <= 2 * 1024 * 1024;
 }

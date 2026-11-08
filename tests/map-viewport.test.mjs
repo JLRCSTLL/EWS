@@ -43,3 +43,26 @@ test('route bounds share the visible padding; full overlays never produce negati
   assert.ok(tiny.paddingTopLeft[0] + tiny.paddingBottomRight[0] <= 256.001);
   assert.ok(tiny.centerOffset.every(Number.isFinite));
 });
+
+test('tablet navigation keeps the vehicle clear of the assignment panel and status dock', () => {
+  const view = rect(166, 0, 1114, 800), panel = rect(182, 104, 371, 588), dock = rect(182, 708, 1082, 76);
+  const marker = markerPosition(view, [{edge:'top',rect:rect(166,0,1114,88)}, {edge:'top',rect:rect(585,110,610,90)}, {edge:'sheet',rect:panel}, {edge:'bottom',rect:dock}]);
+  assert.ok(marker.x - 24 > panel.right);
+  assert.ok(marker.y - 24 > 200);
+  assert.ok(marker.y + 24 < dock.top);
+});
+
+test('compact tablet keeps the whole marker visible between the controls at 900 by 500', () => {
+  const view = rect(112, 0, 788, 500), panel = rect(128, 84, 280, 328), dock = rect(128, 426, 756, 64);
+  const marker = markerPosition(view, [{edge:'top',rect:rect(0,0,900,72)}, {edge:'top',rect:rect(440,84,376,98)}, {edge:'sheet',rect:panel}, {edge:'bottom',rect:dock}]);
+  assert.ok(marker.x - 24 > panel.right);
+  assert.ok(marker.y - 24 > 182);
+  assert.ok(marker.y + 24 < dock.top);
+});
+
+test('phone overview leaves a visible location between guidance and compact controls', () => {
+  const view = rect(0, 0, 375, 582), guidance = rect(14, 80, 347, 100), sheet = rect(10, 326, 355, 244);
+  const marker = markerPosition(view, [{edge:'top',rect:guidance}, {edge:'sheet',rect:sheet}]);
+  assert.ok(marker.y - 24 > guidance.bottom);
+  assert.ok(marker.y + 24 < sheet.top);
+});

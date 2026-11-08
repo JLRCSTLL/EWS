@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { SlidersHorizontal } from 'lucide-react';
+import { readMigratedPreference } from '../../lib/local-preferences';
 
-const storageKey = 'tanoviq-mobile-glass-tint';
+const storageKey = 'agila-mobile-glass-tint';
 
 export function useGlassTint() {
   const [tint, setTint] = useState(() => {
     try {
-      const saved = localStorage.getItem(storageKey);
+      const saved = readMigratedPreference(storageKey, '-mobile-glass-tint');
       const value = saved === null ? 65 : Number(saved);
       return Number.isFinite(value) ? Math.max(0, Math.min(100, value)) : 65;
     } catch { return 65; }

@@ -71,7 +71,7 @@ public class AlertDeliveryTest {
         Intent intent = shadowOf(navigation.actionIntent).getSavedIntent();
         assertEquals("OPEN_RESPONSE",intent.getAction());
         assertEquals(MainActivity.class.getName(),intent.getComponent().getClassName());
-        assertEquals("tanoviq://response/"+response,intent.getDataString());
+        assertEquals("agila://response/"+response,intent.getDataString());
         assertNull(intent.getStringExtra("body"));
     }
     @Test public void ordinaryAlertsDoNotOfferAResponderRoute() throws Exception {

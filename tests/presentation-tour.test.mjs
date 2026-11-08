@@ -24,8 +24,8 @@ test('continuous playback traverses every chapter again and desktop clients cann
   assert.deepEqual(visited.slice(presentationSteps.length, presentationSteps.length * 2), visited.slice(0, presentationSteps.length));
   assert.equal(canUseWebDemo('Mozilla/5.0 Chrome/142.0.0.0 Safari/537.36'), true);
   assert.equal(canUseWebDemo('Mozilla/5.0 (iPhone) Version/27.0 Mobile Safari/605.1.15'), true);
-  assert.equal(canUseWebDemo('Mozilla/5.0 tanoviq-command-center/1.1.2 Chrome/149.0.0.0 Electron/45.0.0 Safari/537.36'), false);
-  assert.equal(canUseWebDemo('Mozilla/5.0 TANOVIQDesktop/2.0'), false);
+  assert.equal(canUseWebDemo('Mozilla/5.0 agila-command-center/1.1.2 Chrome/149.0.0.0 Electron/45.0.0 Safari/537.36'), false);
+  assert.equal(canUseWebDemo('Mozilla/5.0 AGILADesktop/2.0'), false);
 });
 
 test('demo levels loop only through their selected chapters and support back/restart', () => {

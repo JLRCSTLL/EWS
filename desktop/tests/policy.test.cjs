@@ -17,9 +17,9 @@ test('external links never execute local files or operating-system protocols', (
   for(const url of ['file:///C:/test.exe','ms-settings:','data:text/html,hi','javascript:alert(1)','https://u:p@example.com/','http://example.com']) assert.equal(isExternalUrl(url),false,url);
 });
 test('local protocol exposes only four exact public assets', () => {
-  assert.equal(shellAsset('tanoviq://desktop/'),'shell/index.html');
-  assert.equal(shellAsset('tanoviq://desktop/logo.png'),'assets/agila-mark.png');
-  for(const url of ['tanoviq://desktop/../main.cjs','tanoviq://desktop/%2e%2e/main.cjs','tanoviq://desktop/package.json','tanoviq://evil/','tanoviq://desktop/logo.png?file=secret','tanoviq://u@desktop/']) assert.equal(shellAsset(url),null,url);
+  assert.equal(shellAsset('agila://desktop/'),'shell/index.html');
+  assert.equal(shellAsset('agila://desktop/logo.png'),'assets/agila-mark.png');
+  for(const url of ['agila://desktop/../main.cjs','agila://desktop/%2e%2e/main.cjs','agila://desktop/package.json','agila://evil/','agila://desktop/logo.png?file=secret','agila://u@desktop/']) assert.equal(shellAsset(url),null,url);
 });
 test('permissions are confined to notifications for the trusted service', () => {
   assert.equal(canNotify('notifications','https://ews-kappa.vercel.app'),true);
@@ -42,8 +42,7 @@ test('voice recording allows only an audio microphone on the trusted main page',
 
 test('desktop exports accept only bounded CSV log blobs from the command-center origin', () => {
   const good={url:'blob:https://ews-kappa.vercel.app/0ac17d89-194a-4c01-b393-cf69d9277ffb',filename:'AGILA-activity-logs-2026-10-25.csv',mimeType:'text/csv;charset=utf-8',bytes:2048,pageUrl:PRODUCTION_URL};
-  assert.equal(canSaveActivityLog({...good,filename:'TANOVIQ-activity-logs-2026-10-25.csv'}),true,'retain exports from older hosted interfaces');
   assert.equal(canSaveActivityLog(good),true);
-  assert.equal(canSaveActivityLog({...good,filename:'TANOVIQ-demo-logs-2026-10-25.csv'}),true);
-  for(const change of [{url:'https://ews-kappa.vercel.app/report.csv'},{url:'blob:https://evil.example/id'},{url:'file:///C:/secret.csv'},{filename:'report.exe'},{filename:'../TANOVIQ-activity-logs-2026-10-25.csv'},{mimeType:'application/octet-stream'},{bytes:3000000},{bytes:-1},{pageUrl:PRODUCTION_URL+'#/public'}])assert.equal(canSaveActivityLog({...good,...change}),false,JSON.stringify(change));
+  assert.equal(canSaveActivityLog({...good,filename:'AGILA-demo-logs-2026-10-25.csv'}),true);
+  for(const change of [{url:'https://ews-kappa.vercel.app/report.csv'},{url:'blob:https://evil.example/id'},{url:'file:///C:/secret.csv'},{filename:'report.exe'},{filename:'../AGILA-activity-logs-2026-10-25.csv'},{mimeType:'application/octet-stream'},{bytes:3000000},{bytes:-1},{pageUrl:PRODUCTION_URL+'#/public'}])assert.equal(canSaveActivityLog({...good,...change}),false,JSON.stringify(change));
 });

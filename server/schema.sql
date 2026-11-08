@@ -110,6 +110,7 @@ create table if not exists eligtas.audit (
 create index if not exists audit_chronological on eligtas.audit(created_at desc, id desc);
 revoke all on all tables in schema eligtas from public;
 
+
 -- Additive GSAM migration. Organizational labels never grant application access.
 create table if not exists eligtas.projects (
   id uuid primary key,
@@ -238,3 +239,7 @@ update eligtas.users set location_sharing=false,lat=null,lng=null,accuracy=null,
 update eligtas.users set alerts_enabled=true where not exists (select 1 from eligtas.settings where key='gsam_personnel_alert_policy_v1');
 insert into eligtas.settings(key,value) values ('gsam_personnel_alert_policy_v1','true'::jsonb) on conflict(key) do nothing;
 revoke all on all tables in schema eligtas from public;
+alter table eligtas.response_facilities add column if not exists source_ref text;
+alter table eligtas.response_facilities add column if not exists source_data jsonb;
+create table if not exists eligtas.response_facility_exclusions (id uuid primary key, deleted_at timestamptz not null default now());
+revoke all on eligtas.response_facility_exclusions from public;

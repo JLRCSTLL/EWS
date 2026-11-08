@@ -21,7 +21,7 @@ export function AuthPanel({ welcomeIcon = false, commandCenter = false }: { welc
     const fields = Object.fromEntries(new FormData(event.currentTarget));
     try {
       const result = await api(`/auth/${mode}`, fields);
-      if (result.recoveryCode) setRecovery(result.recoveryCode); else await refresh();
+      if (result.recoveryCode) setRecovery(result.recoveryCode); else await refresh(true);
     } catch (error) { setError(error instanceof Error ? error.message : 'Unable to sign in.'); }
     finally { setBusy(false); }
   }

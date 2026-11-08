@@ -61,9 +61,9 @@ final class AlertDelivery {
     }
     static NotificationCompat.Builder notification(Context c, JSONObject alert, String channel) {
         String id = alert.optString("id");
-        Intent open = new Intent(c, AlertMessageActivity.class).setAction("READ_ALERT").setData(Uri.parse("tanoviq://alert/"+id)).putExtra("alertId",id);
+        Intent open = new Intent(c, AlertMessageActivity.class).setAction("READ_ALERT").setData(Uri.parse("agila://alert/"+id)).putExtra("alertId",id);
         PendingIntent content = PendingIntent.getActivity(c, 1, open, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-        Intent stop = new Intent(c, AlertActionReceiver.class).setAction("SILENCE_ALERT").setData(Uri.parse("tanoviq://silence/"+id)).putExtra("alertId",id);
+        Intent stop = new Intent(c, AlertActionReceiver.class).setAction("SILENCE_ALERT").setData(Uri.parse("agila://silence/"+id)).putExtra("alertId",id);
         PendingIntent silence = PendingIntent.getBroadcast(c, 2, stop, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         NotificationCompat.Builder builder = new NotificationCompat.Builder(c, channel).setSmallIcon(ph.eligtas.app.R.drawable.ic_notification)
             .setColor(0xffbdbdbd).setContentTitle("AGILA · " + alert.optString("priority", "normal") + " alert")
@@ -74,7 +74,7 @@ final class AlertDelivery {
         builder.addAction(0,"Read message",content);
         if (alert.optString("responseId").matches("[0-9a-fA-F-]{36}")) {
             Intent route = new Intent(c, MainActivity.class).setAction("OPEN_RESPONSE")
-                .setData(Uri.parse("tanoviq://response/" + alert.optString("responseId")))
+                .setData(Uri.parse("agila://response/" + alert.optString("responseId")))
                 .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
             builder.addAction(0,"Open navigation",PendingIntent.getActivity(c,3,route,PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
         }

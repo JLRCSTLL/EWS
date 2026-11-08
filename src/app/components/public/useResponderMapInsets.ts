@@ -9,7 +9,7 @@ export function useResponderMapInsets(workspace: RefObject<HTMLDivElement>, layo
     const overlays = [...root.querySelectorAll<HTMLElement>('[data-map-occlusion]')];
     const measure = () => {
       const next = responderMapInsets(root.getBoundingClientRect(), overlays.map(el => ({
-        edge: el.dataset.mapOcclusion as 'top' | 'sheet', rect: el.getBoundingClientRect(),
+        edge: el.dataset.mapOcclusion as 'top' | 'sheet' | 'bottom', rect: el.getBoundingClientRect(),
       })));
       setInsets(previous => Object.keys(next).every(key => previous[key as keyof MapInsets] === next[key as keyof MapInsets]) ? previous : next);
     };

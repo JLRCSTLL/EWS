@@ -8,7 +8,7 @@ snapshot. GitHub reported no open secret-scanning alerts.**
 - Repository: `JLRCSTLL/EWS` (public).
 - Fetched all three remote branches and tags before checking; the clone was not
   shallow. Gitleaks 8.30.1 scanned all 25 reachable commits, including
-  `main`, `ui/map-command-center` and `build/tanoviq-ios`.
+  the default, command-center, and iPhone build branches that existed at the time of the review.
 - The reviewed production/base commit was
   `d02592c5179fd5b1b53fbab4a5268bdb4e8b8eb3`. The fetched iPhone branch ended at
   `775f44689635ef60eb35c2d9d836f54e9cc0dce4`.

@@ -266,7 +266,7 @@ public final class MainActivity extends ComponentActivity {
                 }
                 case "stop": stopService(new Intent(this,EmergencyAlarmService.class)); reply(proxy,id,new JSONObject().put("ok",true),null); break;
                 case "logout": {
-                    androidx.work.WorkManager.getInstance(this).cancelAllWorkByTag("tanoviq-alert-network");
+                    androidx.work.WorkManager.getInstance(this).cancelAllWork();
                     AlertStore.clear(this);
                     LocationShareService.stop(this);
                     stopService(new Intent(this,EmergencyAlarmService.class));

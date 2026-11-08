@@ -2,20 +2,24 @@
 const { app, BrowserWindow, WebContentsView, Menu, session, protocol, ipcMain, dialog, shell, nativeTheme, screen, powerSaveBlocker } = require('electron');
 const fs = require('node:fs');
 const path = require('node:path');
+const { prepareProfile } = require('./profile.cjs');
+const { probeService } = require('./service.cjs');
 const { PRODUCTION_URL, SHELL_URL, TOOLBAR_HEIGHT, commandUrl, isCommandUrl, isExternalUrl, shellAsset, canNotify, canRecord, canSaveActivityLog, windowBounds } = require('./policy.cjs');
 
-// Keep the existing account/session directory while the display name is temporary.
-app.setPath('userData', path.join(app.getPath('appData'), 'TANOVIQ Command Center'));
 app.setName('AGILA Command Center');
-app.setAppUserModelId('ph.tanoviq.commandcenter');
+const testProfile = !app.isPackaged && process.env.AGILA_TEST_USER_DATA;
+let profileError;
+try { app.setPath('userData', testProfile && path.isAbsolute(testProfile) ? testProfile : prepareProfile(app.getPath('appData')).directory); }
+catch { profileError = true; }
+app.setAppUserModelId('ph.agila.commandcenter');
 app.enableSandbox();
-protocol.registerSchemesAsPrivileged([{ scheme: 'tanoviq', privileges: { standard: true, secure: true, supportFetchAPI: true } }]);
+protocol.registerSchemesAsPrivileged([{ scheme: 'agila', privileges: { standard: true, secure: true, supportFetchAPI: true } }]);
 const base = commandUrl(process.argv, app.isPackaged);
-if (!app.isPackaged && process.env.TANOVIQ_TEST_USER_DATA && path.isAbsolute(process.env.TANOVIQ_TEST_USER_DATA)) app.setPath('userData', process.env.TANOVIQ_TEST_USER_DATA);
 
 let win, view, remoteSession, heartbeat, retryTimer, readyTimer, loadTimer, awakeId;
 let ready = false, closing = false, checking = false, externalPrompt = false;
 let loadGeneration = 0, loadStarted = 0;
+let serviceRetryAt = 0, serviceFailures = 0;
 let state = { phase: 'loading', service: 'checking', message: 'Opening your command center…', fullScreen: false, keepAwake: false, version: app.getVersion() };
 const stateFile = () => path.join(app.getPath('userData'), 'window.json');
 function publish(patch = {}) {
@@ -63,13 +67,17 @@ function offline(message) {
   retryTimer = setTimeout(() => void loadCommand(), 15000);
 }
 async function checkService() {
-  if (checking || closing) return;
+  if (checking || closing || Date.now() < serviceRetryAt) return;
   checking = true;
   try {
-    const response = await remoteSession.fetch(new URL('api/health', base).href, { cache: 'no-store', credentials: 'omit', redirect: 'error', signal: AbortSignal.timeout(12000) });
-    if (!response.ok || (await response.json()).ok !== true) throw new Error('Service unavailable');
+    await probeService((url, options) => remoteSession.fetch(url, options), new URL('api/health', base).href);
+    serviceFailures = 0; serviceRetryAt = 0;
     publish({ service: 'connected' });
-  } catch { publish({ service: 'unavailable' }); }
+  } catch (error) {
+    serviceFailures++;
+    serviceRetryAt = Date.now() + Math.max(Math.min(60000, 15000 * 2 ** Math.min(serviceFailures - 1, 2)), error.retryAfterMs || 0);
+    publish({ service: 'unavailable' });
+  }
   finally { checking = false; }
 }
 function showCommand(generation) {
@@ -154,9 +162,10 @@ function guardContents(contents) {
   contents.on('render-process-gone', () => offline('The command-center window stopped responding. Retry to reopen it.'));
 }
 async function createWindow() {
+  if (profileError) { dialog.showErrorBox('Profile update interrupted', 'Your previous data was preserved. Close other command-center windows and open AGILA again to finish migrating your profile.'); app.quit(); return; }
   nativeTheme.themeSource = 'dark';
   const saved = restoreWindow();
-  protocol.handle('tanoviq', request => {
+  protocol.handle('agila', request => {
     const asset = shellAsset(request.url);
     if (!asset || request.method !== 'GET') return new Response('Not found', { status: 404 });
     const mime = asset.endsWith('.html') ? 'text/html' : asset.endsWith('.css') ? 'text/css' : asset.endsWith('.js') ? 'text/javascript' : 'image/png';
@@ -164,7 +173,7 @@ async function createWindow() {
   });
   session.defaultSession.setPermissionRequestHandler((_wc, _permission, callback) => callback(false));
   session.defaultSession.setPermissionCheckHandler(() => false);
-  remoteSession = session.fromPartition('persist:tanoviq-command');
+  remoteSession = session.fromPartition('persist:agila-command');
   let microphoneAllowed = false;
   remoteSession.setPermissionRequestHandler((contents, permission, callback, details) => {
     const trusted = contents === view?.webContents && isCommandUrl(contents.getURL(), base);

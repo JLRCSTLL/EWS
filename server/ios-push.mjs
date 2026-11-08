@@ -15,7 +15,7 @@ export function applePayload(alert, device, criticalApproved = false, now = Date
   const urgent = ['high', 'critical'].includes(alert.priority);
   const critical = urgent && criticalApproved && device.critical_enabled;
   return { aps: { alert: { title: `AGILA · ${alert.priority} alert`, body: pushText(alert.content) },
-    category: 'TANOVIQ_ALERT', 'thread-id': 'command-center', 'mutable-content': 1,
+    category: 'AGILA_ALERT', 'thread-id': 'command-center', 'mutable-content': 1,
     'content-available': 1, 'interruption-level': critical ? 'critical' : urgent ? 'time-sensitive' : 'active',
     sound: critical ? { critical: 1, name: 'default', volume: 1 } : 'default' },
     alertId: alert.id, userId: device.user_id, priority: alert.priority,
@@ -24,7 +24,7 @@ export function applePayload(alert, device, criticalApproved = false, now = Date
 export function liveActivityPayload(alert, device, now = Date.now()) {
   const timestamp = Math.floor(now / 1000);
   return { aps: { timestamp, event: 'start', 'stale-date': timestamp + 300,
-    'attributes-type': 'TANOVIQAlertAttributes', attributes: { alertID: alert.id, userID: device.user_id },
+    'attributes-type': 'AGILAAlertAttributes', attributes: { alertID: alert.id, userID: device.user_id },
     'content-state': { priority: alert.priority, message: pushText(alert.content, 1200), updatedAt: timestamp, acknowledged: false },
     'relevance-score': alert.priority === 'critical' ? 100 : 80,
     alert: { title: 'AGILA · Active alert', body: pushText(alert.content, 300) } } };
@@ -48,7 +48,7 @@ async function sendHttp2({ environment, token, headers, payload }) {
 export function setupIosPush(db, env = process.env, transport = sendHttp2) {
   if (!env.APNS_PRIVATE_KEY && !env.APNS_KEY_ID && !env.APNS_TEAM_ID) return null;
   if (!/^[A-Z0-9]{10}$/.test(env.APNS_KEY_ID || '') || !/^[A-Z0-9]{10}$/.test(env.APNS_TEAM_ID || '')) throw new Error('Check APNs team and key IDs.');
-  const bundle = env.APNS_BUNDLE_ID || 'ph.tanoviq.app';
+  const bundle = env.APNS_BUNDLE_ID || 'ph.agila.app';
   if (!/^[a-zA-Z0-9.-]{3,200}$/.test(bundle)) throw new Error('Check the iOS bundle identifier.');
   const key = createPrivateKey(env.APNS_PRIVATE_KEY.replace(/\\n/g, '\n'));
   if (key.asymmetricKeyType !== 'ec' || key.asymmetricKeyDetails?.namedCurve !== 'prime256v1') throw new Error('APNs requires a P-256 signing key.');

@@ -13,13 +13,13 @@ test('iPhone messages are visible APNs alerts; critical audio requires approval 
     const data=applePayload(alert,device,approved);
     assert.equal(data.aps['interruption-level'],'time-sensitive');assert.equal(data.aps.sound,'default');
     assert.ok(data.aps.alert.body.startsWith('TEST ONLY'));assert.ok(Buffer.byteLength(JSON.stringify(data))<4096);
-    assert.equal(data.aps.category,'TANOVIQ_ALERT');
+    assert.equal(data.aps.category,'AGILA_ALERT');
   }
   assert.equal(applePayload(alert,{...device,critical_enabled:true},false).aps['interruption-level'],'time-sensitive');
   const critical=applePayload(alert,{...device,critical_enabled:true},true);
   assert.equal(critical.aps.sound.critical,1);assert.equal(critical.aps.sound.volume,1);
   const live=liveActivityPayload(alert,device,1792800000000);
-  assert.equal(live.aps['attributes-type'],'TANOVIQAlertAttributes');assert.equal(live.aps.event,'start');
+  assert.equal(live.aps['attributes-type'],'AGILAAlertAttributes');assert.equal(live.aps.event,'start');
   assert.deepEqual(live.aps.attributes,{alertID:alert.id,userID:device.user_id});
   assert.equal(live.aps['stale-date']-live.aps.timestamp,300);assert.equal(live.aps.alert.sound,undefined);
   assert.equal(live.aps['content-state'].acknowledged,false);assert.ok(Buffer.byteLength(JSON.stringify(live))<4096);
@@ -44,7 +44,7 @@ test('iOS push uses actual recipients, separate APNs topics, and expires invalid
   const alert={id,priority:'high',content:'TEST ONLY — no emergency'};await push.send(alert);
   assert.equal(sent.length,2);assert.equal(sent[0].token,'a'.repeat(64));assert.equal(sent[0].payload.userId,a);
   assert.equal(sent[0].headers['apns-push-type'],'alert');assert.equal(sent[1].headers['apns-push-type'],'liveactivity');
-  assert.equal(sent[1].headers['apns-topic'],'ph.tanoviq.app.push-type.liveactivity');
+  assert.equal(sent[1].headers['apns-topic'],'ph.agila.app.push-type.liveactivity');
   assert.equal(sent[0].environment,'production');assert.equal(sent[0].headers.authorization.split('.').length,3);
   await db.query('insert into eligtas.ios_activities(token,device_token,alert_id) values($1,$2,$3)',['c'.repeat(128),'a'.repeat(64),id]);
   await push.acknowledge(a,id);assert.equal(sent[2].payload.aps.event,'end');assert.equal((await db.query('select * from eligtas.ios_activities')).rows.length,0);

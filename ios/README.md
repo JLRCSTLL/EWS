@@ -1,4 +1,4 @@
-# AGILA for iPhone — 0.3.0
+# AGILA for iPhone — 0.3.1
 
 This is the native SwiftUI iPhone app. The repository includes a GitHub-hosted
 Mac build workflow, so compilation does not require a Mac on the Windows host.
@@ -8,7 +8,7 @@ Mac build workflow, so compilation does not require a Mac on the Windows host.
 
 The [iPhone build workflow](https://github.com/JLRCSTLL/EWS/actions/workflows/ios-build.yml)
 uses the standard `xcode-27` Mac runner. Pushes affecting iOS source on
-`main` or `build/tanoviq-ios` compile the app and its Live Activity extension, run unit and
+`main` or `build/agila-ios` compile the app and its Live Activity extension, run unit and
 UI tests, capture simulator screenshots, and compile an unsigned device archive.
 It uses read-only repository permissions and no Apple credentials. No production
 account is created and no real alert is sent by these tests.
@@ -29,8 +29,8 @@ To run the simulator package on an Apple silicon Mac with Xcode 27, unzip it,
 boot an iPhone simulator, then run:
 
 ```sh
-xcrun simctl install booted /full/path/to/TANOVIQ.app
-xcrun simctl launch booted ph.tanoviq.app
+xcrun simctl install booted /full/path/to/AGILA.app
+xcrun simctl launch booted ph.agila.app
 ```
 
 ## Design and behavior
@@ -74,7 +74,7 @@ recordings do not replace the background APNs notification sound.
 
 Normal notifications obey iPhone sound settings. High/Critical messages request
 time-sensitive presentation by default. To use Critical Alerts, Apple must first
-approve TANOVIQ's restricted entitlement, the signing profile must include it,
+approve AGILA's restricted entitlement, the signing profile must include it,
 and the person must grant Critical Alerts permission. Until those steps are
 complete, the entitlement and authorization request are deliberately disabled.
 The backend also requires both its approval flag and the device permission flag
@@ -93,16 +93,16 @@ Install Xcode 27 and its iOS simulator runtime, accept its license, and install
 
 ```sh
 xcodegen generate
-xcodebuild -project TANOVIQ.xcodeproj -scheme TANOVIQ -configuration Debug \
+xcodebuild -project AGILA.xcodeproj -scheme AGILA -configuration Debug \
   -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
 ```
 
 Open the generated project, choose an available iPhone simulator, and run the
-`TANOVIQ` scheme. Run `TANOVIQTests` as well. Sign-in and inbox use the existing
+`AGILA` scheme. Run `AGILATests` as well. Sign-in and inbox use the existing
 production service; use a dedicated test account and no real emergency broadcast.
 For notification visual testing, copy `Fixtures/alert.apns`, replace its `userId`
 with your isolated test account ID, then use `xcrun simctl push booted
-ph.tanoviq.app /path/to/your-test.apns`. This is a local sample; its acknowledgment
+ph.agila.app /path/to/your-test.apns`. This is a local sample; its acknowledgment
 will fail unless the ID refers to an actual message in that account's inbox.
 The Debug Account screen also offers a clearly labeled local Live Activity
 preview. Actual remote push-to-start delivery requires APNs credentials and a
@@ -117,7 +117,7 @@ Deploy the repository's additive server/schema changes, then set server-only:
 | `APNS_TEAM_ID` | Your Apple team ID |
 | `APNS_KEY_ID` | Your APNs signing key ID |
 | `APNS_PRIVATE_KEY` | Contents of the Apple `.p8` key; keep secret |
-| `APNS_BUNDLE_ID` | `ph.tanoviq.app`, or your registered matching bundle ID |
+| `APNS_BUNDLE_ID` | `ph.agila.app`, or your registered matching bundle ID |
 | `APNS_CRITICAL_ALERTS_APPROVED` | `false` until Apple's approval is in place |
 
 No Apple key has been created or uploaded. APNs is inactive when configuration
@@ -131,7 +131,7 @@ these records. APNs acceptance is not a receipt or proof of audible output.
 
 After Apple grants Critical Alerts, add
 `com.apple.developer.usernotifications.critical-alerts: true` to the app's
-entitlements in `project.yml`, set `TANOVIQCriticalAlertsApproved: true`, regenerate
+entitlements in `project.yml`, set `AGILACriticalAlertsApproved: true`, regenerate
 the project, use the updated provisioning profile, then enable the Render flag.
 Never enable these based solely on a local sound test.
 
@@ -139,8 +139,8 @@ Never enable these based solely on a local sound test.
 
 1. Enroll in the Apple Developer Program. The repository's macOS build workflow
    can handle compilation; Apple signing credentials still need configuring.
-2. Register `ph.tanoviq.app` with Push Notifications and Time Sensitive
-   Notifications, plus extension `ph.tanoviq.app.alerts`. Select your team in Xcode
+2. Register `ph.agila.app` with Push Notifications and Time Sensitive
+   Notifications, plus extension `ph.agila.app.alerts`. Select your team in Xcode
    for both targets; reserve the identifiers in your own account.
 3. Create the App Store Connect app. Check the privacy manifest against the final
    service, complete App Privacy, export compliance and beta review information,

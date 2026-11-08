@@ -1,7 +1,7 @@
 {
   "aps": {
     "alert": { "title": "AGILA · TEST ONLY", "body": "LOCAL PREVIEW — no emergency. This sample demonstrates an expanded notification and its actions." },
-    "category": "TANOVIQ_ALERT",
+    "category": "AGILA_ALERT",
     "thread-id": "local-preview",
     "interruption-level": "active"
   },

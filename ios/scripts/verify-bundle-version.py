@@ -10,7 +10,7 @@ expected = {
     "CFBundleVersion": re.search(r'CURRENT_PROJECT_VERSION:\s*"([^"]+)"', spec).group(1),
 }
 app = Path(sys.argv[1])
-for info in (app / "Info.plist", app / "PlugIns/TANOVIQAlerts.appex/Info.plist"):
+for info in (app / "Info.plist", app / "PlugIns/AGILAAlerts.appex/Info.plist"):
     with info.open("rb") as source:
         bundle = plistlib.load(source)
     for key, value in expected.items():

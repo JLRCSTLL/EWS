@@ -33,8 +33,8 @@ public final class NativeAlertWorker extends Worker {
         Data input = new Data.Builder().putString("operation",operation).putString("id",id).putString("user",user).build();
         OneTimeWorkRequest work=new OneTimeWorkRequest.Builder(NativeAlertWorker.class).setInputData(input)
             .setConstraints(new Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
-            .setBackoffCriteria(BackoffPolicy.EXPONENTIAL,30,TimeUnit.SECONDS).addTag("tanoviq-alert-network").build();
-        WorkManager.getInstance(c).enqueueUniqueWork("tanoviq-"+user+"-"+operation+"-"+id,operation.equals("register")?ExistingWorkPolicy.REPLACE:ExistingWorkPolicy.KEEP,work);
+            .setBackoffCriteria(BackoffPolicy.EXPONENTIAL,30,TimeUnit.SECONDS).addTag("agila-alert-network").build();
+        WorkManager.getInstance(c).enqueueUniqueWork("agila-"+user+"-"+operation+"-"+id,operation.equals("register")?ExistingWorkPolicy.REPLACE:ExistingWorkPolicy.KEEP,work);
     }
     @NonNull @Override public Result doWork() {
         Context c=getApplicationContext(); String user=getInputData().getString("user"),operation=getInputData().getString("operation"),id=getInputData().getString("id");

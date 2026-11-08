@@ -2,7 +2,7 @@ name: AGILA iPhone build
 
 on:
   push:
-    branches: [main, build/tanoviq-ios]
+    branches: [main, build/agila-ios]
     paths: ['ios/**', '.github/workflows/ios-build.yml']
   workflow_dispatch:
 
@@ -55,7 +55,7 @@ jobs:
       - name: Compile and run iPhone tests
         run: |
           set -euo pipefail
-          xcodebuild -project TANOVIQ.xcodeproj -scheme TANOVIQ -configuration Debug \
+          xcodebuild -project AGILA.xcodeproj -scheme AGILA -configuration Debug \
             -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
             -derivedDataPath build/DerivedData -resultBundlePath build/Tests.xcresult \
             -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO test \
@@ -63,8 +63,8 @@ jobs:
       - name: Capture simulator appearance and package runnable simulator app
         run: |
           set -euo pipefail
-          python3 scripts/verify-bundle-version.py build/DerivedData/Build/Products/Debug-iphonesimulator/TANOVIQ.app
-          xcrun simctl launch "$SIMULATOR_ID" ph.tanoviq.app
+          python3 scripts/verify-bundle-version.py build/DerivedData/Build/Products/Debug-iphonesimulator/AGILA.app
+          xcrun simctl launch "$SIMULATOR_ID" ph.agila.app
           sleep 3
           xcrun simctl ui "$SIMULATOR_ID" appearance light
           sleep 1
@@ -73,16 +73,16 @@ jobs:
           xcrun simctl ui "$SIMULATOR_ID" appearance dark
           sleep 1
           xcrun simctl io "$SIMULATOR_ID" screenshot --display=1 build/evidence/iphone-dark.png
-          ditto -c -k --sequesterRsrc --keepParent build/DerivedData/Build/Products/Debug-iphonesimulator/TANOVIQ.app build/AGILA-iPhone-Simulator.zip
+          ditto -c -k --sequesterRsrc --keepParent build/DerivedData/Build/Products/Debug-iphonesimulator/AGILA.app build/AGILA-iPhone-Simulator.zip
       - name: Compile unsigned iPhone device archive
         run: |
           set -euo pipefail
-          xcodebuild -project TANOVIQ.xcodeproj -scheme TANOVIQ -configuration Release \
-            -destination 'generic/platform=iOS' -archivePath build/TANOVIQ.xcarchive \
+          xcodebuild -project AGILA.xcodeproj -scheme AGILA -configuration Release \
+            -destination 'generic/platform=iOS' -archivePath build/AGILA.xcarchive \
             -derivedDataPath build/DeviceDerivedData CODE_SIGNING_ALLOWED=NO archive \
             2>&1 | tee build/evidence/archive.log
-          python3 scripts/verify-bundle-version.py build/TANOVIQ.xcarchive/Products/Applications/TANOVIQ.app
-          ditto -c -k --sequesterRsrc --keepParent build/TANOVIQ.xcarchive build/AGILA-iPhone-Unsigned-Archive.zip
+          python3 scripts/verify-bundle-version.py build/AGILA.xcarchive/Products/Applications/AGILA.app
+          ditto -c -k --sequesterRsrc --keepParent build/AGILA.xcarchive build/AGILA-iPhone-Unsigned-Archive.zip
           printf '%s\n' 'Simulator zip: runs in an iPhone Simulator on a Mac.' \
             'Unsigned archive: compiled for iPhone hardware, requires Apple signing before installation.' \
             'No IPA or TestFlight release has been produced.' > build/READ-ME.txt

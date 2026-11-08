@@ -6,11 +6,11 @@ sandboxed desktop window. The website uses the same shared API and database as
 the Android app. This is an online client; it does not install a second server or
 database and does not provide offline broadcasts.
 
-The desktop display name is **AGILA Command Center**. The mobile app is displayed as **AGILA**. The application ID, protocol, and existing Windows session directory remain unchanged so the rename preserves saved sign-ins and window preferences.
+The desktop display name is **AGILA Command Center**. The mobile app is displayed as **AGILA**. The current identifiers and local profile use AGILA. The installer retains its upgrade GUID; a uniquely identifiable previous command-center profile is copied into the new AGILA profile before use, preserving its original copy. Close older app windows before updating.
 
 ## Install and use
 
-1. Run `AGILA-Command-Center-Setup-1.2.1-x64.exe`. The assisted installer installs
+1. Run `AGILA-Command-Center-Setup-1.3.0-x64.exe`. The assisted installer installs
    for your Windows user and offers Start menu and desktop shortcuts.
 2. Open **AGILA Command Center**. The loading screen remains visible while the
    command interface loads. A connection failure shows a retry screen and retries
@@ -26,7 +26,7 @@ The desktop display name is **AGILA Command Center**. The mobile app is displaye
    separate from your regular browser's session.
 
 The **Portable** executable runs without an installer. Both editions store the
-workstation profile under `%APPDATA%\TANOVIQ Command Center`; portable means
+workstation profile under `%APPDATA%\AGILA Command Center`; portable means
 installation-free, not that credentials travel beside the executable.
 
 The release is **not code-signed**, so Windows may show an unknown-publisher or

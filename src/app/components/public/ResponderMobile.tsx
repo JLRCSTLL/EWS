@@ -19,6 +19,8 @@ import {
   RefreshCw,
   Route,
   ShieldCheck,
+  MapPin,
+  FileText,
   X,
 } from "lucide-react";
 import { api, useLive } from "../../lib/live-service";
@@ -39,7 +41,9 @@ import { ResponseChat } from "./ResponseChat";
 import { useResponderMapInsets } from "./useResponderMapInsets";
 import { DispatchReceipt } from "./DispatchReceipt";
 import { DutyCard } from "./PersonnelPanels";
+import { ResponderTabletChrome, ResponderTabletStatus } from './ResponderTabletChrome';
 import "../../../styles/responder.css";
+import "../../../styles/responder-tablet.css";
 const actionLabels: Partial<Record<ResponseStatus, string>> = {
   en_route: "Depart for emergency",
   on_scene: "Confirm arrival on scene",
@@ -63,6 +67,7 @@ export function ResponderMobile() {
     [satellite, setSatellite] = useState(true),
     [follow, setFollow] = useState(true);
   const [expanded, setExpanded] = useState(false);
+  const [dutyOpen, setDutyOpen] = useState(false);
   const [recenterKey, setRecenterKey] = useState(0);
   const workspace = useRef<HTMLDivElement>(null);
   const mapInsets = useResponderMapInsets(workspace, `${incident?.id || 'idle'}:${view}:${expanded}`);
@@ -248,13 +253,15 @@ export function ResponderMobile() {
       setBusy(false);
     }
   }
+  const tabletChrome = <ResponderTabletChrome incident={incident} incidents={incidents} view={view} onView={setView} onSelect={id => { setSelected(id); setView('details'); }} onHospitals={() => void chooseHospital()} connected={live.connection === 'connected'} name={user.name} onDuty={!!user.onDuty} now={now} />;
   if (!incident)
     return (
       <div className="rsp-workspace rsp-idle" ref={workspace}>
+        {tabletChrome}
         <ResponseMap position={position} satellite={satellite} follow={follow} recenterKey={recenterKey} onFollowChange={setFollow} insets={mapInsets} />
         <div className="rsp-map-shade" />
         <header className="rsp-topbar" data-map-occlusion="top">
-          <div className="rsp-glass rsp-brand"><img src="/brand/agila-mark-white.svg" alt="" /><span><small>AGILA</small><strong>Responder</strong></span></div>
+          <a href="#/public" className="rsp-glass rsp-brand" aria-label="Back to home"><img src="/brand/agila-mark-white.svg" alt="" /><span><small>AGILA</small><strong>Responder</strong></span></a>
           <span className={"rsp-live-pill " + (live.connection === "connected" ? "is-online" : "")} role="status"><i/>{live.connection === "connected" ? "Connected" : "Reconnecting"}</span>
         </header>
         <div className="rsp-idle-label" data-map-occlusion="top"><span><Radio size={14}/>{user.onDuty ? "WAITING FOR DISPATCH" : "YOUR RESPONSE MAP"}</span><p>{position ? fresh ? "Your shared position" : "Last shared position" : "Regional overview · no location shared"}</p></div>
@@ -265,9 +272,17 @@ export function ResponderMobile() {
         <section className="rsp-glass rsp-idle-sheet" data-map-occlusion="sheet">
           <div className="rsp-idle-heading"><span className="rsp-ready-icon"><Radio size={23}/></span><div><span className="rsp-kicker">{user.onDuty ? "STANDING BY" : "OFF DUTY"}</span><h1>{user.onDuty ? "Ready for your next call" : "Start your response shift"}</h1></div></div>
           <p className="rsp-idle-description">{user.onDuty ? "A validated assignment opens your route automatically." : "Go on duty to receive assignments and share your location with dispatch."}</p>
-          <DutyCard compact />
-          {incidents.length > 0 && <details className="rsp-history"><summary>Recent dispatches <span>{incidents.length}</span><ChevronDown size={16}/></summary>{incidents.map(r => <button onClick={() => { setSelected(r.id); setView("details"); }} key={r.id}><span><strong>{r.title}</strong><small>{responseLabels[r.status]}</small></span><ChevronRight size={18}/></button>)}</details>}
+          <p className="rsp-idle-location"><LocateFixed size={15}/>{position ? `${fresh ? 'Live GPS' : 'Last GPS update'} · ${new Date(position.updatedAt).toLocaleTimeString('en-PH', {hour:'numeric', minute:'2-digit'})} · ±${Math.round(position.accuracy)} m` : 'No location shared yet'}</p>
+          <button className="rsp-secondary rsp-duty-button" onClick={() => setDutyOpen(true)}>{user.onDuty ? 'Manage duty' : 'Start duty'}{incidents.length > 0 && <span> · {incidents.length} recent dispatches</span>}<ChevronRight size={17}/></button>
         </section>
+        <Dialog.Root open={dutyOpen} onOpenChange={setDutyOpen}>
+          <Dialog.Portal><Dialog.Overlay className="rsp-modal-overlay"/><Dialog.Content className="rsp-hospital-picker rsp-glass rsp-duty-dialog">
+            <header><Dialog.Title>Duty & dispatch history</Dialog.Title><Dialog.Close asChild><button className="rsp-icon-button" aria-label="Close duty and history"><X size={20}/></button></Dialog.Close></header>
+            <Dialog.Description>Manage your shift, location sharing and recent assignments.</Dialog.Description>
+            <DutyCard compact />
+            {incidents.length > 0 && <section className="rsp-history" aria-label="Recent dispatches"><h3>Recent dispatches</h3>{incidents.map(r => <button onClick={() => { setDutyOpen(false); setSelected(r.id); setView('details'); }} key={r.id}><span><strong>{r.title}</strong><small>{responseLabels[r.status]}</small></span><ChevronRight size={18}/></button>)}</section>}
+          </Dialog.Content></Dialog.Portal>
+        </Dialog.Root>
       </div>
     );
   const next = responseTransitions[incident.status] || [];
@@ -278,6 +293,7 @@ export function ResponderMobile() {
       : ArrowUp;
   return (
     <div className={"rsp-workspace rsp-view-" + view + (keyboardHeight ? " rsp-keyboard-open" : "")} ref={workspace} style={keyboardHeight ? {height: keyboardHeight} : undefined}>
+      {tabletChrome}
       <ResponseMap
         position={position}
         destination={destination || incident.location}
@@ -325,7 +341,7 @@ export function ResponderMobile() {
               <h1>
                 {step?.instruction || destination?.label || "Dispatch complete"}
               </h1>
-              <p>{destination?.label || responseLabels[incident.status]}</p>
+              {routeError ? <button className="rsp-route-warning" onClick={() => setView('details')}>Directions unavailable · Review <ChevronRight size={14}/></button> : <p>{destination?.label || responseLabels[incident.status]}</p>}
             </div>
           </section>
           <div className="rsp-map-actions">
@@ -379,11 +395,12 @@ export function ResponderMobile() {
               aria-pressed={view === id}
             >
               <Icon size={17} />
-              {label}
+              {label}{id === 'details' && live.state?.alerts.some(alert => alert.response_id === incident.id && !alert.read_at) && <span className="rsp-unread-dot" aria-label="Unread dispatch" />}
             </button>
           ))}
         </nav>
-        {view !== "chat" && <DispatchReceipt incidentId={incident.id} />}
+        {view === "details" && <DispatchReceipt incidentId={incident.id} />}
+        {view === 'navigation' && live.state?.alerts.some(alert => alert.response_id === incident.id && !alert.read_at) && <button className="rsp-tablet-receipt" onClick={() => setView('details')}><MessageCircle size={17}/><span>Unread dispatch message</span><span>Review <ChevronRight size={15}/></span></button>}
         {view === "chat" ? (
           <ResponseChat key={incident.id} incident={incident} />
         ) : view === "details" ? (
@@ -392,6 +409,8 @@ export function ResponderMobile() {
               INCIDENT · {incident.id.slice(0, 8).toUpperCase()}
             </span>
             <h2>{incident.title}</h2>
+            {routeError && <p className="rsp-error" role="status">{routeError}</p>}
+            {!usable && activeResponse(incident) && <p className="rsp-caption">Route starts from the last known leg start until a fresh duty position arrives. <a href="#/public/account">Review location</a></p>}
             <p>{incident.notes || "No additional field notes."}</p>
             <dl>
               <div>
@@ -455,6 +474,12 @@ export function ResponderMobile() {
               <span className="rsp-priority">{incident.priority}</span>
             </div>
             <h2>{incident.title}</h2>
+            <div className="rsp-tablet-summary">
+              <div className="rsp-summary-location"><MapPin size={18}/><span><small>Emergency location</small><p>{incident.location.label}</p></span></div>
+              <div className="rsp-summary-report"><FileText size={18}/><span><small>Dispatch report</small><p>{incident.notes || 'No additional field notes.'}</p></span></div>
+              <button className="rsp-tablet-detail-link" onClick={() => setView('details')}>Full incident & validation <ChevronRight size={15}/></button>
+              <div className="rsp-tablet-tools"><button className="rsp-secondary" onClick={() => void chooseHospital()}><Hospital size={18}/>Hospitals</button><button className="rsp-secondary" onClick={() => setView('chat')}><MessageCircle size={18}/>Message</button></div>
+            </div>
             <div className="rsp-trip-metrics">
               <div>
                 <strong>{route ? responseDistance(remaining) : "—"}</strong>
@@ -478,12 +503,12 @@ export function ResponderMobile() {
                 </small>
               </div>
             </div>
-            {routeError && (
+            {routeError && expanded && (
               <p className="rsp-error" role="status">
                 {routeError}
               </p>
             )}
-            {!usable && activeResponse(incident) && (
+            {!usable && expanded && activeResponse(incident) && (
               <p className="rsp-caption">
                 Route starts from the last known leg start until a fresh duty
                 position arrives. <a href="#/public/account">Review location</a>
@@ -558,6 +583,7 @@ export function ResponderMobile() {
           </p>
         )}
       </section>
+      <ResponderTabletStatus incident={incident} busy={busy} connected={live.connection === 'connected'} onChange={status => { if (status === 'to_hospital' && !incident.hospital) void chooseHospital(true); else void changeStatus(status); }} />
       <Dialog.Root open={hospitalOpen} onOpenChange={setHospitalOpen}>
         <Dialog.Portal>
           <Dialog.Overlay className="rsp-modal-overlay" />

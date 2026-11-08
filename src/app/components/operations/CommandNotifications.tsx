@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Bell, CheckCheck, CircleCheck, Radio, ShieldAlert, X } from 'lucide-react';
 import { useLive } from '../../lib/live-service';
 import { commandNotifications, type CommandNotification } from '../../lib/command-notifications';
+import { readMigratedPreference } from '../../lib/local-preferences';
 
 export function CommandNotifications({ onOpen }: { onOpen:(destination:'public'|'broadcast'|'connected')=>void }) {
   const live = useLive(), userId = live.state?.user.id;
@@ -9,10 +10,10 @@ export function CommandNotifications({ onOpen }: { onOpen:(destination:'public'|
   const items = useMemo(() => commandNotifications(approved ? live.state : null),[live.state,approved]);
   const [open,setOpen] = useState(false), [read,setRead] = useState<string[]>([]), [notice,setNotice] = useState('');
   const container = useRef<HTMLDivElement>(null);
-  const key = userId ? `tanoviq-command-notifications:${userId}` : null;
+  const key = userId ? `agila-command-notifications:${userId}` : null;
   useEffect(() => {
     setRead([]);setNotice('');setOpen(false);
-    if (key) try { const value=JSON.parse(localStorage.getItem(key) || '[]'); if(Array.isArray(value)) setRead(value.filter(i => typeof i === 'string').slice(-1000)); } catch { /* A missing local preference is not an authentication error. */ }
+    if (key) try { const value=JSON.parse(readMigratedPreference(key, `-command-notifications:${userId}`) || '[]'); if(Array.isArray(value)) setRead(value.filter(i => typeof i === 'string').slice(-1000)); } catch { /* A missing local preference is not an authentication error. */ }
   },[key]);
   useEffect(() => {
     if (!open) return;

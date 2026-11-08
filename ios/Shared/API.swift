@@ -38,7 +38,7 @@ actor API {
     func acknowledge(_ id: String, userID: String) async throws {
         guard UUID(uuidString: id) != nil, SecureStore.value("userID") == userID else { throw APIError.unauthorized }
         let _: ServerReply = try await call("/alerts/\(id)/receipt", method: "POST", body: ["read": true])
-        NotificationCenter.default.post(name: .tanoviqAlertChanged, object: nil)
+        NotificationCenter.default.post(name: .agilaAlertChanged, object: nil)
     }
     func audio(_ id: String, userID: String) async throws -> Data {
         guard UUID(uuidString: id) != nil, SecureStore.value("userID") == userID,

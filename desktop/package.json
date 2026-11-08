@@ -1,7 +1,7 @@
 {
-  "name": "tanoviq-command-center",
+  "name": "agila-command-center",
   "productName": "AGILA Command Center",
-  "version": "1.2.1",
+  "version": "1.3.0",
   "description": "AGILA geospatial intelligence, life safety, and alerts.",
   "author": "AGILA",
   "private": true,
@@ -18,7 +18,7 @@
     "electron-builder": "26.18.0"
   },
   "build": {
-    "appId": "ph.tanoviq.commandcenter",
+    "appId": "ph.agila.commandcenter",
     "productName": "AGILA Command Center",
     "copyright": "Copyright © 2026 AGILA",
     "asar": true,
@@ -28,6 +28,8 @@
     },
     "files": [
       "main.cjs",
+      "profile.cjs",
+      "service.cjs",
       "policy.cjs",
       "preload.cjs",
       "shell/**",
@@ -54,7 +56,8 @@
       "createStartMenuShortcut": true,
       "shortcutName": "AGILA Command Center",
       "deleteAppDataOnUninstall": false,
-      "runAfterFinish": true
+      "runAfterFinish": true,
+      "guid": "649278d6-fc5c-5a08-adc2-5686e23059e8"
     },
     "portable": {
       "artifactName": "AGILA-Command-Center-Portable-${version}-${arch}.${ext}"

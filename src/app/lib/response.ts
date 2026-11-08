@@ -40,6 +40,8 @@ export interface ResponseFacility {
   kind: "base" | "hospital";
   name: string;
   location: ResponsePoint;
+  source_ref?: string | null;
+  source_data?: {address?: string; sourceUrl?: string; verification?: string} | null;
 }
 export interface NearbyHospital extends ResponsePoint {
   id: string;

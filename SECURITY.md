@@ -1,6 +1,6 @@
 # Security
 
-TANOVIQ is an evaluation project. Do not use public issues, screenshots or build
+AGILA is an evaluation project. Do not use public issues, screenshots or build
 logs to report credentials, real personnel locations, contact data or session
 tokens. If GitHub's **Security → Report a vulnerability** option is available,
 use it; otherwise contact the repository owner through a private channel already
