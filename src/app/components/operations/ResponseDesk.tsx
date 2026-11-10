@@ -1,15 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Ambulance,
+  ArrowLeft,
   ArrowRight,
   CheckCircle2,
-  Hospital,
   MapPin,
   MessageCircle,
   Plus,
   Radio,
   Tent,
-  Trash2,
   X,
 } from "lucide-react";
 import { api, useLive } from "../../lib/live-service";
@@ -107,6 +106,9 @@ export function ResponseDesk({
   const [id, setId] = useState<string | null>(null),
     [mode, setMode] = useState<"detail" | "new" | "directory">("detail"),
     [filter, setFilter] = useState<"active" | "closed">("active");
+  const [addingDestination, setAddingDestination] = useState(false);
+  const [destinationSaved, setDestinationSaved] = useState(false);
+  const directoryActionRef = useRef<HTMLButtonElement>(null);
   const [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
     [note, setNote] = useState(""),
@@ -175,7 +177,7 @@ export function ResponseDesk({
       </div>
     );
   return (
-    <section className="dispatch-desk" aria-label="Responder dispatch">
+    <section className={`dispatch-desk${mode === 'directory' ? ' dispatch-desk--directory' : ''}`} aria-label="Responder dispatch">
       <header className="dispatch-heading">
         <div>
           <span>FIELD OPERATIONS</span>
@@ -188,7 +190,8 @@ export function ResponseDesk({
               setMode("directory");
               setPoint({ ...emptyPoint });
               setDraftId(crypto.randomUUID());
-              setDeleteFacilityId(null);
+              setAddingDestination(false);
+              setDestinationSaved(false);
               setError("");
             }}
           >
@@ -215,8 +218,8 @@ export function ResponseDesk({
           {error}
         </p>
       )}
-      <div className="dispatch-layout">
-        <aside className="dispatch-list">
+      <div className={`dispatch-layout${mode === 'directory' ? ' dispatch-layout--directory' : ''}`}>
+        {mode !== 'directory' && <aside className="dispatch-list">
           <nav aria-label="Dispatch list filter">
             <button
               className={filter === "active" ? "is-active" : ""}
@@ -279,8 +282,8 @@ export function ResponseDesk({
               hospitals
             </small>
           </div>
-        </aside>
-        <div className="dispatch-detail">
+        </aside>}
+        <div className={`dispatch-detail${mode === 'directory' ? ' dispatch-detail--directory' : ''}`}>
           {mode === "new" ? (
             <form
               onSubmit={(e) => {
@@ -388,21 +391,29 @@ export function ResponseDesk({
           ) : mode === "directory" ? (
             <>
               <div className="dispatch-form-heading">
-                <h3>Bases & receiving hospitals</h3>
+                <h3>{addingDestination ? 'Add a destination' : 'Bases & receiving hospitals'}</h3>
+                <div className="dispatch-directory-actions">
+                  <button ref={directoryActionRef} type="button" onClick={() => { setAddingDestination(value => !value); setDestinationSaved(false); setError(''); }}>
+                    {addingDestination ? <ArrowLeft size={16} /> : <Plus size={16} />}
+                    {addingDestination ? 'Back to directory' : 'Add destination'}
+                  </button>
                 <button
+                  type="button"
+                  className="dispatch-directory-close"
                   aria-label="Close directory"
                   onClick={() => setMode("detail")}
                 >
                   <X size={18} />
                 </button>
+                </div>
               </div>
-              <p className="dispatch-caption">
-                Keep destinations verified with your local operations team. A
-                mapped hospital listing does not confirm capacity or receiving
-                capability.
+              <p className="dispatch-caption" role={destinationSaved ? 'status' : undefined}>
+                {destinationSaved ? 'Destination saved. Your search and filters have been kept.' : 'Verify hospital capacity and vehicle access with your operations team.'}
               </p>
-              <ResponseDirectory onLocate={onLocate} onDelete={deleted => { if (base === deleted) setBase(''); }} />
-              <form
+              <div hidden={addingDestination}>
+                <ResponseDirectory onLocate={onLocate} onDelete={deleted => { if (base === deleted) setBase(''); }} />
+              </div>
+              {addingDestination && <form className="dispatch-destination-form"
                 onSubmit={(e) => {
                   e.preventDefault();
                   void run(async () => {
@@ -413,10 +424,12 @@ export function ResponseDesk({
                     });
                     setPoint({ ...emptyPoint });
                     setDraftId(crypto.randomUUID());
+                    setAddingDestination(false);
+                    setDestinationSaved(true);
+                    requestAnimationFrame(() => directoryActionRef.current?.focus());
                   });
                 }}
               >
-                <h4>Add a destination</h4>
                 <label>
                   Destination type
                   <select
@@ -432,7 +445,7 @@ export function ResponseDesk({
                   <Plus size={16} />
                   Save destination
                 </button>
-              </form>
+              </form>}
             </>
           ) : !incident ? (
             <div className="dispatch-empty">

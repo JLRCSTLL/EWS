@@ -149,7 +149,9 @@
   border: 1px solid #c0c0c030;
   border-radius: 10px;
   padding: 11px 12px;
-  font: 12px/1.5 inherit;
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1.5;
   min-height: 42px;
 }
 .dispatch-detail option {
@@ -197,26 +199,14 @@
 .dispatch-map .leaflet-control-attribution {
   font-size: 8px;
 }
-.dispatch-facilities {
-  max-height: 250px;
-  overflow: auto;
-  margin-bottom: 24px;
-}
-.dispatch-facilities > div {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  align-items: center;
-  padding: 13px 0;
-  border-bottom: 1px solid #ffffff16;
-}
 .dispatch-facilities strong {
   font-size: 12px;
   display: block;
 }
-.dispatch-facility-info { flex: 1; min-width: 120px; overflow-wrap: anywhere; }
-.dispatch-facility > svg { flex-shrink: 0; }
-.dispatch-desk .dispatch-facility-delete { color: #efb4ab; padding: 7px 10px; min-height: 36px; }
+.dispatch-facility-info { min-width: 0; overflow-wrap: anywhere; }
+.dispatch-facility-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.dispatch-desk .dispatch-facility-actions button { padding: 8px 12px; min-height: 38px; white-space: nowrap; }
+.dispatch-desk .dispatch-facility-actions .dispatch-facility-delete { color: #efb4ab; background: transparent; }
 .dispatch-delete-confirm { width: 100%; padding: 13px; border: 1px solid #e5a29640; border-radius: 12px; background: #452c2d80; }
 .dispatch-delete-confirm p { font-size: 12px; line-height: 1.65; margin: 0 0 10px; }
 .dispatch-delete-confirm p strong { display: inline; }
@@ -420,12 +410,90 @@
   }
 }
 
-.hospital-directory-search { display: grid; grid-template-columns: minmax(0, 1fr) 170px; gap: 12px; }
-.hospital-directory-search label { min-width: 0; }
-.hospital-directory-search input, .hospital-directory-search select { width: 100%; }
-.hospital-directory-pages { display: flex; align-items: center; gap: 10px; padding: 14px 0 24px; }
-.hospital-directory-pages span { margin-right: auto; font-size: 12px; color: #ccc; }
-.hospital-directory-pages button { min-height: 40px; padding: 8px 14px; border: 1px solid #ffffff30; border-radius: 10px; background: #ffffff09; color: #eee; }
-.hospital-directory-pages button:disabled { opacity: .4; }
-.hospital-directory .dispatch-facility-info a { font-size: 10px; text-decoration: underline; }
-@media(max-width: 600px) { .hospital-directory-search { grid-template-columns: 1fr; } }
+/* Keep the directory within the dispatch dialog; only results scroll. */
+.ops-dialog.ops-dialog--dispatch { width: min(1160px, calc(100vw - 40px)); height: min(940px, calc(100dvh - 64px)); }
+.ops-dialog--dispatch > [data-slot='dialog-header'] { flex-shrink: 0; }
+.el-connected.el-connected--dispatch { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
+.el-dispatch-connection { display: flex; align-items: center; gap: 7px; color: #c3c3c3; font-size: 11px; flex-shrink: 0; }
+.el-connected--dispatch .dispatch-desk { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.el-connected--dispatch .dispatch-heading { flex-shrink: 0; margin: 10px 0 16px; gap: 12px; }
+.el-connected--dispatch .dispatch-heading > div:first-child > span,
+.el-connected--dispatch .dispatch-heading h2 { display: none; }
+.el-connected--dispatch .dispatch-heading p { margin: 0; }
+.el-connected--dispatch .dispatch-desk--directory > .dispatch-heading { display: none; }
+.el-connected--dispatch:has(.dispatch-desk--directory) > :is(.el-dispatch-connection, .el-dispatch-checkins, .el-connected-footer) { display: none; }
+.el-connected--dispatch .dispatch-desk--directory { margin-top: 0; }
+.el-connected--dispatch .dispatch-layout { flex: 1; min-height: 0; align-items: stretch; grid-template-columns: minmax(200px, 26%) minmax(0, 1fr); gap: 18px; }
+.el-connected--dispatch .dispatch-list { align-content: start; overflow-y: auto; min-height: 0; }
+.el-connected--dispatch .dispatch-detail { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.el-connected--dispatch .dispatch-layout--directory { grid-template-columns: minmax(0, 1fr); }
+.dispatch-desk .dispatch-detail--directory { display: flex; flex-direction: column; min-height: 0; padding: 20px; overflow: hidden; }
+.dispatch-detail--directory > .dispatch-form-heading,
+.dispatch-detail--directory > .dispatch-caption { flex-shrink: 0; }
+.dispatch-desk .dispatch-form-heading h3 { margin: 0; line-height: 1.3; }
+.dispatch-detail--directory > .dispatch-caption { margin: 8px 0 16px; max-width: 80ch; font-size: 11px; }
+.dispatch-directory-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.dispatch-desk .dispatch-directory-actions button { min-height: 38px; padding: 8px 12px; }
+.dispatch-desk .dispatch-directory-actions .dispatch-directory-close { width: 38px; padding: 8px; background: transparent; }
+.dispatch-detail--directory > div:not([hidden]):not(.dispatch-form-heading) { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.dispatch-detail--directory > [hidden] { display: none; }
+.dispatch-detail--directory .dispatch-destination-form { min-height: 0; overflow-y: auto; padding: 3px 5px 5px 3px; }
+.dispatch-desk .dispatch-detail label { margin: 0; min-width: 0; }
+.hospital-directory { display: flex; flex-direction: column; min-height: 0; flex: 1; }
+.hospital-directory-search { display: grid; grid-template-columns: minmax(0, 1fr) 190px; align-items: end; gap: 14px; flex-shrink: 0; }
+.hospital-directory-search-field { position: relative; display: flex; align-items: center; min-width: 0; }
+.hospital-directory-search-field > svg { position: absolute; left: 13px; color: #bdbdbd; pointer-events: none; }
+.dispatch-desk .hospital-directory-search input { padding-left: 40px; }
+.hospital-directory-search input, .hospital-directory-search select { width: 100%; min-width: 0; }
+.dispatch-desk .hospital-directory-status { margin: 12px 0 8px; min-height: 18px; color: #bdbdbd; font-size: 11px; flex-shrink: 0; }
+.hospital-directory .dispatch-facilities { flex: 1; min-height: 100px; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; border-block: 1px solid #ffffff1a; }
+.hospital-directory-list { list-style: none; margin: 0; padding: 0; }
+.hospital-directory-list > .dispatch-facility { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 16px 8px 16px 0; }
+.hospital-directory-list > .dispatch-facility + .dispatch-facility { border-top: 1px solid #ffffff14; }
+.dispatch-facility-icon { display: grid; place-items: center; width: 40px; height: 40px; align-self: start; border: 1px solid #ffffff1a; border-radius: 11px; color: #d5d5d5; background: #ffffff06; }
+.dispatch-facility .dispatch-delete-confirm { grid-column: 1 / -1; }
+.dispatch-desk .hospital-directory a { display: inline; border: 0; border-radius: 0; padding: 0; background: none; color: #c7c7c7; font-size: inherit; line-height: inherit; text-decoration: underline; text-underline-offset: 3px; overflow-wrap: anywhere; }
+.dispatch-desk .dispatch-facility-info a { display: inline-block; margin-top: 5px; font-size: 11px; }
+.hospital-directory-credit { flex-shrink: 0; font-size: 10px; line-height: 1.7; padding-top: 12px; border-top: 1px solid #ffffff14; }
+.hospital-directory-credit p { margin: 0; }
+.hospital-directory-credit a > svg { display: inline; margin-left: 3px; vertical-align: -1px; }
+.hospital-directory-pages { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; flex-shrink: 0; }
+.hospital-directory-pages > span { font-size: 11px; color: #ccc; font-variant-numeric: tabular-nums; }
+.hospital-directory-pages > div { display: flex; gap: 8px; }
+.hospital-directory-empty { display: grid; justify-items: center; gap: 8px; padding: 32px 16px; text-align: center; color: #c6c6c6; }
+.hospital-directory-empty p { margin: 0; font-size: 12px; }
+.hospital-directory .dispatch-facilities:focus-visible,
+.hospital-directory a:focus-visible,
+.el-dispatch-checkins > summary:focus-visible { outline: 2px solid #ddd; outline-offset: -2px; }
+.el-dispatch-checkins { flex-shrink: 0; border-top: 1px solid #ffffff1a; margin-top: 12px; font-size: 11px; }
+.el-dispatch-checkins > summary { cursor: pointer; padding: 8px 0; color: #c8c8c8; }
+.el-dispatch-checkins > summary span { margin-left: 6px; font-variant-numeric: tabular-nums; }
+.el-dispatch-checkins > div { max-height: 130px; overflow-y: auto; }
+.el-connected--dispatch .el-connected-footer { margin-top: 4px; padding-top: 8px; flex-shrink: 0; }
+@media (max-width: 780px) {
+  .el-connected--dispatch .dispatch-layout { grid-template-columns: minmax(0, 1fr); }
+  .el-connected--dispatch .dispatch-layout:not(.dispatch-layout--directory) { grid-template-rows: minmax(90px, 24%) minmax(0, 1fr); }
+  .el-connected--dispatch .dispatch-heading { flex-direction: row; align-items: center; }
+  .el-connected--dispatch .dispatch-heading p { display: none; }
+  .hospital-directory-list > .dispatch-facility { grid-template-columns: 36px minmax(0, 1fr); gap: 10px; }
+  .dispatch-facility-icon { width: 36px; height: 36px; }
+  .dispatch-facility-actions { grid-column: 2; }
+}
+@media (max-width: 600px) {
+  .ops-dialog.ops-dialog--dispatch { width: calc(100vw - 16px); height: calc(100dvh - 24px); max-height: calc(100dvh - 24px); padding: 18px 14px; gap: 12px; }
+  .dispatch-desk .dispatch-detail--directory { padding: 14px; border-radius: 14px; }
+  .dispatch-detail--directory .dispatch-form-heading { flex-wrap: wrap; gap: 10px; }
+  .dispatch-desk .dispatch-form-heading h3 { font-size: 17px; }
+  .dispatch-directory-actions { width: 100%; justify-content: space-between; }
+  .hospital-directory-search { grid-template-columns: minmax(0, 1fr) 138px; gap: 8px; }
+  .dispatch-desk .hospital-directory-search input, .dispatch-desk .hospital-directory-search select { font-size: 12px; }
+  .hospital-directory-credit { font-size: 9px; }
+  .hospital-directory-pages { gap: 6px; }
+  .dispatch-desk .hospital-directory-pages button { padding: 8px; }
+}
+@media (max-height: 650px) {
+  .el-connected.el-connected--dispatch { overflow-y: auto; }
+  .el-connected--dispatch .dispatch-desk { flex: none; min-height: 470px; }
+  .el-connected--dispatch .dispatch-layout { min-height: 340px; }
+  .hospital-directory .dispatch-facilities { max-height: 280px; }
+}
