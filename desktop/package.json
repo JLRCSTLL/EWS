@@ -1,7 +1,7 @@
 {
   "name": "agila-command-center",
   "productName": "AGILA Command Center",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "description": "AGILA geospatial intelligence, life safety, and alerts.",
   "author": "AGILA",
   "private": true,

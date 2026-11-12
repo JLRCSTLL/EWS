@@ -10,7 +10,7 @@ The desktop display name is **AGILA Command Center**. The mobile app is displaye
 
 ## Install and use
 
-1. Run `AGILA-Command-Center-Setup-1.3.0-x64.exe`. The assisted installer installs
+1. Run `AGILA-Command-Center-Setup-1.3.1-x64.exe`. The assisted installer installs
    for your Windows user and offers Start menu and desktop shortcuts.
 2. Open **AGILA Command Center**. The loading screen remains visible while the
    command interface loads. A connection failure shows a retry screen and retries

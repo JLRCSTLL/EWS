@@ -1,4 +1,4 @@
-# AGILA Android pilot 0.9.1
+# AGILA Android pilot 0.9.2
 
 An installable Android app (Android 8+) for the existing personnel service.
 The public interface loads from `https://ews-kappa.vercel.app/#/public` in an
@@ -7,7 +7,7 @@ Firebase Cloud Messaging, safe external links, Android back navigation, and
 location permission. Accounts and consented locations use the existing Render
 API through the same HTTPS origin. No separate account system is introduced.
 
-Pilot 0.9.1 (version code 12) adds the AGILA display name, eagle launcher icon,
+Pilot 0.9.2 (version code 14) adds the AGILA display name, eagle launcher icon,
 branded native loading screen, and matte charcoal native alert/offline surfaces.
 It retains custom alert audio and the notification/location improvements below
 and the existing pilot signing identity. Its hosted interface uses the same Groups
